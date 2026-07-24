@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon-192.png">
+<title>ПОЗИТРОН КОМБО</title>
+<style>
+:root{--bg:#06101c;--panel:#0b1b2c;--panel2:#10253a;--line:#24415d;--text:#edf6ff;--muted:#9db0c3;--gold:#ffcb52;--green:#67e08a;--blue:#66b8ff;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0b2840 0,#06101c 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select{font:inherit}.app{max-width:920px;margin:auto;padding:12px 12px 90px}
+.top{display:flex;gap:12px;align-items:center;margin-bottom:12px}.logo{width:60px;height:60px;border-radius:17px;border:1px solid #2d6d9a}.title{font-size:20px;font-weight:950}.sub{font-size:12px;color:var(--muted);line-height:1.4}
+.status{margin-left:auto;text-align:right}.badge{display:inline-block;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--gold)}
+.card{background:linear-gradient(180deg,rgba(16,37,58,.96),rgba(9,25,41,.96));border:1px solid var(--line);border-radius:16px;padding:12px;margin:10px 0;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.card h2{margin:0 0 9px;font-size:17px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:690px){.grid2{grid-template-columns:1fr}}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}@media(min-width:690px){.actions{grid-template-columns:repeat(4,1fr)}}
+button,.filebtn{border:0;border-radius:11px;padding:10px 9px;background:#1c4262;color:#fff;font-weight:800;text-align:center;cursor:pointer}
+button.primary{background:linear-gradient(135deg,#1e7d54,#43b56f)}button.gold{background:linear-gradient(135deg,#8b6114,#d69b25)}button.danger{background:#722b35}.filebtn{display:block}.filebtn input{display:none}
+input,select{width:100%;background:#071523;border:1px solid var(--line);color:#fff;border-radius:10px;padding:10px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.small{font-size:12px;color:var(--muted)}
+.alg{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}@media(max-width:690px){.alg{grid-template-columns:1fr}}
+.algname{font-size:28px;font-weight:950;color:var(--green)}.meter{height:10px;background:#071523;border-radius:99px;overflow:hidden;margin:8px 0}.meter span{display:block;height:100%;background:linear-gradient(90deg,#3fbf70,#d4c651);width:0}
+.pills{display:flex;flex-wrap:wrap;gap:6px}.pill{padding:5px 8px;border-radius:999px;background:#132e47;border:1px solid #2c506f;font-size:12px}
+.combo{border:1px solid #2a5273;background:#091827;border-radius:13px;padding:10px;margin-top:8px}.comboHead{display:flex;justify-content:space-between;gap:8px}.nums{font-size:18px;font-weight:950;letter-spacing:2px;color:#fff}.state{font-size:12px;color:var(--gold);font-weight:900}
+.chain{display:flex;gap:5px;overflow:auto;padding:7px 0}.hit{min-width:44px;text-align:center;background:#10283e;border:1px solid #294b68;border-radius:9px;padding:6px 4px;font-size:11px}.hit b{display:block;font-size:17px;color:var(--green)}
+.comboBtns{display:flex;gap:6px;margin-top:6px}.comboBtns button{padding:7px 9px;font-size:12px}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed #35546e;border-radius:12px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tab.on{background:#2a7d55}
+dialog{width:calc(100% - 24px);max-width:680px;background:#0c1c2c;color:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}dialog::backdrop{background:rgba(0,0,0,.72)}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.formgrid .wide{grid-column:1/-1}
+.history{max-height:300px;overflow:auto}.histrow{padding:7px;border-bottom:1px solid #203a52;font-size:12px}
+.footer{position:fixed;left:0;right:0;bottom:0;background:rgba(5,15,26,.95);border-top:1px solid var(--line);padding:7px calc(8px + env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom));backdrop-filter:blur(8px)}
+.footerin{max-width:920px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.footer button{padding:6px 2px;background:transparent;color:#b8cadb;font-size:11px}.footer b{display:block;font-size:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img class="logo" src="assets/icon-192.png" alt="">
+    <div><div class="title">ПОЗИТРОН КОМБО</div><div class="sub">Комбинации K5 и K6 · исторические аналоги · отслеживание по тиражам</div></div>
+    <div class="status"><div id="dbBadge" class="badge">База: 0</div><div id="lastDraw" class="sub">Тиражей пока нет</div></div>
+  </header>
+
+  <section class="card">
+    <div class="actions">
+      <button class="primary" id="createBtn">＋ Создать</button>
+      <button id="fromDrawBtn">🎯 По тиражу</button>
+      <button id="historyBtn">🕘 Исторически</button>
+      <button class="gold" id="analyzeBtn">✨ Анализ</button>
+      <label class="filebtn">📂 Импорт базы<input id="importFile" type="file" accept=".csv,.json,text/csv,application/json"></label>
+      <button id="syncBtn">↻ Обновить тиражи</button>
+      <button id="exportBtn">💾 Экспорт</button>
+      <button class="danger" id="clearTrackBtn">🗑 Очистить комбинации</button>
+    </div>
+    <div id="message" class="small" style="margin-top:9px">Импортируйте базу КЕНО или нажмите «Обновить тиражи».</div>
+  </section>
+
+  <section class="card">
+    <h2>🧭 Текущий алгоритм КЕНО</h2>
+    <div class="alg">
+      <div>
+        <div id="algName" class="algname">Недостаточно данных</div>
+        <div class="small">Программа сравнивает горизонтальные, вертикальные и диагональные связи в последних тиражах.</div>
+        <div class="meter"><span id="algMeter"></span></div>
+        <div id="algConfidence" class="small">Уверенность: —</div>
+      </div>
+      <div>
+        <div class="small">Исторические аналоги</div>
+        <div id="analogCount" style="font-size:30px;font-weight:950;color:var(--gold)">0</div>
+        <div id="analogNote" class="small">Нажмите «Анализ» после загрузки базы.</div>
+      </div>
+    </div>
+    <div id="suggestions"></div>
+  </section>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="k5">Комбинации K5</button>
+    <button class="tab" data-tab="k6">Комбинации K6</button>
+  </div>
+  <section id="k5Panel" class="card"><h2>K5 на отслеживании</h2><div id="k5List"></div></section>
+  <section id="k6Panel" class="card" style="display:none"><h2>K6 на отслеживании</h2><div id="k6List"></div></section>
+</div>
+
+<nav class="footer"><div class="footerin">
+<button id="footCreate"><b>＋</b>Создать</button>
+<button id="footAnalyze"><b>✨</b>Анализ</button>
+<button id="footSync"><b>↻</b>Обновить</button>
+<button id="footSettings"><b>⚙</b>Источник</button>
+</div></nav>
+
+<dialog id="comboDialog">
+<form method="dialog">
+<h2 id="comboDialogTitle">Создать комбинацию</h2>
+<div class="formgrid">
+<label>Тип<select id="comboType"><option value="5">K5</option><option value="6">K6</option></select></label>
+<label>Начать с тиража<input id="comboStart" type="number" placeholder="последний"></label>
+<label class="wide">Числа<input id="comboNums" inputmode="numeric" placeholder="Например: 07 18 33 46 64"></label>
+<label class="wide">Название (необязательно)<input id="comboName" placeholder="Моя комбинация"></label>
+</div>
+<div class="comboBtns"><button value="cancel">Отмена</button><button type="button" class="primary" id="saveComboBtn">Поставить на отслеживание</button></div>
+</form>
+</dialog>
+
+<dialog id="drawDialog">
+<form method="dialog">
+<h2 id="drawDialogTitle">Создать по тиражу</h2>
+<div class="formgrid">
+<label>Номер тиража<input id="sourceDraw" type="number"></label>
+<label>Тип<select id="sourceType"><option value="5">K5</option><option value="6">K6</option></select></label>
+<label class="wide">Выберите числа из тиража</label>
+<div id="drawNumbers" class="pills wide"></div>
+</div>
+<div class="comboBtns"><button value="cancel">Отмена</button><button type="button" class="primary" id="saveFromDraw">Поставить на отслеживание</button></div>
+</form>
+</dialog>
+
+<dialog id="settingsDialog">
+<form method="dialog">
+<h2>Источник обновления</h2>
+<div class="small">Адрес должен возвращать JSON или CSV с тиражами.</div>
+<input id="sourceUrl" value="https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws">
+<div class="comboBtns"><button value="cancel">Отмена</button><button type="button" class="primary" id="saveSettings">Сохранить</button></div>
+</form>
+</dialog>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let draws=[], combos=[], currentTab='k5', selectedNumbers=new Set(), lastSuggestions=[];
+const DB='pozitron_combo_v1', STORE_D='draws', STORE_C='combos';
+
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(STORE_D))db.createObjectStore(STORE_D,{keyPath:'draw'});if(!db.objectStoreNames.contains(STORE_C))db.createObjectStore(STORE_C,{keyPath:'id'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function getAll(store){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function putMany(store,arr){if(!arr.length)return;const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(store,'readwrite'),s=tx.objectStore(store);arr.forEach(x=>s.put(x));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function clearStore(store){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+async function del(store,key){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+
+function pad(n){return String(n).padStart(2,'0')}
+function valid(o){
+ const draw=Number(o.draw??o.drawNumber??o.number??o.id), date=String(o.date??o.drawDate??'').slice(0,10), time=String(o.time??o.drawTime??'');
+ let balls=o.balls??o.numbers??o.winningNumbers??o.results;
+ if(typeof balls==='string')balls=(balls.match(/\d+/g)||[]).map(Number);
+ if(!Array.isArray(balls)||balls.length<20||!Number.isFinite(draw))return null;
+ balls=balls.slice(0,20).map(Number).filter(n=>n>=1&&n<=80);if(balls.length!==20)return null;
+ return {draw,date,time,balls};
+}
+function walk(o,out=[]){if(Array.isArray(o)){o.forEach(x=>walk(x,out));return out}if(o&&typeof o==='object'){const d=valid(o);if(d)out.push(d);else Object.values(o).forEach(v=>{if(v&&typeof v==='object')walk(v,out)})}return out}
+function csvLine(s){const a=[];let cur='',q=false;for(const c of s){if(c==='"')q=!q;else if((c===','||c===';')&&!q){a.push(cur.trim());cur=''}else cur+=c}a.push(cur.trim());return a}
+function parse(text){
+ text=String(text||'').replace(/^\uFEFF/,'').trim();if(!text)return [];
+ try{return dedupe(walk(JSON.parse(text)))}catch{}
+ const out=[];text.split(/\r?\n/).filter(Boolean).forEach((line,i)=>{const p=csvLine(line);if(i===0&&p.some(x=>/тираж|draw|date|дата/i.test(x)))return;let d=null;if(p.length>=23)d=valid({draw:p[0],date:p[1],time:p[2],balls:p.slice(3,23)});if(!d&&p.length>=24)d=valid({date:p[1],time:p[2],draw:p[3],balls:p.slice(4,24)});if(d)out.push(d)});return dedupe(out)
+}
+function dedupe(a){const m=new Map();a.forEach(d=>m.set(Number(d.draw),d));return [...m.values()].sort((a,b)=>a.draw-b.draw)}
+function setMessage(t){$('message').textContent=t}
+
+function coord(n){return {r:Math.floor((n-1)/10),c:(n-1)%10}}
+function drawPattern(d){
+ let h=0,v=0,g=0;const set=new Set(d.balls);
+ for(const n of d.balls){const {r,c}=coord(n);if(c<9&&set.has(n+1))h++;if(r<7&&set.has(n+10))v++;if(r<7&&c<9&&set.has(n+11))g++;if(r<7&&c>0&&set.has(n+9))g++}
+ const total=h+v+g||1;return {h,v,g,vec:[h/total,v/total,g/total]}
+}
+function windowSignature(end,win=5){
+ const sums=[0,0,0];for(let i=Math.max(0,end-win+1);i<=end;i++){const v=drawPattern(draws[i]).vec;v.forEach((x,j)=>sums[j]+=x)}
+ const z=sums.reduce((a,b)=>a+b,0)||1;return sums.map(x=>x/z)
+}
+function dominant(sig){const names=['Горизонтальный','Вертикальный','Диагональный'],i=sig.indexOf(Math.max(...sig));return {name:names[i],i,confidence:sig[i]}}
+function distance(a,b){return Math.sqrt(a.reduce((s,x,i)=>s+(x-b[i])**2,0))}
+function analyzeAlgorithm(){
+ if(draws.length<12){setMessage('Для анализа нужно хотя бы 12 тиражей.');return}
+ const win=5,end=draws.length-1,sig=windowSignature(end,win),dom=dominant(sig);
+ const analogs=[];
+ for(let i=win-1;i<draws.length-2;i++){const s=windowSignature(i,win),dist=distance(sig,s);if(dist<0.13)analogs.push({i,dist})}
+ analogs.sort((a,b)=>a.dist-b.dist);const picked=analogs.slice(0,60);
+ const freq=Array(81).fill(0);
+ picked.forEach(a=>draws[a.i+1].balls.forEach(n=>freq[n]++));
+ const ranked=[...Array(80)].map((_,i)=>i+1).sort((a,b)=>freq[b]-freq[a]||a-b);
+ const make=(k,offset=0)=>ranked.slice(offset,offset+k).sort((a,b)=>a-b);
+ lastSuggestions=[{type:5,nums:make(5,0)},{type:5,nums:make(5,5)},{type:6,nums:make(6,0)},{type:6,nums:make(6,6)}];
+ $('algName').textContent=dom.name;$('algMeter').style.width=Math.round(dom.confidence*100)+'%';$('algConfidence').textContent='Уверенность: '+Math.round(dom.confidence*100)+'%';
+ $('analogCount').textContent=picked.length;$('analogNote').textContent=picked.length?'Показаны лучшие совпадения последних пяти тиражей.':'Похожих участков с заданной точностью не найдено.';
+ renderSuggestions();setMessage('Анализ завершён. Комбинации можно поставить на отслеживание.')
+}
+function renderSuggestions(){
+ $('suggestions').innerHTML=lastSuggestions.length?'<div class="small" style="margin-top:10px">Комбинации после похожих исторических участков</div>'+lastSuggestions.map((s,i)=>`<div class="combo"><div class="comboHead"><div><span class="state">K${s.type}</span><div class="nums">${s.nums.map(pad).join(' ')}</div></div><button onclick="trackSuggestion(${i})">Отслеживать</button></div></div>`).join(''):''
+}
+async function trackSuggestion(i){const s=lastSuggestions[i];await addCombo(s.type,s.nums,draws.at(-1)?.draw||0,'Найдена алгоритмом')}
+function comboHits(combo){
+ const startIndex=Math.max(-1,draws.findIndex(d=>d.draw>=combo.startDraw)-1),arr=[];
+ for(let i=startIndex+1;i<draws.length;i++){const d=draws[i],nums=combo.nums.filter(n=>d.balls.includes(n));arr.push({draw:d.draw,count:nums.length,nums})}
+ return arr.slice(-30)
+}
+function comboState(combo,hits){if(!hits.length)return 'Собирается';const last=hits.slice(-5).map(x=>x.count),max=Math.max(...last);if(max>=combo.type-1)return 'Повтор';if(last.length>=3&&last.at(-1)>=last.at(-2)&&last.at(-2)>=last.at(-3))return 'Готова к выходу';return 'Собирается'}
+function comboHTML(c){
+ const hits=comboHits(c),state=comboState(c,hits);
+ return `<div class="combo"><div class="comboHead"><div><div class="nums">${c.nums.map(pad).join(' ')}</div><div class="small">${c.name||'Комбинация'} · с тиража ${c.startDraw||'текущего'}</div></div><div class="state">${state}</div></div>
+ <div class="chain">${hits.length?hits.map(h=>`<div class="hit"><span>${h.draw}</span><b>${h.count}</b><span>чисел</span></div>`).join(''):'<div class="small">Новые тиражи ещё не поступили.</div>'}</div>
+ <div class="comboBtns"><button onclick="showHistory('${c.id}')">Вся цепочка</button><button class="danger" onclick="removeCombo('${c.id}')">Удалить</button></div></div>`
+}
+function render(){
+ draws=dedupe(draws);$('dbBadge').textContent='База: '+draws.length.toLocaleString('ru-RU');$('lastDraw').textContent=draws.length?'Последний №'+draws.at(-1).draw:'Тиражей пока нет';
+ const k5=combos.filter(c=>c.type===5),k6=combos.filter(c=>c.type===6);
+ $('k5List').innerHTML=k5.length?k5.map(comboHTML).join(''):'<div class="empty">Комбинаций K5 пока нет.</div>';
+ $('k6List').innerHTML=k6.length?k6.map(comboHTML).join(''):'<div class="empty">Комбинаций K6 пока нет.</div>'
+}
+async function addCombo(type,nums,startDraw,name=''){
+ nums=[...new Set(nums.map(Number).filter(n=>n>=1&&n<=80))].sort((a,b)=>a-b);
+ if(nums.length!==Number(type))return alert('Для K'+type+' нужно выбрать ровно '+type+' чисел.');
+ const c={id:crypto.randomUUID(),type:Number(type),nums,startDraw:Number(startDraw)||draws.at(-1)?.draw||0,name,createdAt:new Date().toISOString()};
+ combos.push(c);await putMany(STORE_C,[c]);render();setMessage('Комбинация K'+type+' поставлена на отслеживание.')
+}
+async function removeCombo(id){if(!confirm('Удалить эту комбинацию?'))return;combos=combos.filter(c=>c.id!==id);await del(STORE_C,id);render()}
+function showHistory(id){const c=combos.find(x=>x.id===id),hits=comboHits(c);alert((c.nums.map(pad).join(' '))+'\n\n'+hits.map(h=>`${h.draw} — ${h.count} чисел${h.nums.length?' ('+h.nums.map(pad).join(' ')+')':''}`).join('\n'))}
+function openCreate(){ $('comboDialogTitle').textContent='Создать комбинацию';$('comboStart').value=draws.at(-1)?.draw||'';$('comboNums').value='';$('comboName').value='';$('comboDialog').showModal() }
+function openFromDraw(historical=false){$('drawDialogTitle').textContent=historical?'Создать исторически':'Создать по тиражу';$('sourceDraw').value=historical?(draws.at(-10)?.draw||draws.at(-1)?.draw||''):(draws.at(-1)?.draw||'');selectedNumbers.clear();renderDrawPicker();$('drawDialog').showModal()}
+function renderDrawPicker(){const d=draws.find(x=>x.draw===Number($('sourceDraw').value));$('drawNumbers').innerHTML=d?d.balls.map(n=>`<button type="button" class="pill" data-num="${n}" style="${selectedNumbers.has(n)?'background:#2a7d55':''}">${pad(n)}</button>`).join(''):'<div class="small">Тираж не найден.</div>';document.querySelectorAll('[data-num]').forEach(b=>b.onclick=()=>{const n=Number(b.dataset.num);selectedNumbers.has(n)?selectedNumbers.delete(n):selectedNumbers.add(n);renderDrawPicker()})}
+async function importText(text){const arr=parse(text);if(!arr.length)throw new Error('Тиражи не распознаны');const before=draws.length;draws=dedupe([...draws,...arr]);await putMany(STORE_D,arr);render();setMessage('Добавлено '+(draws.length-before)+' · всего '+draws.length.toLocaleString('ru-RU'))}
+async function sync(){const url=localStorage.getItem('pozitron_combo_url')||'https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws';setMessage('Проверяю новые тиражи…');try{const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);await importText(await r.text())}catch(e){setMessage('Обновление не выполнено: '+e.message)}
+}
+async function init(){draws=await getAll(STORE_D);combos=await getAll(STORE_C);render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');currentTab=b.dataset.tab;$('k5Panel').style.display=currentTab==='k5'?'block':'none';$('k6Panel').style.display=currentTab==='k6'?'block':'none'});
+$('createBtn').onclick=$('footCreate').onclick=openCreate;$('fromDrawBtn').onclick=()=>openFromDraw(false);$('historyBtn').onclick=()=>openFromDraw(true);$('analyzeBtn').onclick=$('footAnalyze').onclick=analyzeAlgorithm;
+$('syncBtn').onclick=$('footSync').onclick=sync;$('footSettings').onclick=()=>{$('sourceUrl').value=localStorage.getItem('pozitron_combo_url')||'https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws';$('settingsDialog').showModal()};
+$('saveSettings').onclick=()=>{localStorage.setItem('pozitron_combo_url',$('sourceUrl').value.trim());$('settingsDialog').close();setMessage('Источник сохранён.')};
+$('saveComboBtn').onclick=async()=>{await addCombo($('comboType').value,($('comboNums').value.match(/\d+/g)||[]),$('comboStart').value,$('comboName').value);$('comboDialog').close()};
+$('sourceDraw').oninput=()=>{selectedNumbers.clear();renderDrawPicker()};$('sourceType').onchange=()=>{selectedNumbers.clear();renderDrawPicker()};
+$('saveFromDraw').onclick=async()=>{await addCombo($('sourceType').value,[...selectedNumbers],$('sourceDraw').value,'Создана по тиражу '+$('sourceDraw').value);$('drawDialog').close()};
+$('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await importText(r.result)}catch(err){alert(err.message)}};r.readAsText(f,'UTF-8')};
+$('clearTrackBtn').onclick=async()=>{if(!confirm('Удалить все отслеживаемые K5 и K6? База тиражей останется.'))return;combos=[];await clearStore(STORE_C);render();setMessage('Отслеживаемые комбинации удалены.')};
+$('exportBtn').onclick=()=>{const data={app:'ПОЗИТРОН КОМБО',version:'1.0',exportedAt:new Date().toISOString(),draws,combos};const u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='ПОЗИТРОН_КОМБО_РЕЗЕРВ.json';a.click();URL.revokeObjectURL(u)};
+init();
+</script>
+</body>
+</html>
