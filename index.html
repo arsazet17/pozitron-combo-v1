@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#071827">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<title>ПОЗИТРОН КОМБО</title>
+<title>ПОЗИТРОН КОМБО v1.0.1</title>
 <style>
 :root{--bg:#06101c;--panel:#0b1b2c;--panel2:#10253a;--line:#24415d;--text:#edf6ff;--muted:#9db0c3;--gold:#ffcb52;--green:#67e08a;--blue:#66b8ff;--red:#ff6b6b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0b2840 0,#06101c 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -39,7 +39,7 @@ dialog{width:calc(100% - 24px);max-width:680px;background:#0c1c2c;color:#fff;bor
 <div class="app">
   <header class="top">
     <img class="logo" src="icon-192.png" alt="">
-    <div><div class="title">ПОЗИТРОН КОМБО</div><div class="sub">Комбинации K5 и K6 · исторические аналоги · отслеживание по тиражам</div></div>
+    <div><div class="title">ПОЗИТРОН КОМБО v1</div><div class="sub">СБОРКА 1.0.1 · АВТООБНОВЛЕНИЕ · K5 и K6 · исторические аналоги</div></div>
     <div class="status"><div id="dbBadge" class="badge">База: 0</div><div id="lastDraw" class="sub">Тиражей пока нет</div></div>
   </header>
 
@@ -120,7 +120,7 @@ dialog{width:calc(100% - 24px);max-width:680px;background:#0c1c2c;color:#fff;bor
 <form method="dialog">
 <h2>Источник обновления</h2>
 <div class="small">Адрес должен возвращать JSON или CSV с тиражами.</div>
-<input id="sourceUrl" value="https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws">
+<input id="sourceUrl" value="./combo-history-v1.json">
 <div class="comboBtns"><button value="cancel">Отмена</button><button type="button" class="primary" id="saveSettings">Сохранить</button></div>
 </form>
 </dialog>
@@ -130,6 +130,9 @@ dialog{width:calc(100% - 24px);max-width:680px;background:#0c1c2c;color:#fff;bor
 const $=id=>document.getElementById(id);
 let draws=[], combos=[], currentTab='k5', selectedNumbers=new Set(), lastSuggestions=[];
 const DB='pozitron_combo_v1', STORE_D='draws', STORE_C='combos';
+const APP_VERSION='1.0.1';
+const DEFAULT_SOURCE='./combo-history-v1.json';
+const LEGACY_SOURCE='https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws';
 
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(STORE_D))db.createObjectStore(STORE_D,{keyPath:'draw'});if(!db.objectStoreNames.contains(STORE_C))db.createObjectStore(STORE_C,{keyPath:'id'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function getAll(store){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
@@ -217,19 +220,43 @@ function openCreate(){ $('comboDialogTitle').textContent='Создать ком�
 function openFromDraw(historical=false){$('drawDialogTitle').textContent=historical?'Создать исторически':'Создать по тиражу';$('sourceDraw').value=historical?(draws.at(-10)?.draw||draws.at(-1)?.draw||''):(draws.at(-1)?.draw||'');selectedNumbers.clear();renderDrawPicker();$('drawDialog').showModal()}
 function renderDrawPicker(){const d=draws.find(x=>x.draw===Number($('sourceDraw').value));$('drawNumbers').innerHTML=d?d.balls.map(n=>`<button type="button" class="pill" data-num="${n}" style="${selectedNumbers.has(n)?'background:#2a7d55':''}">${pad(n)}</button>`).join(''):'<div class="small">Тираж не найден.</div>';document.querySelectorAll('[data-num]').forEach(b=>b.onclick=()=>{const n=Number(b.dataset.num);selectedNumbers.has(n)?selectedNumbers.delete(n):selectedNumbers.add(n);renderDrawPicker()})}
 async function importText(text){const arr=parse(text);if(!arr.length)throw new Error('Тиражи не распознаны');const before=draws.length;draws=dedupe([...draws,...arr]);await putMany(STORE_D,arr);render();setMessage('Добавлено '+(draws.length-before)+' · всего '+draws.length.toLocaleString('ru-RU'))}
-async function sync(){const url=localStorage.getItem('pozitron_combo_url')||'https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws';setMessage('Проверяю новые тиражи…');try{const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);await importText(await r.text())}catch(e){setMessage('Обновление не выполнено: '+e.message)}
+function getSourceUrl(){
+ const saved=(localStorage.getItem('pozitron_combo_url')||'').trim();
+ if(!saved||saved===LEGACY_SOURCE){localStorage.setItem('pozitron_combo_url',DEFAULT_SOURCE);return DEFAULT_SOURCE}
+ return saved
 }
-async function init(){draws=await getAll(STORE_D);combos=await getAll(STORE_C);render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+async function sync(silent=false){
+ const url=getSourceUrl();
+ if(!silent)setMessage('Проверяю новые тиражи…');
+ try{
+  const sep=url.includes('?')?'&':'?';
+  const r=await fetch(url+sep+'v='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const text=await r.text();
+  const arr=parse(text);
+  if(!arr.length){if(!silent)setMessage('Серверная база пока пустая. Повторите после первого обновления.');return}
+  const before=draws.length;
+  draws=dedupe([...draws,...arr]);
+  await putMany(STORE_D,arr);
+  render();
+  setMessage('Автообновление: добавлено '+(draws.length-before)+' · всего '+draws.length.toLocaleString('ru-RU'));
+ }catch(e){if(!silent)setMessage('Обновление не выполнено: '+e.message)}
+}
+async function init(){
+ draws=await getAll(STORE_D);combos=await getAll(STORE_C);render();
+ if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ await sync(true);
+}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');currentTab=b.dataset.tab;$('k5Panel').style.display=currentTab==='k5'?'block':'none';$('k6Panel').style.display=currentTab==='k6'?'block':'none'});
 $('createBtn').onclick=$('footCreate').onclick=openCreate;$('fromDrawBtn').onclick=()=>openFromDraw(false);$('historyBtn').onclick=()=>openFromDraw(true);$('analyzeBtn').onclick=$('footAnalyze').onclick=analyzeAlgorithm;
-$('syncBtn').onclick=$('footSync').onclick=sync;$('footSettings').onclick=()=>{$('sourceUrl').value=localStorage.getItem('pozitron_combo_url')||'https://pozitron-keno-v3.netlify.app/.netlify/functions/fresh-draws';$('settingsDialog').showModal()};
+$('syncBtn').onclick=$('footSync').onclick=()=>sync(false);$('footSettings').onclick=()=>{$('sourceUrl').value=getSourceUrl();$('settingsDialog').showModal()};
 $('saveSettings').onclick=()=>{localStorage.setItem('pozitron_combo_url',$('sourceUrl').value.trim());$('settingsDialog').close();setMessage('Источник сохранён.')};
 $('saveComboBtn').onclick=async()=>{await addCombo($('comboType').value,($('comboNums').value.match(/\d+/g)||[]),$('comboStart').value,$('comboName').value);$('comboDialog').close()};
 $('sourceDraw').oninput=()=>{selectedNumbers.clear();renderDrawPicker()};$('sourceType').onchange=()=>{selectedNumbers.clear();renderDrawPicker()};
 $('saveFromDraw').onclick=async()=>{await addCombo($('sourceType').value,[...selectedNumbers],$('sourceDraw').value,'Создана по тиражу '+$('sourceDraw').value);$('drawDialog').close()};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await importText(r.result)}catch(err){alert(err.message)}};r.readAsText(f,'UTF-8')};
 $('clearTrackBtn').onclick=async()=>{if(!confirm('Удалить все отслеживаемые K5 и K6? База тиражей останется.'))return;combos=[];await clearStore(STORE_C);render();setMessage('Отслеживаемые комбинации удалены.')};
-$('exportBtn').onclick=()=>{const data={app:'ПОЗИТРОН КОМБО',version:'1.0',exportedAt:new Date().toISOString(),draws,combos};const u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='ПОЗИТРОН_КОМБО_РЕЗЕРВ.json';a.click();URL.revokeObjectURL(u)};
+$('exportBtn').onclick=()=>{const data={app:'ПОЗИТРОН КОМБО',version:APP_VERSION,exportedAt:new Date().toISOString(),draws,combos};const u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='ПОЗИТРОН_КОМБО_РЕЗЕРВ.json';a.click();URL.revokeObjectURL(u)};
 init();
 </script>
 </body>
