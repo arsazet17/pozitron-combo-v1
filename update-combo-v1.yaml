@@ -1,0 +1,43 @@
+name: COMBO v1 Auto Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-combo-v1
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Update COMBO v1 history
+        run: node combo-update-v1.js
+
+      - name: Commit updated data
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add combo-history-v1.json combo-status-v1.json
+          if git diff --cached --quiet; then
+            echo "No new draws"
+          else
+            git commit -m "Auto-update COMBO v1 data"
+            git push
+          fi
