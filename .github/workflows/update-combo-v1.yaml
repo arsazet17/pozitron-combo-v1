@@ -15,29 +15,41 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Update COMBO v1 history
-        run: node combo-update-v1.js
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Stoloto OAuth · double verification
+        env:
+          STOLOTO_EMAIL: ${{ secrets.STOLOTO_EMAIL }}
+          STOLOTO_PASSWORD: ${{ secrets.STOLOTO_PASSWORD }}
+        run: node stoloto-combo-update-v1.mjs
 
       - name: Commit updated data
         shell: bash
         run: |
+          if git diff --quiet -- combo-history-v1.json combo-status-v1.json; then
+            echo "No new draws"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add combo-history-v1.json combo-status-v1.json
-          if git diff --cached --quiet; then
-            echo "No new draws"
-          else
-            git commit -m "Auto-update COMBO v1 data"
-            git push
-          fi
+          git commit -m "COMBO v1 · Stoloto OAuth · double verification"
+          git pull --rebase origin main
+          git push origin HEAD:main
