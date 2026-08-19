@@ -6,6 +6,7 @@ const LOGIN_URL='https://oauth.stoloto.ru/login';
 const ARCHIVE_URL='https://m.stoloto.ru/keno2/archive/';
 const HISTORY_FILE='combo-history-v1.json';
 const STATUS_FILE='combo-status-v1.json';
+const TAIL_SIZE=10;
 const EMAIL=process.env.STOLOTO_EMAIL||'';
 const PASSWORD=process.env.STOLOTO_PASSWORD||'';
 
@@ -53,35 +54,38 @@ async function login(page){
   let clicked=false;for(const b of buttons){if(await b.count()){await b.click();clicked=true;break}}
   if(!clicked)throw new Error('FAIL: не найдена кнопка Войти');
   await page.waitForLoadState('domcontentloaded',{timeout:60000}).catch(()=>{});
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1800);
 }
 
-async function expandArchive(page,targetRows){
+async function expandArchive(page,targetRows=TAIL_SIZE){
   let last=0,stable=0;
-  for(let round=0;round<90;round++){
+  for(let round=0;round<6;round++){
     const count=await page.locator('tr').evaluateAll(list=>list.filter(el=>/№\s*\d{4,}/.test(el.innerText||'')).length);
     if(count>=targetRows)break;
     stable=count===last?stable+1:0;last=count;
+
     const more=page.getByRole('button',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last();
-    try{if(await more.count()&&await more.isVisible()){await more.click({timeout:4000});await page.waitForTimeout(650);continue}}catch{}
+    try{if(await more.count()&&await more.isVisible()){await more.click({timeout:3500});await page.waitForTimeout(700);continue}}catch{}
     const link=page.getByRole('link',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last();
-    try{if(await link.count()&&await link.isVisible()){await link.click({timeout:4000});await page.waitForTimeout(650);continue}}catch{}
+    try{if(await link.count()&&await link.isVisible()){await link.click({timeout:3500});await page.waitForTimeout(700);continue}}catch{}
     await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
-    await page.waitForTimeout(650);
-    if(stable>=6)break;
+    await page.waitForTimeout(700);
+    if(stable>=2)break;
   }
   await page.evaluate(()=>window.scrollTo(0,0));
 }
 
-async function collectRows(page,targetRows){
+async function collectRows(page){
   await page.goto(ARCHIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForTimeout(2500);
-  await expandArchive(page,targetRows);
+  await page.waitForTimeout(2200);
+  await expandArchive(page,TAIL_SIZE);
+
   return await page.locator('body').evaluate(()=>{
     const drawRx=/№\s*\d{4,}/;
     const dateRx=/^(Сегодня|Вчера|\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}|\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?)$/i;
     const n=s=>String(s||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim();
     const all=[...document.querySelectorAll('body *')];
+
     function nearestDate(el){
       let best=null;
       for(const node of all){
@@ -95,12 +99,14 @@ async function collectRows(page,targetRows){
       }
       return best;
     }
+
     let c=[...document.querySelectorAll('tr')].filter(el=>drawRx.test(el.innerText||''));
     if(!c.length)c=all.filter(el=>{
       const t=n(el.innerText||'');
       if(!drawRx.test(t)||el.querySelectorAll('button').length<20)return false;
       return ![...el.children].some(ch=>drawRx.test(n(ch.innerText||''))&&ch.querySelectorAll('button').length>=20);
     });
+
     return c.map(el=>({
       text:el.innerText||'',
       dateLabel:nearestDate(el),
@@ -123,30 +129,31 @@ function parseRows(raw){
     if(balls.length!==20||new Set(balls).size!==20)continue;
     out.push({draw,date,time,balls});
   }
-  return [...new Map(out.map(d=>[d.draw,d])).values()].sort((a,b)=>a.draw-b.draw);
+  return [...new Map(out.map(d=>[d.draw,d])).values()]
+    .sort((a,b)=>a.draw-b.draw)
+    .slice(-TAIL_SIZE);
 }
 function canon(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.time,balls:d.balls})}
 
-async function readTwice(page,targetRows){
+async function readThree(page){
   const reads=[];
-  for(let i=1;i<=2;i++){
-    const parsed=parseRows(await collectRows(page,targetRows));
-    if(parsed.length<60)throw new Error(`FAIL: чтение ${i}: только ${parsed.length} тиражей`);
+  for(let i=1;i<=3;i++){
+    const parsed=parseRows(await collectRows(page));
+    if(parsed.length<TAIL_SIZE)throw new Error(`FAIL: чтение ${i}: только ${parsed.length} из ${TAIL_SIZE} тиражей`);
     reads.push(parsed);
-    console.log(`Чтение ${i}: ${parsed.length}, №${parsed[0].draw}–№${parsed.at(-1).draw}`);
-    if(i===1)await page.waitForTimeout(1200);
+    console.log(`Чтение ${i}: последние ${TAIL_SIZE}, №${parsed[0].draw}–№${parsed.at(-1).draw}`);
+    if(i<3)await page.waitForTimeout(900);
   }
-  const a=new Map(reads[0].map(d=>[d.draw,d]));
-  const b=new Map(reads[1].map(d=>[d.draw,d]));
-  const stable=[];
-  for(const [draw,d1] of a){
-    const d2=b.get(draw);
-    if(d2&&canon(d1)===canon(d2))stable.push(d1);
+
+  const c0=reads[0].map(canon);
+  for(let i=1;i<reads.length;i++){
+    const ci=reads[i].map(canon);
+    if(ci.length!==c0.length||ci.some((x,k)=>x!==c0[k])){
+      throw new Error('SAFE RETRY: последние 10 изменились между тремя чтениями; следующий cron проверит снова');
+    }
   }
-  stable.sort((x,y)=>x.draw-y.draw);
-  if(stable.length<60)throw new Error(`FAIL: двойная проверка: стабильны только ${stable.length}`);
-  console.log(`Двойная проверка PASS: ${stable.length} тиражей`);
-  return stable;
+  console.log(`Тройная проверка PASS: ${TAIL_SIZE}/${TAIL_SIZE}`);
+  return reads[0];
 }
 
 async function readHistory(){
@@ -161,21 +168,32 @@ function normalizeHistory(d){
     balls:Array.isArray(d?.balls)?d.balls.map(Number):Array.isArray(d?.numbers)?d.numbers.map(Number):[]
   };
 }
+
 function validateAndFindFresh(stoloto,historyRaw){
   const history=historyRaw.map(normalizeHistory).filter(d=>Number.isInteger(d.draw)&&d.balls.length===20).sort((a,b)=>a.draw-b.draw);
   if(!history.length)throw new Error('FAIL: локальная история пуста');
+
   const last=history.at(-1);
+  const oldest=stoloto[0];
+  const newest=stoloto.at(-1);
+  if(!oldest||!newest)throw new Error('FAIL: последние 10 Столото пусты');
+
   const officialMap=new Map(stoloto.map(d=>[d.draw,d]));
   const anchor=officialMap.get(last.draw);
-  if(!anchor)throw new Error(`FAIL: Столото не догружен до anchor №${last.draw}`);
-  if(canon(anchor)!==canon(last))throw new Error(`FAIL: anchor №${last.draw} не совпал со Столото`);
+
+  if(anchor){
+    if(canon(anchor)!==canon(last))throw new Error(`FAIL: anchor №${last.draw} не совпал со Столото`);
+  }else if(oldest.draw!==last.draw+1){
+    throw new Error(`FAIL SAFE: локальная база слишком отстала для tail10. Последний локальный №${last.draw}, Столото начинается с №${oldest.draw}`);
+  }
+
   const fresh=stoloto.filter(d=>d.draw>last.draw).sort((a,b)=>a.draw-b.draw);
   let expected=last.draw+1;
   for(const d of fresh){
     if(d.draw!==expected)throw new Error(`FAIL: пропуск тиража: ожидался №${expected}, получен №${d.draw}`);
     expected++;
   }
-  return {last,fresh};
+  return {last,fresh,newest};
 }
 
 const browser=await chromium.launch({headless:true});
@@ -190,36 +208,35 @@ try{
   await login(page);
 
   const historyRaw=await readHistory();
-  const lastDraw=Math.max(...historyRaw.map(x=>Number(x?.draw??x?.number??x?.id)||0));
+  const stoloto=await readThree(page);
+  const {last,fresh,newest}=validateAndFindFresh(stoloto,historyRaw);
 
-  let stoloto=null;
-  for(const depth of [220,500,900,1400]){
-    stoloto=await readTwice(page,depth);
-    if(stoloto.some(d=>d.draw===lastDraw))break;
-    console.log(`Anchor №${lastDraw} пока не найден, увеличиваем глубину`);
-  }
-
-  const {fresh}=validateAndFindFresh(stoloto,historyRaw);
-  if(!fresh.length){
-    console.log(`PASS: новых тиражей нет, последний №${lastDraw}`);
-  }else{
-    const source='Официальный Столото · OAuth · двойная проверка';
+  let merged=historyRaw;
+  if(fresh.length){
+    const source='Официальный Столото · OAuth · tail10 · тройная проверка';
     const additions=fresh.map(d=>({...d,source}));
-    const merged=[...historyRaw,...additions].sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
+    merged=[...historyRaw,...additions].sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
     await fs.writeFile(HISTORY_FILE,JSON.stringify(merged)+'\n');
-    const last=merged.at(-1);
-    await fs.writeFile(STATUS_FILE,JSON.stringify({
-      version:'1.0.2',
-      source:ARCHIVE_URL,
-      updatedAt:new Date().toISOString(),
-      drawsStored:merged.length,
-      latestDraw:Number(last.draw??last.number??last.id),
-      latestDate:String(last.date||''),
-      latestTime:String(last.time||''),
-      verification:'double'
-    },null,2)+'\n');
-    console.log(`PASS: добавлено ${fresh.length}, новый последний №${last.draw}`);
   }
+
+  const finalLast=merged.at(-1);
+  const status={
+    version:'1.0.3',
+    source:ARCHIVE_URL,
+    updatedAt:new Date().toISOString(),
+    drawsStored:merged.length,
+    latestDraw:Number(finalLast.draw??finalLast.number??finalLast.id),
+    latestDate:String(finalLast.date||''),
+    latestTime:String(finalLast.time||''),
+    verification:'triple-tail10',
+    stableDraws:TAIL_SIZE,
+    checkedTail:TAIL_SIZE,
+    added:fresh.length,
+    latestOfficial:{draw:newest.draw,date:newest.date,time:newest.time}
+  };
+  await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
+
+  console.log(`COMBO TAIL10 PASS: локальный был №${last.draw}; добавлено ${fresh.length}; последний №${status.latestDraw}`);
 }finally{
   await browser.close();
 }
