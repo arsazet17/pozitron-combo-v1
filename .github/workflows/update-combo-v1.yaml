@@ -1,4 +1,4 @@
-name: COMBO v1 Auto Update
+name: COMBO v1 · Stoloto AUTO
 
 on:
   workflow_dispatch:
@@ -15,41 +15,55 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
-      - name: Set up Node.js
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
+      - name: Cache Chromium Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-1.54.2-chromium
+
       - name: Install Playwright
         run: |
           npm init -y
-          npm install playwright
+          npm install --no-save playwright@1.54.2
           npx playwright install --with-deps chromium
 
-      - name: Stoloto OAuth · double verification
+      - name: Stoloto OAuth · last 10 · triple verification
         env:
           STOLOTO_EMAIL: ${{ secrets.STOLOTO_EMAIL }}
           STOLOTO_PASSWORD: ${{ secrets.STOLOTO_PASSWORD }}
         run: node stoloto-combo-update-v1.mjs
 
-      - name: Commit updated data
+      - name: Commit verified live data
         shell: bash
         run: |
           if git diff --quiet -- combo-history-v1.json combo-status-v1.json; then
-            echo "No new draws"
+            echo "No verified changes"
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add combo-history-v1.json combo-status-v1.json
-          git commit -m "COMBO v1 · Stoloto OAuth · double verification"
+          git commit -m "COMBO v1 · Stoloto tail10 auto"
           git pull --rebase origin main
           git push origin HEAD:main
