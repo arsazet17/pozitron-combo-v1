@@ -21,7 +21,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.1</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.2</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -48,7 +48,8 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>String(n).padStart(2,'0');
-let DRAWS=[],PRESETS={combos:[],groups:[]},PAYOUTS={combination:{}},group='КУ-КУ',selected=[],lastResult=null,showCount=20,historyMarks=new Set();
+let DRAWS=[],PRESETS={combos:[],groups:[]},PAYOUTS={combination:{}},group='КУ-КУ',selected=[],lastResult=null,showCount=20,historyMarks=new Set(),syncMeta=null,autoRefreshBusy=false;
+const AUTO_REFRESH_MS=10*1000;
 const filter={mode:'last',one:'',date:'',fromDate:'',toDate:'',count:50,fromDraw:'',toDraw:''};
 
 function parseDMY(s){const m=String(s||'').match(/^(\d{2})\.(\d{2})\.(\d{2,4})$/);if(!m)return 0;let y=+m[3];if(y<100)y+=2000;return Date.UTC(y,+m[2]-1,+m[1]);}
@@ -75,8 +76,94 @@ function bindHistoryNumbers(){document.querySelectorAll('#historyBox .dn[data-hn
 function renderHistory(){if(!lastResult)return;const {nums,name,draws,st}=lastResult;const ordered=[...draws].sort((a,b)=>b.draw-a.draw),shown=ordered.slice(0,showCount);$('historyBox').innerHTML=`<h2>${name}</h2><div class="resultTop">${nums.map(n=>`<span class="sel">${fmt(n)}</span>`).join('')}</div><div class="muted" style="margin-top:6px">${modeLabel()} · ${draws.length} тиражей</div><div class="stats" style="margin-top:9px"><div class="stat"><b>${st.sum}</b><span>Σ попаданий</span></div><div class="stat"><b>${st.best}</b><span>Макс.</span></div><div class="stat"><b>${st.avg.toFixed(2)}</b><span>Среднее</span></div><div class="stat"><b>${st.pct.toFixed(0)}%</b><span>С попад.</span></div><div class="stat fire"><b>${st.cur}</b><span>🔥 текущая серия</span></div><div class="stat fire"><b>${st.rec}</b><span>🔥 рекорд серии</span></div></div><div class="historyTitle">КАК ШЛА КОМБИНАЦИЯ</div>${markBarHTML()}<div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · 2×10</div></div>${shown.map(d=>histRow(d,nums)).join('')}${shown.length<ordered.length?'<button id="moreBtn" class="more">ПОКАЗАТЬ ЕЩЁ ▼</button>':''}</div>`;bindHistoryNumbers();if($('moreBtn'))$('moreBtn').onclick=()=>{showCount+=20;renderHistory()}}
 function runCheck(nums,name){if(!nums.length){alert('Выберите хотя бы одно число');return}const a=getFiltered();if(!a.length){alert('По выбранным параметрам тиражи не найдены');return}showCount=20;historyMarks.clear();lastResult={nums:[...nums],name,draws:a,st:stats(nums,a)};renderHistory();switchSec('history')}
 function switchSec(id){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('on',s.id===id));document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('on',b.dataset.sec===id));window.scrollTo({top:0,behavior:'smooth'})}
+
+function updateDbLine(){
+  const last=DRAWS.at(-1);
+  if(!last){$('dbline').textContent='База пуста';return}
+  $('dbline').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} · последний №${last.draw} · ${last.date} ${last.time}`;
+}
+function refreshOpenHistory(){
+  if(!lastResult)return;
+  const nums=[...lastResult.nums],name=lastResult.name;
+  const a=getFiltered();
+  lastResult={nums,name,draws:a,st:stats(nums,a)};
+  renderHistory();
+}
+async function fetchJSONLive(name){
+  const sep=name.includes('?')?'&':'?';
+  const r=await fetch(`${name}${sep}_live=${Date.now()}`,{cache:'no-store'});
+  if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);
+  const text=await r.text();
+  if(/^\s*</.test(text))throw new Error(`${name}: получен HTML вместо JSON`);
+  return JSON.parse(text);
+}
+async function autoRefreshLive(force=false){
+  if(autoRefreshBusy||document.hidden)return;
+  autoRefreshBusy=true;
+  try{
+    const s=await fetchJSONLive('combo-status-v1.json');
+    const current=Number(DRAWS.at(-1)?.draw||0);
+    const official=Number(s?.latestDraw||0);
+    syncMeta=s;
+
+    if(!force && official<=current)return;
+
+    const d=await fetchJSONLive('combo-history-v1.json');
+    if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');
+    d.sort((a,b)=>a.draw-b.draw);
+
+    const received=Number(d.at(-1)?.draw||0);
+    if(official && received<official)throw new Error(`История ещё не догнала status: ${received}<${official}`);
+
+    if(received>current || force){
+      DRAWS=d;
+      updateDbLine();
+      renderFields('anyP');
+      renderFields('ourP');
+      refreshOpenHistory();
+    }
+  }catch(e){
+    console.warn('COMBO LIVE AUTO',e);
+  }finally{
+    autoRefreshBusy=false;
+  }
+}
+function startAutoRefresh(){
+  window.setTimeout(()=>autoRefreshLive(false),1000);
+  window.setInterval(()=>autoRefreshLive(false),AUTO_REFRESH_MS);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoRefreshLive(true)});
+  window.addEventListener('focus',()=>autoRefreshLive(false));
+  window.addEventListener('pageshow',()=>autoRefreshLive(false));
+  window.addEventListener('online',()=>autoRefreshLive(true));
+}
+
 async function forceUpdate(){const b=$('refreshBtn');if(!b)return;b.disabled=true;b.textContent='↻ Обновляю…';try{if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.update().catch(()=>{})))}if('caches' in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('combo-keno-shell')).map(k=>caches.delete(k)))}}catch(e){console.warn(e)}finally{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString())}}
-async function load(){try{const [d,p,s,pay]=await Promise.all([fetch('combo-history-v1.json?'+Date.now(),{cache:'no-store'}).then(r=>r.json()),fetch('combo-presets-v1.json?'+Date.now(),{cache:'no-store'}).then(r=>r.json()),fetch('combo-status-v1.json?'+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>null),fetch('keno-payouts-v1.json?'+Date.now(),{cache:'no-store'}).then(r=>r.json())]);DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;const last=DRAWS.at(-1);$('dbline').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} · последний №${last.draw} · ${last.date} ${last.time}`;renderGroups();renderCombos();renderPick()}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error(e)}}
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>switchSec(b.dataset.sec));$('anyParams').innerHTML=paramsHTML('anyP');bindParams(document);renderFields('anyP');$('checkAny').onclick=()=>runCheck(selected,'Любая комба');$('refreshBtn').onclick=forceUpdate;renderPick();load();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+async function load(){
+  try{
+    const [d,p,s,pay]=await Promise.all([
+      fetchJSONLive('combo-history-v1.json'),
+      fetchJSONLive('combo-presets-v1.json'),
+      fetchJSONLive('combo-status-v1.json').catch(()=>null),
+      fetchJSONLive('keno-payouts-v1.json')
+    ]);
+    DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;
+    updateDbLine();
+    renderGroups();renderCombos();renderPick();
+    startAutoRefresh();
+  }catch(e){
+    $('dbline').textContent='Ошибка загрузки базы';
+    console.error(e);
+  }
+}
+
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>switchSec(b.dataset.sec));
+$('anyParams').innerHTML=paramsHTML('anyP');
+bindParams(document);
+renderFields('anyP');
+$('checkAny').onclick=()=>runCheck(selected,'Любая комба');
+$('refreshBtn').onclick=forceUpdate;
+renderPick();
+load();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body></html>
