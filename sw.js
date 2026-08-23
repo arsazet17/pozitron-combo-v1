@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-v9';
+const CACHE='combo-keno-shell-v11';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./combo-presets-v1.json','./keno-payouts-v1.json'];
 
 self.addEventListener('install',e=>e.waitUntil(
