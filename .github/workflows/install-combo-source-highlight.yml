@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           grep -q "Версия v4.1.14" index.html
           grep -q "comboSourceHighlightSetForDraw" index.html
-          grep -q "recentDrawNum sourceOn" index.html || grep -q "sourceOn" index.html
+          grep -q "sourceOn" index.html
           grep -q "В предыдущем тираже в ст" index.html
           grep -q "combo-keno-shell-v19-source-highlight" sw.js
           echo "CHECK PASS"
