@@ -1,0 +1,29 @@
+name: INSTALL · COMBO Draw Group Details
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - run: git fetch origin main && git reset --hard origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node install-combo-draw-group-details.cjs
+      - run: |
+          grep -q "Версия v4.1.13" index.html
+          grep -q "comboDrawGroupDetails" index.html
+          grep -q "Вышел из группы" index.html
+          grep -q "combo-keno-shell-v18-group-details" sw.js
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js
+          git commit -m "COMBO v4.1.13 · столб и группа в карточке тиража"
+          git push origin HEAD:main
