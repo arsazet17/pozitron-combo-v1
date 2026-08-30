@@ -1,0 +1,62 @@
+name: INSTALL · COMBO Source Highlight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combo-source-highlight-install
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Установить подсветку источника
+        run: node install-combo-source-highlight.cjs
+
+      - name: Проверка
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "Версия v4.1.14" index.html
+          grep -q "comboSourceHighlightSetForDraw" index.html
+          grep -q "recentDrawNum sourceOn" index.html || grep -q "sourceOn" index.html
+          grep -q "В предыдущем тираже в ст" index.html
+          grep -q "combo-keno-shell-v19-source-highlight" sw.js
+          echo "CHECK PASS"
+
+      - name: Сохранить
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- index.html sw.js; then
+            echo "Изменений нет"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add index.html sw.js
+          git commit -m "COMBO v4.1.14 · подсветка исходных чисел предыдущего тиража"
+          git push origin HEAD:main
