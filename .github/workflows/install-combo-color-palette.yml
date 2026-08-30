@@ -1,0 +1,78 @@
+name: INSTALL · COMBO Color Palette
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combo-color-palette-install
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Получить свежий main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Установить цветную палитру
+        run: node install-combo-color-palette.cjs
+
+      - name: Проверка
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "Версия v4.1.12" index.html
+          grep -q "tablePaintColor" index.html
+          grep -q "data-paint" index.html
+          grep -q "paintOn" index.html
+          grep -q "combo-keno-shell-v17-palette" sw.js
+          echo "CHECK PASS"
+
+      - name: Сохранить
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- index.html sw.js; then
+            echo "Изменений нет"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add index.html sw.js
+          git commit -m "COMBO v4.1.12 · активная цветная палитра таблицы"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "INSTALL PASS"
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "INSTALL FAIL"
+              exit 1
+            fi
+
+            git fetch origin main
+            git rebase origin/main
+          done
