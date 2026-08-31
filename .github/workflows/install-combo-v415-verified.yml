@@ -1,0 +1,74 @@
+name: INSTALL · COMBO v4.1.15 VERIFIED
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combo-v415-install
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install official Stoloto column
+        run: node install-combo-v415-verified.cjs
+
+      - name: Refresh app build
+        run: node refresh-combo-build.mjs
+
+      - name: Full self-test BEFORE commit
+        run: node self-test-combo-v415.cjs
+
+      - name: Node syntax checks
+        run: |
+          node --check install-combo-v415-verified.cjs
+          node --check refresh-combo-build.mjs
+          node --check self-test-combo-v415.cjs
+          node --check stoloto-combo-update-v1.mjs
+
+      - name: Commit only after PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            index.html \
+            stoloto-combo-update-v1.mjs \
+            app-version.json \
+            refresh-combo-build.mjs \
+            self-test-combo-v415.cjs \
+            manifest.webmanifest \
+            sw.js \
+            .github/workflows/combo-auto-app-build.yml
+
+          if git diff --cached --quiet; then
+            echo "Изменений нет"
+            exit 0
+          fi
+
+          git commit -m "COMBO v4.1.15 · official Stoloto column VERIFIED"
+          git pull --rebase origin main
+          git push origin HEAD:main
