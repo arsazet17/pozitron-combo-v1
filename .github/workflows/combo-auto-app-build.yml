@@ -1,0 +1,53 @@
+name: COMBO · AUTO APP BUILD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "app-version.json"
+      - "manifest.webmanifest"
+      - "combo-presets-v1.json"
+      - "keno-payouts-v1.json"
+      - "refresh-combo-build.mjs"
+      - "icon-192.png"
+      - "icon-512.png"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combo-auto-app-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node refresh-combo-build.mjs
+      - run: |
+          node --check refresh-combo-build.mjs
+          grep -q 'name="app-build"' index.html
+          grep -q 'combo-keno-shell-' sw.js
+          grep -q '"start_url": "./?v=' manifest.webmanifest
+      - shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- index.html manifest.webmanifest sw.js; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html manifest.webmanifest sw.js
+          git commit -m "COMBO · AUTO APP BUILD"
+          git push origin HEAD:main
