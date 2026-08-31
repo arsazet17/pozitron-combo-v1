@@ -1,0 +1,60 @@
+name: INSTALL · COMBO v4.1.15 Official Stoloto
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: node install-combo-v415-official-column.cjs
+
+      - name: Refresh app build
+        run: node refresh-combo-build.mjs
+
+      - name: Check
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check install-combo-v415-official-column.cjs
+          node --check stoloto-combo-update-v1.mjs
+          node --check refresh-combo-build.mjs
+          grep -q 'function parseColumn' stoloto-combo-update-v1.mjs
+          grep -q 'Столото не отдал «Столбец N»' stoloto-combo-update-v1.mjs
+          grep -q 'column:official.column' stoloto-combo-update-v1.mjs
+          grep -q 'const c=Number(d?.column)' index.html
+          grep -q 'Вышел из группы:' index.html
+          grep -q 'В группе ' index.html
+          grep -q 'Версия v4.1.15' index.html
+          grep -q 'combo-keno-shell-' sw.js
+          echo "CHECK PASS"
+
+      - name: Save
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html stoloto-combo-update-v1.mjs app-version.json refresh-combo-build.mjs manifest.webmanifest sw.js .github/workflows/combo-auto-app-build.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "COMBO v4.1.15 · официальный столб Столото и группы"
+          git push origin HEAD:main
