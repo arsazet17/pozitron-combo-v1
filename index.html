@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
+<meta name="app-build" content="56ccf4b99605">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>COMBO KENO</title>
@@ -26,7 +27,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.14</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.15</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -74,7 +75,10 @@ const filter={mode:'last',one:'',date:'',fromDate:'',toDate:'',count:50,fromDraw
 
 function parseDMY(s){const m=String(s||'').match(/^(\d{2})\.(\d{2})\.(\d{2,4})$/);if(!m)return 0;let y=+m[3];if(y<100)y+=2000;return Date.UTC(y,+m[2]-1,+m[1]);}
 function inputDateToUTC(s){if(!s)return 0;const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)}
-function drawColumn(d){const cnt=Array(10).fill(0);for(const n of d.balls)cnt[(n-1)%10]++;const mx=Math.max(...cnt), tied=new Set(cnt.map((c,i)=>c===mx?i+1:null).filter(Boolean));for(const n of d.balls){const c=((n-1)%10)+1;if(tied.has(c))return c}return 1}
+function drawColumn(d){
+ const c=Number(d?.column);
+ return Number.isInteger(c)&&c>=1&&c<=10?c:null;
+}
 function prizeForHits(selectedCount,h){return Number(PAYOUTS?.combination?.[String(selectedCount)]?.[String(h)]||0)}
 function money(v){return v.toLocaleString('ru-RU')+' ₽'}
 function comboKey(nums){return [...nums].sort((a,b)=>a-b).join('-')}
@@ -317,7 +321,7 @@ function chooseOur(c){const box=$('ourChosen');box.classList.remove('hidden');bo
 function renderPick(){$('pickgrid').innerHTML=Array.from({length:80},(_,i)=>i+1).map(n=>`<button class="pick ${selected.includes(n)?'on':''}" data-n="${n}">${fmt(n)}</button>`).join('');$('pickgrid').querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;if(selected.includes(n))selected=selected.filter(x=>x!==n);else if(selected.length<10)selected=[...selected,n].sort((a,b)=>a-b);renderPick()});$('selectedbar').innerHTML=selected.length?selected.map(n=>`<span class="sel">${fmt(n)}</span>`).join(''):'<span class="muted">Ничего не выбрано</span>';if($('clearSelectedBtn'))$('clearSelectedBtn').disabled=!selected.length;if($('saveSelectedBtn'))$('saveSelectedBtn').disabled=!selected.length}
 function hitCell(h,selectedCount){const prize=prizeForHits(selectedCount,h);if(prize){return `<div class="hitbox"><div class="hits fire"><span class="flame">🔥</span><span>${h}</span></div><div class="prize">Сумма<br>${money(prize)}</div></div>`}const cl=h===0?'z':h>=2?'h':'o';return `<div class="hitbox"><div class="hits ${cl}">${h}</div></div>`}
 function historyBalls(d){return historyOrder==='asc'?[...d.balls].sort((a,b)=>a-b):d.balls}
-function histRow(d,nums){const balls=historyBalls(d);return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${drawColumn(d)}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${hitCell(hitsFor(nums,d),nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${historyMarks.has(n)?'mark':''}" data-hn="${n}" role="button" tabindex="0" aria-pressed="${historyMarks.has(n)?'true':'false'}">${fmt(n)}</span>`).join('')}</div></div>`}
+function histRow(d,nums){const balls=historyBalls(d);return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${drawColumn(d)??'—'}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${hitCell(hitsFor(nums,d),nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${historyMarks.has(n)?'mark':''}" data-hn="${n}" role="button" tabindex="0" aria-pressed="${historyMarks.has(n)?'true':'false'}">${fmt(n)}</span>`).join('')}</div></div>`}
 function orderSwitchHTML(){return `<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">➡️ Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">⬆️ Возрастание</button></div>`}
 function bindHistoryOrder(){document.querySelectorAll('#historyBox [data-history-order]').forEach(b=>b.onclick=()=>{historyOrder=b.dataset.historyOrder;renderHistory()})}
 function markBarHTML(){const a=[...historyMarks].sort((x,y)=>x-y);return `<div class="markHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Можно отметить несколько.</div>${a.length?`<div class="markBar"><span class="muted">Подсвечено:</span>${a.map(n=>`<span class="markChip">${fmt(n)}</span>`).join('')}<button id="markClear" class="markClear" type="button">Снять всё</button></div>`:''}`}
@@ -489,6 +493,13 @@ loadSavedAnyCombos();
 renderSavedCombos();
 renderPick();
 load();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+ window.addEventListener('load',async()=>{
+  try{
+   const reg=await navigator.serviceWorker.register('sw.js?v=56ccf4b99605',{updateViaCache:'none'});
+   await reg.update();
+  }catch(e){console.warn('SW update',e)}
+ });
+}
 </script>
 </body></html>

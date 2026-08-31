@@ -34,6 +34,7 @@ function normalizeDateLabel(label){
 function normalizeTime(v){const m=String(v??'').match(/(\d{1,2}):(\d{2})/);if(!m)return null;const h=+m[1],min=+m[2];if(h>23||min>59)return null;return`${pad2(h)}:${pad2(min)}`}
 function parseDraw(t){const m=String(t).match(/№\s*([0-9]{4,})/);return m?+m[1]:null}
 function parseTime(t){const m=String(t).match(/\b([01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/);return m?normalizeTime(m[0]):null}
+function parseColumn(text){const m=norm(text).match(/столбец\s*([1-9]|10)\b/i);return m?Number(m[1]):null}
 function findDateLabel(text){
   const s=String(text);let m=s.match(/(?:^|\n)\s*(Сегодня|Вчера)\s*(?:\n|$)/i);if(m)return norm(m[1]);
   m=s.match(/(?:^|\n)\s*(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})\s*(?:\n|$)/);if(m)return norm(m[1]);
@@ -123,17 +124,19 @@ function parseRows(raw){
     if(local)carry=local;
     const draw=parseDraw(text);if(!draw)continue;
     const time=parseTime(text);if(!time)continue;
+    const column=parseColumn(text);if(!column)throw new Error(`FAIL: №${draw}: Столото не отдал «Столбец N»`);
     const date=normalizeDateLabel(local||carry);if(!date)continue;
     let balls=(row.buttons||[]).map(x=>Number(norm(x))).filter(n=>Number.isInteger(n)&&n>=1&&n<=80);
     if(balls.length>20)balls=balls.slice(-20);
     if(balls.length!==20||new Set(balls).size!==20)continue;
-    out.push({draw,date,time,balls});
+    out.push({draw,date,time,column,balls});
   }
   return [...new Map(out.map(d=>[d.draw,d])).values()]
     .sort((a,b)=>a.draw-b.draw)
     .slice(-TAIL_SIZE);
 }
 function canon(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.time,balls:d.balls})}
+function canonOfficial(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.time,column:d.column,balls:d.balls})}
 
 async function readThree(page){
   const reads=[];
@@ -145,9 +148,9 @@ async function readThree(page){
     if(i<3)await page.waitForTimeout(900);
   }
 
-  const c0=reads[0].map(canon);
+  const c0=reads[0].map(canonOfficial);
   for(let i=1;i<reads.length;i++){
-    const ci=reads[i].map(canon);
+    const ci=reads[i].map(canonOfficial);
     if(ci.length!==c0.length||ci.some((x,k)=>x!==c0[k])){
       throw new Error('SAFE RETRY: последние 10 изменились между тремя чтениями; следующий cron проверит снова');
     }
@@ -211,11 +214,34 @@ try{
   const stoloto=await readThree(page);
   const {last,fresh,newest}=validateAndFindFresh(stoloto,historyRaw);
 
-  let merged=historyRaw;
-  if(fresh.length){
-    const source='Официальный Столото · OAuth · tail10 · тройная проверка';
-    const additions=fresh.map(d=>({...d,source}));
-    merged=[...historyRaw,...additions].sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
+  const source='Официальный Столото · OAuth · tail10 · тройная проверка';
+  const officialMap=new Map(stoloto.map(d=>[Number(d.draw),d]));
+  const mergedMap=new Map();
+
+  for(const old of historyRaw){
+    const id=Number(old?.draw??old?.number??old?.id);
+    const official=officialMap.get(id);
+
+    mergedMap.set(id, official ? {
+      ...old,
+      draw:official.draw,
+      date:official.date,
+      time:official.time,
+      balls:official.balls,
+      column:official.column,
+      source
+    } : old);
+  }
+
+  for(const official of stoloto){
+    const id=Number(official.draw);
+    if(!mergedMap.has(id)) mergedMap.set(id,{...official,source});
+  }
+
+  const merged=[...mergedMap.values()]
+    .sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
+
+  if(JSON.stringify(merged)!==JSON.stringify(historyRaw)){
     await fs.writeFile(HISTORY_FILE,JSON.stringify(merged)+'\n');
   }
 
@@ -232,7 +258,7 @@ try{
     stableDraws:TAIL_SIZE,
     checkedTail:TAIL_SIZE,
     added:fresh.length,
-    latestOfficial:{draw:newest.draw,date:newest.date,time:newest.time}
+    latestOfficial:{draw:newest.draw,date:newest.date,time:newest.time,column:newest.column}
   };
   await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
 
