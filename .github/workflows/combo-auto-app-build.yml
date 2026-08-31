@@ -25,29 +25,46 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
-      - run: |
+
+      - name: Fresh main
+        run: |
           git fetch origin main
           git reset --hard origin/main
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node refresh-combo-build.mjs
-      - run: |
+
+      - name: Refresh build
+        run: node refresh-combo-build.mjs
+
+      - name: Check
+        run: |
           node --check refresh-combo-build.mjs
           grep -q 'name="app-build"' index.html
           grep -q 'combo-keno-shell-' sw.js
           grep -q '"start_url": "./?v=' manifest.webmanifest
-      - shell: bash
+
+      - name: Save only real shell changes
+        shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- index.html manifest.webmanifest sw.js; then exit 0; fi
+
+          if git diff --quiet -- index.html manifest.webmanifest sw.js; then
+            echo "APP BUILD unchanged"
+            exit 0
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add index.html manifest.webmanifest sw.js
           git commit -m "COMBO · AUTO APP BUILD"
+          git pull --rebase origin main
           git push origin HEAD:main
