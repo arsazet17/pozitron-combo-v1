@@ -8,7 +8,7 @@ const MANIFEST='manifest.webmanifest';
 const SW='sw.js';
 
 const version=String(
-  JSON.parse(await fs.readFile('app-version.json','utf8')).version || '4.1.15'
+  JSON.parse(await fs.readFile('app-version.json','utf8')).version || '4.1.16'
 );
 
 let html=await fs.readFile(INDEX,'utf8');
@@ -16,16 +16,15 @@ let manifestText=await fs.readFile(MANIFEST,'utf8');
 
 html=html.replace(/Версия v4\.1\.\d+/g,`Версия v${version}`);
 
+if(!html.includes('combo-search-v1.js')){
+  html=html.replace('</body>',`<script src="combo-search-v1.js?v=${version}"></script>\n</body>`);
+}
+
 function normalizedIndex(x){
   return x
-    .replace(
-      /<meta\s+name=["']app-build["']\s+content=["'][^"']*["']\s*\/?>/i,
-      '<meta name="app-build" content="BUILD">'
-    )
-    .replace(
-      /serviceWorker\.register\(['"]sw\.js(?:\?v=[^'"]*)?['"]/g,
-      "serviceWorker.register('sw.js?v=BUILD'"
-    );
+    .replace(/<meta\s+name=["']app-build["']\s+content=["'][^"']*["']\s*\/?>/i,'<meta name="app-build" content="BUILD">')
+    .replace(/serviceWorker\.register\(['"]sw\.js(?:\?v=[^'"]*)?['"]/g,"serviceWorker.register('sw.js?v=BUILD'")
+    .replace(/combo-search-v1\.js\?v=[^"']+/g,'combo-search-v1.js?v=VERSION');
 }
 
 function normalizedManifest(x){
@@ -41,22 +40,18 @@ function normalizedManifest(x){
 const build=crypto.createHash('sha256')
   .update(normalizedIndex(html))
   .update(normalizedManifest(manifestText))
+  .update(version)
   .digest('hex')
   .slice(0,12);
 
 if(/<meta\s+name=["']app-build["']/i.test(html)){
-  html=html.replace(
-    /<meta\s+name=["']app-build["']\s+content=["'][^"']*["']\s*\/?>/i,
-    `<meta name="app-build" content="${build}">`
-  );
+  html=html.replace(/<meta\s+name=["']app-build["']\s+content=["'][^"']*["']\s*\/?>/i,`<meta name="app-build" content="${build}">`);
 }else{
-  html=html.replace(
-    /<meta name="theme-color"[^>]*>/i,
-    m=>`${m}\n<meta name="app-build" content="${build}">`
-  );
+  html=html.replace(/<meta name="theme-color"[^>]*>/i,m=>`${m}\n<meta name="app-build" content="${build}">`);
 }
 
-// Старую простую регистрацию SW меняем на принудительную проверку свежей сборки.
+html=html.replace(/combo-search-v1\.js\?v=[^"']+/g,`combo-search-v1.js?v=${build}`);
+
 const simple=/if\('serviceWorker' in navigator\)navigator\.serviceWorker\.register\('sw\.js(?:\?v=[^']*)?'\)\.catch\(\(\)=>\{\}\);/;
 const robust=`if('serviceWorker' in navigator){
  window.addEventListener('load',async()=>{
@@ -72,10 +67,35 @@ if(simple.test(html)){
 }else if(!html.includes("updateViaCache:'none'")){
   throw new Error('Не найдена регистрация Service Worker');
 }else{
-  html=html.replace(
-    /serviceWorker\.register\('sw\.js\?v=[^']*'/g,
-    `serviceWorker.register('sw.js?v=${build}'`
-  );
+  html=html.replace(/serviceWorker\.register\('sw\.js\?v=[^']*'/g,`serviceWorker.register('sw.js?v=${build}'`);
+}
+
+if(!html.includes('id="comboAutoUpdate"')){
+  const auto=`<script id="comboAutoUpdate">
+(()=>{
+ let reloading=false;
+ const check=async()=>{
+  try{
+   if(!('serviceWorker' in navigator))return;
+   const reg=await navigator.serviceWorker.getRegistration();
+   if(reg)await reg.update();
+  }catch(e){console.warn('COMBO auto update',e)}
+ };
+ if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+   if(reloading)return;
+   reloading=true;
+   location.reload();
+  });
+  setInterval(check,600000);
+  addEventListener('focus',check);
+  addEventListener('pageshow',check);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+  setTimeout(check,1500);
+ }
+})();
+</script>`;
+  html=html.replace('</body>',auto+'\n</body>');
 }
 
 await fs.writeFile(INDEX,html,'utf8');
@@ -93,7 +113,8 @@ const SHELL=[
  './icon-192.png',
  './icon-512.png',
  './combo-presets-v1.json',
- './keno-payouts-v1.json'
+ './keno-payouts-v1.json',
+ './combo-search-v1.js'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -111,7 +132,6 @@ self.addEventListener('fetch',e=>{
 
  const u=new URL(e.request.url);
 
- // Живые данные никогда не замораживаем оболочкой.
  if(
   u.pathname.endsWith('/combo-history-v1.json') ||
   u.pathname.endsWith('/combo-status-v1.json')
@@ -135,4 +155,4 @@ self.addEventListener('fetch',e=>{
 `;
 
 await fs.writeFile(SW,sw,'utf8');
-console.log(`APP BUILD PASS ${build}`);
+console.log(`APP BUILD PASS ${build} · v${version} · combo-search enabled · auto-update enabled`);
