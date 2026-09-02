@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="56ccf4b99605">
+<meta name="app-build" content="31aea8c9ceaf">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>COMBO KENO</title>
@@ -496,7 +496,7 @@ load();
 if('serviceWorker' in navigator){
  window.addEventListener('load',async()=>{
   try{
-   const reg=await navigator.serviceWorker.register('sw.js?v=56ccf4b99605',{updateViaCache:'none'});
+   const reg=await navigator.serviceWorker.register('sw.js?v=31aea8c9ceaf',{updateViaCache:'none'});
    await reg.update();
   }catch(e){console.warn('SW update',e)}
  });
