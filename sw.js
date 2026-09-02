@@ -1,4 +1,5 @@
-const CACHE='combo-keno-shell-56ccf4b99605';
+const CACHE='combo-keno-shell-4116-search1';
+const SEARCH_SCRIPT='./combo-search-v1.js?v=4116-search1';
 const SHELL=[
  './',
  './index.html',
@@ -6,7 +7,8 @@ const SHELL=[
  './icon-192.png',
  './icon-512.png',
  './combo-presets-v1.json',
- './keno-payouts-v1.json'
+ './keno-payouts-v1.json',
+ './combo-search-v1.js'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -19,12 +21,24 @@ self.addEventListener('activate',e=>e.waitUntil(
   .then(()=>self.clients.claim())
 ));
 
+async function injectSearchScript(response){
+ if(!response || !response.ok)return response;
+ const type=response.headers.get('content-type')||'';
+ if(!type.includes('text/html'))return response;
+ let text=await response.text();
+ if(!text.includes('combo-search-v1.js')){
+   const tag=`<script src="${SEARCH_SCRIPT}"></script>`;
+   text=text.includes('</body>')?text.replace('</body>',tag+'\n</body>'):text+tag;
+ }
+ const headers=new Headers(response.headers);
+ headers.delete('content-length');
+ return new Response(text,{status:response.status,statusText:response.statusText,headers});
+}
+
 self.addEventListener('fetch',e=>{
  if(e.request.method!=='GET')return;
-
  const u=new URL(e.request.url);
 
- // Живые данные никогда не замораживаем оболочкой.
  if(
   u.pathname.endsWith('/combo-history-v1.json') ||
   u.pathname.endsWith('/combo-status-v1.json')
@@ -32,16 +46,26 @@ self.addEventListener('fetch',e=>{
   e.respondWith(fetch(new Request(e.request,{cache:'no-store'})));
   return;
  }
-
  if(u.origin!==self.location.origin)return;
+
+ const isHtml=e.request.mode==='navigate' || u.pathname.endsWith('/') || u.pathname.endsWith('/index.html');
+ if(isHtml){
+   e.respondWith((async()=>{
+     try{
+       const r=await fetch(new Request(e.request,{cache:'no-store'}));
+       const raw=r.clone(); caches.open(CACHE).then(c=>c.put(e.request,raw)).catch(()=>{});
+       return await injectSearchScript(r);
+     }catch(err){
+       const cached=await caches.match(e.request) || await caches.match('./index.html');
+       return cached ? injectSearchScript(cached) : Response.error();
+     }
+   })());
+   return;
+ }
 
  e.respondWith(
   fetch(new Request(e.request,{cache:'no-store'}))
-   .then(r=>{
-    const copy=r.clone();
-    caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
-    return r;
-   })
+   .then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});return r;})
    .catch(()=>caches.match(e.request))
  );
 });
