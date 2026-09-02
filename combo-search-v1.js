@@ -1,5 +1,5 @@
 /* COMBO KENO — Поиск разных комб
-   v4.1.17-diverse, 02.09.2026
+   v4.1.18-diverse, 02.09.2026
    Новый принцип: не выводим миллионы лексикографических вариантов.
    Формируем пул из реально ходивших чисел, оцениваем ход по всему окну
    и показываем 4 максимально разные комбинации.
@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.17';
+  const EXT_VERSION='v4.1.18';
   const RESULT_LIMIT=4;
 
   function q(id){return document.getElementById(id)}
@@ -255,23 +255,51 @@
     }
   }
 
+  function clearOldResult(note='Параметры изменены — пересчитываю…'){
+    q('csResults')?.classList.add('hidden');
+    q('csDetail')?.classList.add('hidden');
+    if(q('csDetail'))q('csDetail').innerHTML='';
+    if(q('csSummary'))q('csSummary').innerHTML='';
+    if(q('csStatus')){
+      q('csStatus').className='csStatus';
+      q('csStatus').textContent=note;
+    }
+  }
+
+  let autoRunTimer=0;
+  function scheduleAutoRun(){
+    clearTimeout(autoRunTimer);
+    clearOldResult();
+    autoRunTimer=setTimeout(()=>runSearch(),120);
+  }
+
   function bind(){
     q('csWindowModes')?.querySelectorAll('[data-csw]').forEach(b=>b.onclick=()=>{
-      state.window=Number(b.dataset.csw);state.date='';q('csDateInput').value='';
+      state.window=Number(b.dataset.csw);
+      state.date='';
+      q('csDateInput').value='';
       setActive(q('csWindowModes'),'data-csw',state.window);
+      scheduleAutoRun();
     });
     q('csSizeModes')?.querySelectorAll('[data-css]').forEach(b=>b.onclick=()=>{
-      state.size=Number(b.dataset.css);setActive(q('csSizeModes'),'data-css',state.size);
+      state.size=Number(b.dataset.css);
+      setActive(q('csSizeModes'),'data-css',state.size);
+      scheduleAutoRun();
     });
     q('csDateInput').onchange=e=>{
       state.date=e.target.value;
-      if(state.date)q('csWindowModes')?.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      if(state.date){
+        q('csWindowModes')?.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        scheduleAutoRun();
+      }
     };
     q('csToday').onclick=()=>{
       const last=(typeof DRAWS!=='undefined'&&DRAWS.length)?DRAWS[DRAWS.length-1]:null;
       const iso=last?ruDateToISO(last.date):new Date().toISOString().slice(0,10);
-      state.date=iso;q('csDateInput').value=iso;
+      state.date=iso;
+      q('csDateInput').value=iso;
       q('csWindowModes')?.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      scheduleAutoRun();
     };
     q('csGo').onclick=runSearch;
   }
