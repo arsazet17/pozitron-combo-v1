@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-31aea8c9ceaf';
+const CACHE='combo-keno-shell-fc8711836dbc';
 const SHELL=[
  './',
  './index.html',
@@ -6,7 +6,8 @@ const SHELL=[
  './icon-192.png',
  './icon-512.png',
  './combo-presets-v1.json',
- './keno-payouts-v1.json'
+ './keno-payouts-v1.json',
+ './combo-search-v1.js'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -24,7 +25,6 @@ self.addEventListener('fetch',e=>{
 
  const u=new URL(e.request.url);
 
- // Живые данные никогда не замораживаем оболочкой.
  if(
   u.pathname.endsWith('/combo-history-v1.json') ||
   u.pathname.endsWith('/combo-status-v1.json')
