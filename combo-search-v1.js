@@ -1,5 +1,5 @@
 /* COMBO KENO — Поиск разных комб
-   v4.1.22-draw-count, 02.09.2026
+   v4.1.23-draw-count-archive, 02.09.2026
    Новый принцип: не выводим миллионы лексикографических вариантов.
    Формируем пул из реально ходивших чисел, оцениваем ход по всему окну
    и показываем 4 максимально разные комбинации.
@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.22';
+  const EXT_VERSION='v4.1.23';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -211,14 +211,15 @@
 
   function showDetail(row){
     const box=q('csDetail'),key=comboKey(row.nums);
-    const available=state.draws.length;
     let count=Number(detailDrawCounts.get(key)??DETAIL_MIN_DRAWS);
     if(!Number.isInteger(count)||count<DETAIL_MIN_DRAWS)count=DETAIL_MIN_DRAWS;
     detailDrawCounts.set(key,count);
     const render=()=>{
-      const visible=[...state.draws].sort((a,b)=>b.draw-a.draw).slice(0,count);
+      const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
+      const visible=[...archive].sort((a,b)=>b.draw-a.draw).slice(0,count);
+      const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${row.full} · Σ ${row.sum} · с попаданием ${row.withHit}/${state.draws.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${detailStats.full} · Σ ${detailStats.sum} · с попаданием ${detailStats.withHit}/${visible.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
       const input=q('csDrawCount');
       const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};

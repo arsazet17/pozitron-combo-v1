@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-drawcount-030926';
+const CACHE='combo-keno-shell-drawcount-archive-030926';
 const SHELL=[
  './',
  './index.html',
