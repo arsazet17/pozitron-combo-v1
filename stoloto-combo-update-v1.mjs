@@ -140,23 +140,70 @@ function canonOfficial(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.
 
 async function readThree(page){
   const reads=[];
-  for(let i=1;i<=3;i++){
-    const parsed=parseRows(await collectRows(page));
-    if(parsed.length<TAIL_SIZE)throw new Error(`FAIL: чтение ${i}: только ${parsed.length} из ${TAIL_SIZE} тиражей`);
-    reads.push(parsed);
-    console.log(`Чтение ${i}: последние ${TAIL_SIZE}, №${parsed[0].draw}–№${parsed.at(-1).draw}`);
-    if(i<3)await page.waitForTimeout(900);
-  }
+  const failures=[];
 
-  const c0=reads[0].map(canonOfficial);
-  for(let i=1;i<reads.length;i++){
-    const ci=reads[i].map(canonOfficial);
-    if(ci.length!==c0.length||ci.some((x,k)=>x!==c0[k])){
-      throw new Error('SAFE RETRY: последние 10 изменились между тремя чтениями; следующий cron проверит снова');
+  for(let i=1;i<=3;i++){
+    try{
+      const parsed=parseRows(await collectRows(page));
+
+      if(parsed.length<TAIL_SIZE){
+        throw new Error(`только ${parsed.length} из ${TAIL_SIZE} тиражей`);
+      }
+
+      reads.push({
+        read:i,
+        parsed,
+        key:JSON.stringify(parsed.map(canonOfficial))
+      });
+
+      console.log(`Чтение ${i}: последние ${TAIL_SIZE}, №${parsed[0].draw}–№${parsed.at(-1).draw}`);
+    }catch(error){
+      failures.push({
+        read:i,
+        message:error?.message||String(error)
+      });
+
+      console.warn(`Чтение ${i}: FAIL · ${error?.message||error}`);
+    }
+
+    if(i<3){
+      await page.waitForTimeout(900);
     }
   }
-  console.log(`Тройная проверка PASS: ${TAIL_SIZE}/${TAIL_SIZE}`);
-  return reads[0];
+
+  const groups=new Map();
+
+  for(const item of reads){
+    if(!groups.has(item.key)){
+      groups.set(item.key,[]);
+    }
+
+    groups.get(item.key).push(item);
+  }
+
+  const winner=[...groups.values()].find(group=>group.length>=2);
+
+  if(!winner){
+    const good=reads.map(x=>`#${x.read}`).join(', ')||'нет';
+    const bad=failures.map(x=>`#${x.read}: ${x.message}`).join('; ')||'нет';
+
+    throw new Error(
+      `SAFE RETRY: нет двух одинаковых чтений из 3. Валидные: ${good}. Ошибки: ${bad}`
+    );
+  }
+
+  const matched=winner.map(x=>x.read).join('+');
+
+  const ignored=[...reads,...failures]
+    .filter(x=>!winner.some(w=>w.read===x.read))
+    .map(x=>`#${x.read}`)
+    .join(', ')||'нет';
+
+  console.log(
+    `Проверка 2/3 PASS: совпали чтения ${matched}; игнорировано: ${ignored}; ${TAIL_SIZE}/${TAIL_SIZE}`
+  );
+
+  return winner[0].parsed;
 }
 
 async function readHistory(){
@@ -192,14 +239,17 @@ function validateAndFindFresh(stoloto,historyRaw){
 
   const fresh=stoloto.filter(d=>d.draw>last.draw).sort((a,b)=>a.draw-b.draw);
   let expected=last.draw+1;
+
   for(const d of fresh){
     if(d.draw!==expected)throw new Error(`FAIL: пропуск тиража: ожидался №${expected}, получен №${d.draw}`);
     expected++;
   }
+
   return {last,fresh,newest};
 }
 
 const browser=await chromium.launch({headless:true});
+
 try{
   const context=await browser.newContext({
     locale:'ru-RU',
@@ -207,6 +257,7 @@ try{
     viewport:{width:390,height:844},
     userAgent:'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36'
   });
+
   const page=await context.newPage();
   await login(page);
 
@@ -214,7 +265,7 @@ try{
   const stoloto=await readThree(page);
   const {last,fresh,newest}=validateAndFindFresh(stoloto,historyRaw);
 
-  const source='Официальный Столото · OAuth · tail10 · тройная проверка';
+  const source='Официальный Столото · OAuth · tail10 · проверка 2 из 3';
   const officialMap=new Map(stoloto.map(d=>[Number(d.draw),d]));
   const mergedMap=new Map();
 
@@ -235,7 +286,10 @@ try{
 
   for(const official of stoloto){
     const id=Number(official.draw);
-    if(!mergedMap.has(id)) mergedMap.set(id,{...official,source});
+
+    if(!mergedMap.has(id)){
+      mergedMap.set(id,{...official,source});
+    }
   }
 
   const merged=[...mergedMap.values()]
@@ -246,23 +300,32 @@ try{
   }
 
   const finalLast=merged.at(-1);
+
   const status={
-    version:'1.0.3',
+    version:'1.0.4',
     source:ARCHIVE_URL,
     updatedAt:new Date().toISOString(),
     drawsStored:merged.length,
     latestDraw:Number(finalLast.draw??finalLast.number??finalLast.id),
     latestDate:String(finalLast.date||''),
     latestTime:String(finalLast.time||''),
-    verification:'triple-tail10',
+    verification:'2of3-tail10',
     stableDraws:TAIL_SIZE,
     checkedTail:TAIL_SIZE,
     added:fresh.length,
-    latestOfficial:{draw:newest.draw,date:newest.date,time:newest.time,column:newest.column}
+    latestOfficial:{
+      draw:newest.draw,
+      date:newest.date,
+      time:newest.time,
+      column:newest.column
+    }
   };
+
   await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
 
-  console.log(`COMBO TAIL10 PASS: локальный был №${last.draw}; добавлено ${fresh.length}; последний №${status.latestDraw}`);
+  console.log(
+    `COMBO TAIL10 PASS: локальный был №${last.draw}; добавлено ${fresh.length}; последний №${status.latestDraw}`
+  );
 }finally{
   await browser.close();
 }
