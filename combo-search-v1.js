@@ -1,5 +1,5 @@
 /* COMBO KENO — Поиск разных комб
-   v4.1.21-repo-journal-only, 02.09.2026
+   v4.1.22-draw-count, 02.09.2026
    Новый принцип: не выводим миллионы лексикографических вариантов.
    Формируем пул из реально ходивших чисел, оцениваем ход по всему окну
    и показываем 4 максимально разные комбинации.
@@ -7,8 +7,10 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.21';
+  const EXT_VERSION='v4.1.22';
   const RESULT_LIMIT=4;
+  const detailDrawCounts=new Map();
+  const DETAIL_MIN_DRAWS=5;
 
   function q(id){return document.getElementById(id)}
   function f2(n){return String(n).padStart(2,'0')}
@@ -41,7 +43,7 @@
       .csSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.csStat{padding:8px 5px;text-align:center;border:1px solid #294b66;background:#081827;border-radius:10px}.csStat b{display:block;font-size:16px;color:var(--green)}.csStat span{font-size:9px;color:var(--muted)}
       .csList{display:grid;gap:7px;margin-top:8px}.csItem{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;text-align:left;padding:10px;background:#0a1c2d;border:1px solid #315677;border-radius:11px}
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
-      .csDetail{margin-top:10px}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
+      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
     `;
@@ -208,9 +210,22 @@
   }
 
   function showDetail(row){
-    const box=q('csDetail');box.classList.remove('hidden');
-    box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${row.full} · Σ ${row.sum} · с попаданием ${row.withHit}/${state.draws.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${[...state.draws].sort((a,b)=>b.draw-a.draw).map(d=>detailRow(d,row.nums)).join('')}</div>`;
-    q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
+    const box=q('csDetail'),key=comboKey(row.nums);
+    const available=state.draws.length;
+    let count=Number(detailDrawCounts.get(key)??DETAIL_MIN_DRAWS);
+    if(!Number.isInteger(count)||count<DETAIL_MIN_DRAWS)count=DETAIL_MIN_DRAWS;
+    detailDrawCounts.set(key,count);
+    const render=()=>{
+      const visible=[...state.draws].sort((a,b)=>b.draw-a.draw).slice(0,count);
+      box.classList.remove('hidden');
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${row.full} · Σ ${row.sum} · с попаданием ${row.withHit}/${state.draws.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums)).join('')}</div>`;
+      q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
+      const input=q('csDrawCount');
+      const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};
+      input.onchange=apply;
+      input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply()}};
+    };
+    render();
     box.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
