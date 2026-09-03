@@ -1,0 +1,41 @@
+name: COMBO · SEARCH JOURNAL
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "combo-history-v1.json"
+      - "build-combo-search-log.mjs"
+      - "combo-search-v1.js"
+permissions:
+  contents: write
+concurrency:
+  group: combo-search-journal
+  cancel-in-progress: true
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build search journal
+        run: |
+          node --check build-combo-search-log.mjs
+          node build-combo-search-log.mjs
+      - name: Save journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- combo-search-log-v1.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add combo-search-log-v1.json
+          git commit -m "COMBO · SEARCH JOURNAL"
+          git pull --rebase origin main
+          git push origin HEAD:main
