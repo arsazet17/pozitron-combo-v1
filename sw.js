@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-734440056bcc';
+const CACHE='combo-keno-shell-0beefa2b8136';
 const SHELL=[
  './',
  './index.html',
