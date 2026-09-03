@@ -1,5 +1,5 @@
 /* COMBO KENO — Поиск разных комб
-   v4.1.19-journal, 02.09.2026
+   v4.1.21-repo-journal-only, 02.09.2026
    Новый принцип: не выводим миллионы лексикографических вариантов.
    Формируем пул из реально ходивших чисел, оцениваем ход по всему окну
    и показываем 4 максимально разные комбинации.
@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.19';
+  const EXT_VERSION='v4.1.21';
   const RESULT_LIMIT=4;
 
   function q(id){return document.getElementById(id)}
@@ -42,7 +42,6 @@
       .csList{display:grid;gap:7px;margin-top:8px}.csItem{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;text-align:left;padding:10px;background:#0a1c2d;border:1px solid #315677;border-radius:11px}
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
       .csDetail{margin-top:10px}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
-      .csJournal{margin-top:9px;border-top:1px solid #294b66;padding-top:8px}.csJournal #csJournalList{display:grid;gap:5px;margin-top:6px}.csJournalItem{padding:7px 8px;border:1px solid #294b66;background:#081827;border-radius:9px;font-size:10px;line-height:1.35}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
     `;
@@ -77,7 +76,6 @@
         <button id="csGo" class="primary csGo" type="button">🔍 НАЙТИ КОМБЫ</button>
         <div id="csStatus" class="csStatus">Выберите отрезок и размер комбинации.</div>
         <div id="csSummary"></div>
-        <div class="csJournal"><b>🧠 Запись поиска</b><div class="muted">Последние поиски сохраняются на устройстве. Контрольные снимки также пишутся в репозиторий.</div><div id="csJournalList"></div></div>
       </div>
       <div id="csResults" class="comboSearchCard hidden"></div>
       <div id="csDetail" class="comboSearchCard csDetail hidden"></div>`;
@@ -228,21 +226,6 @@
   }
 
 
-  const JOURNAL_KEY='comboSearchJournalV1';
-  function loadLocalJournal(){try{const a=JSON.parse(localStorage.getItem(JOURNAL_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
-  function saveLocalJournal(a){try{localStorage.setItem(JOURNAL_KEY,JSON.stringify(a.slice(-100)))}catch(e){}}
-  function renderLocalJournal(){
-    const box=q('csJournalList'); if(!box)return;
-    const a=loadLocalJournal().slice(-8).reverse();
-    box.innerHTML=a.length?a.map(x=>`<div class="csJournalItem"><b>${x.mode==='date'?(x.date||'дата'):x.window+' тир'} · ${x.size}К</b> · до №${x.anchorDraw||'—'}<br>${(x.combos||[]).map(c=>c.nums.map(f2).join(' ')).join(' · ')}</div>`).join(''):'<div class="muted">Пока поисков нет.</div>';
-  }
-  function snapshotSearch(){
-    if(!state.rows?.length||!state.draws?.length)return;
-    const last=state.draws[state.draws.length-1];
-    const item={savedAt:new Date().toISOString(),anchorDraw:Number(last?.draw)||null,anchorDate:String(last?.date||''),anchorTime:String(last?.time||''),mode:state.date?'date':'window',window:state.date?null:Number(state.window),date:state.date||'',size:Number(state.size),drawsCount:state.draws.length,combos:state.rows.map(r=>({nums:[...r.nums],full:r.full,near:r.near,sum:r.sum,withHit:r.withHit,maxRun:r.maxRun,score:r.score}))};
-    const a=loadLocalJournal(); a.push(item); saveLocalJournal(a); renderLocalJournal();
-  }
-
   async function runSearch(){
     if(state.busy)return;
     const draws=selectedDraws();
@@ -264,7 +247,6 @@
       q('csStatus').textContent=`Готово: проверен пул ${built.poolSize.toLocaleString('ru-RU')} реально собиравшихся вариантов. Оставлено ${picked.length} разных комб; почти одинаковые отброшены.`;
       q('csSummary').innerHTML=`<div class="csSummary"><div class="csStat"><b>${draws.length}</b><span>тиражей</span></div><div class="csStat"><b>${state.size}К</b><span>размер</span></div><div class="csStat"><b>${picked.length}</b><span>разные комбы</span></div></div>`;
       renderResults();
-      snapshotSearch();
     }catch(e){
       console.error('COMBO DIVERSE SEARCH',e);
       q('csStatus').className='csStatus err';
@@ -343,7 +325,7 @@
   }
 
   function init(){
-    css();addSection();addNav();bind();patchHistoryDismiss();renderLocalJournal();
+    css();addSection();addNav();bind();patchHistoryDismiss();
     const v=document.querySelector('.version');if(v)v.textContent='Версия '+EXT_VERSION;
   }
 
