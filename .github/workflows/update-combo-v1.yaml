@@ -46,7 +46,7 @@ jobs:
           npm install --no-save playwright@1.54.2
           npx playwright install --with-deps chromium
 
-      - name: Stoloto OAuth · last 10 · triple verification
+      - name: Stoloto OAuth · last 10 · 2 of 3 verification
         env:
           STOLOTO_EMAIL: ${{ secrets.STOLOTO_EMAIL }}
           STOLOTO_PASSWORD: ${{ secrets.STOLOTO_PASSWORD }}
