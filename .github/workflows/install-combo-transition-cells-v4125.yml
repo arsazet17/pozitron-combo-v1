@@ -1,0 +1,70 @@
+name: INSTALL · COMBO v4.1.25 TRANSITION CELLS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "install-combo-transition-cells-v4125.cjs"
+      - ".github/workflows/install-combo-transition-cells-v4125.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combo-v4125-transition-cells
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install transition cells
+        run: node install-combo-transition-cells-v4125.cjs
+
+      - name: Validate JSON
+        run: |
+          node -e "const v=JSON.parse(require('fs').readFileSync('app-version.json','utf8')); if(v.version!=='4.1.25') process.exit(1)"
+
+      - name: Refresh build
+        run: node refresh-combo-build.mjs
+
+      - name: Check
+        run: |
+          node --check combo-search-v1.js
+          grep -q "EXT_VERSION='v4.1.25'" combo-search-v1.js
+          grep -q ".dn.transition{padding-right:11px;background:#3a2a15" combo-search-v1.js
+          grep -q ".dn.hit.transition{background:var(--green)!important" combo-search-v1.js
+          grep -q '"version": "4.1.25"' app-version.json
+          grep -q 'combo-keno-shell-' sw.js
+
+      - name: Commit after PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add             combo-search-v1.js             app-version.json             index.html             manifest.webmanifest             sw.js             install-combo-transition-cells-v4125.cjs             .github/workflows/install-combo-transition-cells-v4125.yml
+
+          if git diff --cached --quiet; then exit 0; fi
+
+          git commit -m "COMBO v4.1.25 · transition cells"
+          git pull --rebase origin main
+          git push origin HEAD:main
