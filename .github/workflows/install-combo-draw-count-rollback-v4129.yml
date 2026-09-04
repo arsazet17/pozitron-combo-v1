@@ -1,0 +1,64 @@
+name: INSTALL · COMBO v4.1.29 DRAW COUNT ROLLBACK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "install-combo-draw-count-rollback-v4129.cjs"
+      - ".github/workflows/install-combo-draw-count-rollback-v4129.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fresh main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Restore original draw-count input
+        run: node install-combo-draw-count-rollback-v4129.cjs
+
+      - name: Validate
+        run: |
+          node --check combo-search-v1.js
+          node -e "const v=JSON.parse(require('fs').readFileSync('app-version.json','utf8')); if(v.version!=='4.1.29') process.exit(1)"
+          grep -Fq 'type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric"' combo-search-v1.js
+          grep -Fq "input.onchange=apply;" combo-search-v1.js
+          ! grep -Fq "setSelectionRange" combo-search-v1.js
+          ! grep -Fq "input.focus({preventScroll:true})" combo-search-v1.js
+          ! grep -Fq "const normalize=()=>" combo-search-v1.js
+          grep -Fq "💰 Выигрышных:" combo-search-v1.js
+          grep -Fq "🔥 Сумма выигрышей:" combo-search-v1.js
+
+      - name: Refresh build
+        run: node refresh-combo-build.mjs
+
+      - name: Commit after PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add             combo-search-v1.js             app-version.json             index.html             manifest.webmanifest             sw.js             install-combo-draw-count-rollback-v4129.cjs             .github/workflows/install-combo-draw-count-rollback-v4129.yml
+
+          if git diff --cached --quiet; then exit 0; fi
+
+          git commit -m "COMBO v4.1.29 · restore original draw count input"
+          git pull --rebase origin main
+          git push origin HEAD:main
