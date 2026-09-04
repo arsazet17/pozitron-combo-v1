@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.23';
+  const EXT_VERSION='v4.1.24';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -43,8 +43,9 @@
       .csSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.csStat{padding:8px 5px;text-align:center;border:1px solid #294b66;background:#081827;border-radius:10px}.csStat b{display:block;font-size:16px;color:var(--green)}.csStat span{font-size:9px;color:var(--muted)}
       .csList{display:grid;gap:7px;margin-top:8px}.csItem{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;text-align:left;padding:10px;background:#0a1c2d;border:1px solid #315677;border-radius:11px}
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
-      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
+      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
+      .csDetail .dn{position:relative;overflow:visible}.csDetail .dn.transition::after{content:'◆';position:absolute;right:-2px;top:-7px;color:#ff9800;font-size:8px;line-height:1;text-shadow:0 1px 2px #000;z-index:2}.csDetail .dn.hit.transition{box-shadow:0 0 0 1px #72e34d inset}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
     `;
     document.head.appendChild(s);
@@ -202,11 +203,20 @@
     return `<div class="hitbox"><div class="hits ${cls}">${prize?'🔥 ':''}${h}</div>${prize?`<div class="prize">Сумма<br>${prize.toLocaleString('ru-RU')} ₽</div>`:''}</div>`;
   }
 
-  function detailRow(d,nums){
+  function transitionSetForDraw(d){
+    const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
+    const idx=archive.findIndex(x=>Number(x.draw)===Number(d?.draw));
+    if(idx<=0)return new Set();
+    const prev=new Set((archive[idx-1]?.balls||[]).map(Number));
+    return new Set((d?.balls||[]).map(Number).filter(n=>prev.has(Number(n))));
+  }
+
+  function detailRow(d,nums,showTransitions=false){
     const balls=[...d.balls].sort((a,b)=>a-b);
+    const transitions=showTransitions?transitionSetForDraw(d):new Set();
     let h=0;for(const n of nums)if(d.balls.includes(n))h++;
     const col=Number.isInteger(Number(d.column))?Number(d.column):'—';
-    return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${col}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${detailHitCell(h,nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''}">${f2(n)}</span>`).join('')}</div></div>`;
+    return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${col}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${detailHitCell(h,nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${transitions.has(Number(n))?'transition':''}">${f2(n)}</span>`).join('')}</div></div>`;
   }
 
   function showDetail(row){
@@ -214,13 +224,16 @@
     let count=Number(detailDrawCounts.get(key)??DETAIL_MIN_DRAWS);
     if(!Number.isInteger(count)||count<DETAIL_MIN_DRAWS)count=DETAIL_MIN_DRAWS;
     detailDrawCounts.set(key,count);
+    let showTransitions=false;
     const render=()=>{
       const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
       const visible=[...archive].sort((a,b)=>b.draw-a.draw).slice(0,count);
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${detailStats.full} · Σ ${detailStats.sum} · с попаданием ${detailStats.withHit}/${visible.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${detailStats.full} · Σ ${detailStats.sum} · с попаданием ${detailStats.withHit}/${visible.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
+      const transitionsBtn=q('csTransitionsBtn');
+      if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
       const input=q('csDrawCount');
       const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};
       input.onchange=apply;
