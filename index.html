@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="297c3f3fc64f">
+<meta name="app-build" content="e3a93c130e94">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>COMBO KENO</title>
@@ -27,7 +27,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.30</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.1.31</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -395,7 +395,7 @@ function renderHistory(){
   if($('moreBtn'))$('moreBtn').onclick=()=>{showCount+=20;renderHistory()};
 }
 function runCheck(nums,name){if(!nums.length){alert('Выберите хотя бы одно число');return}const a=getFiltered();if(!a.length){alert('По выбранным параметрам тиражи не найдены');return}showCount=20;historyMarks.clear();selected=[...nums].slice(0,10);lastResult={nums:[...nums],name,draws:a,st:stats(nums,a)};renderPick();renderHistory();switchSec('history')}
-function switchSec(id){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('on',s.id===id));document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('on',b.dataset.sec===id));window.scrollTo({top:0,behavior:'smooth'})}
+function switchSec(id){try{document.activeElement?.blur()}catch(e){}document.querySelectorAll('.section').forEach(s=>s.classList.toggle('on',s.id===id));document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('on',b.dataset.sec===id));window.scrollTo({top:0,behavior:'smooth'})}
 
 function updateDbLine(){
   const last=DRAWS.at(-1);
@@ -496,13 +496,13 @@ load();
 if('serviceWorker' in navigator){
  window.addEventListener('load',async()=>{
   try{
-   const reg=await navigator.serviceWorker.register('sw.js?v=297c3f3fc64f',{updateViaCache:'none'});
+   const reg=await navigator.serviceWorker.register('sw.js?v=e3a93c130e94',{updateViaCache:'none'});
    await reg.update();
   }catch(e){console.warn('SW update',e)}
  });
 }
 </script>
-<script src="combo-search-v1.js?v=297c3f3fc64f"></script>
+<script src="combo-search-v1.js?v=e3a93c130e94"></script>
 <script id="comboAutoUpdate">
 (()=>{
  let reloading=false;
