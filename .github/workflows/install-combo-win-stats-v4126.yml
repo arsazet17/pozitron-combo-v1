@@ -1,0 +1,50 @@
+name: INSTALL · COMBO v4.1.26 WIN STATS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "install-combo-win-stats-v4126.cjs"
+      - ".github/workflows/install-combo-win-stats-v4126.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        run: node install-combo-win-stats-v4126.cjs
+      - name: Validate
+        run: |
+          node --check combo-search-v1.js
+          node -e "const v=JSON.parse(require('fs').readFileSync('app-version.json','utf8')); if(v.version!=='4.1.26') process.exit(1)"
+          grep -q "function winningStats(nums,draws)" combo-search-v1.js
+          grep -q "💰 Выигрышных:" combo-search-v1.js
+          grep -q "🔥 Сумма выигрышей:" combo-search-v1.js
+      - name: Refresh build
+        run: node refresh-combo-build.mjs
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add combo-search-v1.js app-version.json index.html manifest.webmanifest sw.js install-combo-win-stats-v4126.cjs .github/workflows/install-combo-win-stats-v4126.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "COMBO v4.1.26 · winning stats"
+          git pull --rebase origin main
+          git push origin HEAD:main
