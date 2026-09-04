@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.29';
+  const EXT_VERSION='v4.1.30';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -252,7 +252,7 @@
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="tel" inputmode="numeric" pattern="[0-9]*" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
