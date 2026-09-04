@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.25';
+  const EXT_VERSION='v4.1.26';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -43,7 +43,7 @@
       .csSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.csStat{padding:8px 5px;text-align:center;border:1px solid #294b66;background:#081827;border-radius:10px}.csStat b{display:block;font-size:16px;color:var(--green)}.csStat span{font-size:9px;color:var(--muted)}
       .csList{display:grid;gap:7px;margin-top:8px}.csItem{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;text-align:left;padding:10px;background:#0a1c2d;border:1px solid #315677;border-radius:11px}
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
-      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
+      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}.csWinStats{width:100%;display:grid;gap:2px;margin-top:2px;font-size:11px;line-height:1.35;color:#c8d7e5}.csWinStats b{font-size:inherit;color:#fff}.csWinBreakdown{color:#9fb2c4;font-size:10px;white-space:normal}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
       .csDetail .drawnums{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px 4px;align-items:center}.csDetail .dn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:0;height:22px;padding:0 3px;border:1px solid transparent;border-radius:6px;box-sizing:border-box;line-height:1}.csDetail .dn.transition{padding-right:11px;background:#3a2a15;border-color:#d89a2b;color:#fff}.csDetail .dn.transition::after{content:'◆';position:absolute;right:2px;top:50%;transform:translateY(-50%);color:#ff9800;font-size:7px;line-height:1;text-shadow:none;z-index:2}.csDetail .dn.hit.transition{background:var(--green)!important;border-color:#d89a2b!important;color:#fff!important;box-shadow:0 0 0 1px rgba(216,154,43,.45) inset}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
@@ -203,6 +203,27 @@
     return `<div class="hitbox"><div class="hits ${cls}">${prize?'🔥 ':''}${h}</div>${prize?`<div class="prize">Сумма<br>${prize.toLocaleString('ru-RU')} ₽</div>`:''}</div>`;
   }
 
+  function winningStats(nums,draws){
+    const k=nums.length;
+    const byHits=new Map();
+    let winning=0,totalPrize=0;
+    for(const d of draws){
+      let h=0;
+      for(const n of nums)if(d.balls.includes(n))h++;
+      const prize=prizeFor(k,h);
+      if(prize>0){
+        winning++;
+        totalPrize+=prize;
+        byHits.set(h,(byHits.get(h)||0)+1);
+      }
+    }
+    const levels=[];
+    for(let h=0;h<=k;h++){
+      if(prizeFor(k,h)>0)levels.push(`${h}/${k}: ${byHits.get(h)||0}`);
+    }
+    return{winning,totalPrize,levels};
+  }
+
   function transitionSetForDraw(d){
     const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
     const idx=archive.findIndex(x=>Number(x.draw)===Number(d?.draw));
@@ -229,8 +250,9 @@
       const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
       const visible=[...archive].sort((a,b)=>b.draw-a.draw).slice(0,count);
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
+      const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><span class="muted">🔥 полностью ${detailStats.full} · Σ ${detailStats.sum} · с попаданием ${detailStats.withHit}/${visible.length}</span><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
