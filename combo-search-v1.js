@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.28';
+  const EXT_VERSION='v4.1.29';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -252,41 +252,14 @@
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="number" min="${DETAIL_MIN_DRAWS}" step="1" inputmode="numeric" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
       const input=q('csDrawCount');
-      const normalize=()=>{
-        const digits=String(input.value||'').replace(/\D+/g,'');
-        if(input.value!==digits)input.value=digits;
-      };
-      const apply=()=>{
-        normalize();
-        let v=Math.floor(Number(input.value));
-        if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;
-        count=v;
-        detailDrawCounts.set(key,v);
-        input.value=String(v);
-        render();
-      };
-      input.addEventListener('input',normalize);
-      input.addEventListener('focus',()=>{
-        try{
-          const len=String(input.value||'').length;
-          requestAnimationFrame(()=>input.setSelectionRange(len,len));
-        }catch(e){}
-      });
-      input.addEventListener('click',()=>{
-        try{input.focus({preventScroll:true})}catch(e){input.focus()}
-      });
-      input.addEventListener('blur',apply);
-      input.addEventListener('keydown',e=>{
-        if(e.key==='Enter'){
-          e.preventDefault();
-          try{input.blur()}catch(_){apply()}
-        }
-      });
+      const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};
+      input.onchange=apply;
+      input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply()}};
     };
     render();
     box.scrollIntoView({behavior:'smooth',block:'start'});
