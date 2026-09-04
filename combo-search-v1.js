@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.24';
+  const EXT_VERSION='v4.1.25';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -45,7 +45,7 @@
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
       .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
-      .csDetail .dn{position:relative;overflow:visible}.csDetail .dn.transition::after{content:'◆';position:absolute;right:-2px;top:-7px;color:#ff9800;font-size:8px;line-height:1;text-shadow:0 1px 2px #000;z-index:2}.csDetail .dn.hit.transition{box-shadow:0 0 0 1px #72e34d inset}
+      .csDetail .drawnums{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px 4px;align-items:center}.csDetail .dn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:0;height:22px;padding:0 3px;border:1px solid transparent;border-radius:6px;box-sizing:border-box;line-height:1}.csDetail .dn.transition{padding-right:11px;background:#3a2a15;border-color:#d89a2b;color:#fff}.csDetail .dn.transition::after{content:'◆';position:absolute;right:2px;top:50%;transform:translateY(-50%);color:#ff9800;font-size:7px;line-height:1;text-shadow:none;z-index:2}.csDetail .dn.hit.transition{background:var(--green)!important;border-color:#d89a2b!important;color:#fff!important;box-shadow:0 0 0 1px rgba(216,154,43,.45) inset}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
     `;
     document.head.appendChild(s);
