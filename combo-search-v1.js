@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.27';
+  const EXT_VERSION='v4.1.28';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=5;
@@ -273,7 +273,8 @@
       input.addEventListener('input',normalize);
       input.addEventListener('focus',()=>{
         try{
-          requestAnimationFrame(()=>input.select());
+          const len=String(input.value||'').length;
+          requestAnimationFrame(()=>input.setSelectionRange(len,len));
         }catch(e){}
       });
       input.addEventListener('click',()=>{
