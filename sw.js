@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-a61bda437442';
+const CACHE='combo-keno-shell-xray420b1';
 const SHELL=[
  './',
  './index.html',
@@ -7,7 +7,10 @@ const SHELL=[
  './icon-512.png',
  './combo-presets-v1.json',
  './keno-payouts-v1.json',
- './combo-search-v1.js'
+ './combo-search-v1.js',
+ './xray-engine-v1.js',
+ './xray-ui-v1.js',
+ './xray-v1.css'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -22,9 +25,7 @@ self.addEventListener('activate',e=>e.waitUntil(
 
 self.addEventListener('fetch',e=>{
  if(e.request.method!=='GET')return;
-
  const u=new URL(e.request.url);
-
  if(
   u.pathname.endsWith('/combo-history-v1.json') ||
   u.pathname.endsWith('/combo-status-v1.json')
@@ -32,9 +33,7 @@ self.addEventListener('fetch',e=>{
   e.respondWith(fetch(new Request(e.request,{cache:'no-store'})));
   return;
  }
-
  if(u.origin!==self.location.origin)return;
-
  e.respondWith(
   fetch(new Request(e.request,{cache:'no-store'}))
    .then(r=>{
