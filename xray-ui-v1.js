@@ -1,5 +1,14 @@
 (function(){
 'use strict';
+const __xrayPatchStyle=document.createElement('style');__xrayPatchStyle.textContent=`.xrayPanelHead small{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+.xrayColumnForecast{margin-top:8px;padding:7px 8px;border-top:1px solid #294b66;color:#b9c8d6;font-size:10px;line-height:1.8;word-spacing:1px}
+.xrayColumnForecast span{display:inline;white-space:nowrap;margin-right:5px}
+.xrayColumnForecast b{color:#eef7ff}
+.xrayColumnForecast i{font-style:normal;color:#ff5b67}
+.xrayFactNums span.layerHit{background:#1e7e38;border:1px solid #59d978;color:#fff;font-weight:900}
+.xrayFactNums span.layerMiss{background:#081827;border:1px solid #294b66;color:#b8c9d7;font-weight:900}
+`;document.head.appendChild(__xrayPatchStyle);
+
 const $=id=>document.getElementById(id);
 const fmt=n=>String(n).padStart(2,'0');
 const money=v=>Number(v||0).toLocaleString('ru-RU')+' ₽';
@@ -15,6 +24,16 @@ async function loadPayouts(){if(!payouts)payouts=await fetchJSON('keno-payouts-v
 function head(title,key,extra=''){return `<div class="xrayPanelHead"><div><b>${title}</b>${extra?`<small>${extra}</small>`:''}</div><button class="xrayFold ${panel[key]?'on':''}" data-xfold="${key}" type="button">▼</button></div>`}
 function targetLabel(r){return `№${r?.targetDraw||'—'} · ${r?.targetDate||'—'} ${r?.targetTime||'—'}`}
 function sourceLabel(r){return `№${r?.sourceDraw||'—'} · ${r?.sourceDate||'—'} ${r?.sourceTime||'—'}${r?.sourceColumn?` · столб ${r.sourceColumn}`:''}`}
+function gridHeadLabel(f){return f?`Источник ${sourceLabel(f)} → прогноз на ${targetLabel(f)}`:'ожидаю прогноз'}
+function columnForecastHTML(f){
+  const pred=(f?.predicted20||[]).map(Number);
+  const cols=Array.from({length:10},()=>[]);
+  for(const n of pred){
+    const c=((n-1)%10);
+    if(c>=0&&c<10)cols[c].push(n);
+  }
+  return `<div class="xrayColumnForecast">${cols.map((a,i)=>`<span><b>Ст${i+1}</b>(${a.length?a.join('.'): '<i>🔺</i>'})</span>`).join(' ')}</div>`;
+}
 function gridHTML(f){
   const cur=new Set((f?.current20||runtime?.latestOfficial?.balls||[]).map(Number)),pred=new Set((f?.predicted20||[]).map(Number));
   return Array.from({length:80},(_,i)=>i+1).map(n=>{
@@ -38,9 +57,9 @@ function renderOverlay(f){
 function comboBox(title,cls,nums,f){return `<div class="xrayCombo ${cls}"><div class="xrayComboTop"><b>${title}</b><span>на ${targetLabel(f)}</span></div><div class="xrayComboNums">${(nums||[]).map(n=>`<span>${fmt(n)}</span>`).join('')}</div></div>`}
 function factBlock(e){
   if(!e)return '';
-  const c5=new Set(e.combo5Hits||[]),c7=new Set(e.combo7Hits||[]);
+  const c5=new Set(e.combo5Hits||[]),c7=new Set(e.combo7Hits||[]),layer=new Set(e.layerHits||[]);
   return `<div class="xrayFactBlock">${head(`Факт тиража №${e.factDraw}`,'fact',`${e.factDate||'—'} ${e.factTime||'—'} · столб ${e.factColumn||'—'}`)}
-  <div class="xrayPanelBody ${panel.fact?'':'hiddenX'}"><div class="xrayFactNums">${(e.factBalls||[]).map(n=>`<span>${fmt(n)}</span>`).join('')}</div>
+  <div class="xrayPanelBody ${panel.fact?'':'hiddenX'}"><div class="xrayFactNums">${(e.factBalls||[]).map(n=>`<span class="${layer.has(n)?'layerHit':'layerMiss'}">${fmt(n)}</span>`).join('')}</div>
   <div class="xrayFactCombos"><div><b>COMBO-5 · ${(e.combo5Hits||[]).length}/5</b><div class="xrayCheckedNums">${(e.combo5||[]).map(n=>`<span class="${c5.has(n)?'hit':'miss'}">${fmt(n)} ${c5.has(n)?'✓':'×'}</span>`).join('')}</div>${e.combo5Payout?`<strong class="xrayWin">🔥 ${money(e.combo5Payout)}</strong>`:''}</div>
   <div><b>COMBO-7 · ${(e.combo7Hits||[]).length}/7</b><div class="xrayCheckedNums">${(e.combo7||[]).map(n=>`<span class="${c7.has(n)?'hit':'miss'}">${fmt(n)} ${c7.has(n)?'✓':'×'}</span>`).join('')}</div>${e.combo7Payout?`<strong class="xrayWin">🔥 ${money(e.combo7Payout)}</strong>`:''}</div></div>
   <div class="xrayLayerResult">Прогнозный слой 20: <b>${(e.layerHits||[]).length}/20</b></div></div></div>`;
@@ -63,9 +82,10 @@ function render(){
   root.innerHTML=`<div class="card"><h2>🔬 Рентген структуры</h2>
   <div class="muted">SERVER LIVE · архив и прогнозы ведутся автоматически, даже когда приложение закрыто.</div>
   <div class="xrayLiveLine">LIVE ${runtime.latestOfficial?`№${runtime.latestOfficial.draw} · ${runtime.latestOfficial.date} ${runtime.latestOfficial.time}`:'—'} · история ${h.length}</div></div>
-  <div class="card">${head('Поле 1–80','grid',f?`Источник ${sourceLabel(f)} → прогноз ${targetLabel(f)}`:'ожидаю прогноз')}
-  <div class="xrayPanelBody ${panel.grid?'':'hiddenX'}"><div class="xrayLegend"><span class="lgCurrent">Факт</span><span class="lgPred">Следующий 20</span><span class="lgBoth">Совпало</span></div>
-  <div id="xrayStage" class="xrayStage"><div class="xrayGrid">${gridHTML(f)}</div><svg id="xrayOverlay" class="xrayOverlay"></svg></div></div></div>
+  <div class="card">${head('Поле 1–80','grid',gridHeadLabel(f))}
+  <div class="xrayPanelBody ${panel.grid?'':'hiddenX'}"><div class="xrayLegend"><span class="current">Тираж</span><span class="predicted">Прогноз</span><span class="both">Совпало</span></div>
+  <div id="xrayStage" class="xrayStage"><div class="xrayGrid">${gridHTML(f)}</div><svg id="xrayOverlay" class="xrayOverlay"></svg></div>
+  ${f?columnForecastHTML(f):''}</div></div>
   <div class="card">${head('COMBO','combos',f?targetLabel(f):'ожидаю SERVER LIVE')}<div class="xrayPanelBody ${panel.combos?'':'hiddenX'}">${f?comboBox('COMBO-5','combo5',f.combo5,f)+comboBox('COMBO-7','combo7',f.combo7,f):'<div class="msg">Модель ещё не сформировала следующий frozen-прогноз.</div>'}</div></div>
   ${factBlock(last)}
   <div id="xrayArchiveBox" class="card">${head('История Рентгена','archive',`${h.length} записей`)}<div class="xrayPanelBody ${panel.archive?'':'hiddenX'}">${h.length?h.map(archiveItem).join(''):'<div class="xrayEmpty">Пока нет завершённых прогнозов.</div>'}</div></div>
