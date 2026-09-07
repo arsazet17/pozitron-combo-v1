@@ -26,38 +26,35 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Install TensorFlow.js Node
         run: npm install --no-save @tensorflow/tfjs-node@4.22.0
-
       - name: Train Attention LSTM 5→1
         env:
           XRAY_TRAIN_DRAWS: "2000"
           XRAY_EPOCHS: "100"
           XRAY_BATCH_SIZE: "8"
         run: node train-xray-ai-v2.mjs
-
-      - name: Verify model
+      - name: Build first SERVER LIVE runtime
+        run: node build-xray-runtime.mjs
+      - name: Verify
         run: |
           test -s xray-ai-model/model.json
           test -s xray-ai-model/meta.json
-          ls -lh xray-ai-model
-
-      - name: Save model
+          test -s data/xray-runtime.json
+      - name: Save model + runtime
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add xray-ai-model
+          git add xray-ai-model data/xray-runtime.json
           if git diff --cached --quiet; then
-            echo "XRAY model unchanged"
+            echo "XRAY unchanged"
             exit 0
           fi
-          git commit -m "XRAY AI · refresh Attention LSTM model"
+          git commit -m "XRAY AI · model + SERVER LIVE runtime"
           git pull --rebase origin main
           git push origin HEAD:main
