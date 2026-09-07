@@ -1,8 +1,3 @@
-/* ROLLBACK: feature "analog columns in row" disabled.
-   This file intentionally does nothing.
-   It replaces the 07.09.2026 update that added a MutationObserver-based decorator.
-*/
-(function(){
-  'use strict';
-  // no-op by design
-})();
+// XRAY-AI 2.0 compatibility file.
+// Старый поиск дальних аналогов и геометрических столбцов отключён.
+window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
