@@ -12,6 +12,10 @@ on:
       - "combo-presets-v1.json"
       - "keno-payouts-v1.json"
       - "refresh-combo-build.mjs"
+      - "xray-engine-v1.js"
+      - "xray-ui-v1.js"
+      - "xray-analog-columns-v1.js"
+      - "xray-v1.css"
       - "icon-192.png"
       - "icon-512.png"
 
@@ -26,35 +30,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
-
       - name: Fresh main
         run: |
           git fetch origin main
           git reset --hard origin/main
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Refresh build
         run: node refresh-combo-build.mjs
-
       - name: Check
         run: |
           node --check refresh-combo-build.mjs
           node --check combo-search-v1.js
+          node --check xray-engine-v1.js
+          node --check xray-ui-v1.js
           grep -q 'name="app-build"' index.html
-          grep -q 'combo-search-v1.js' index.html
-          grep -q 'combo-search-v1.js' sw.js
+          grep -q 'xray-engine-v1.js' index.html
+          grep -q 'xray-ui-v1.js' index.html
+          grep -q 'xray-engine-v1.js' sw.js
           grep -q 'combo-keno-shell-' sw.js
           grep -q '"start_url": "./?v=' manifest.webmanifest
-
       - name: Save only real shell changes
         shell: bash
         run: |
