@@ -2,8 +2,6 @@ name: COMBO v1 · Stoloto AUTO
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
@@ -108,7 +106,20 @@ jobs:
       - name: Restore updater source before commit
         run: git checkout -- stoloto-combo-update-v1.mjs
 
+      - name: Detect verified live-data changes
+        id: live_data
+        shell: bash
+        run: |
+          if git diff --quiet -- combo-history-v1.json combo-status-v1.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new verified draw — XRAY rebuild is not needed"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Verified live data changed"
+          fi
+
       - name: Build XRAY SERVER LIVE runtime
+        if: steps.live_data.outputs.changed == 'true'
         shell: bash
         run: |
           set -e
@@ -119,7 +130,7 @@ jobs:
             echo "XRAY model is not trained yet — runtime build skipped"
           fi
 
-      - name: Commit verified live data + XRAY runtime
+      - name: Commit only changed live data + XRAY runtime
         shell: bash
         run: |
           if git diff --quiet -- combo-history-v1.json combo-status-v1.json data/xray-runtime.json; then
