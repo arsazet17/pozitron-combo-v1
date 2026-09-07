@@ -30,7 +30,7 @@ jobs:
 
       - name: Freeze target draw for this run
         env:
-          COMBO_PUBLICATION_GRACE_MINUTES: "7"
+          COMBO_PUBLICATION_GRACE_MINUTES: "3"
         run: |
           python3 - <<'PY'
           import os
