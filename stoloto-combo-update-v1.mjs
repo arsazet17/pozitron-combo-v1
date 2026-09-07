@@ -295,7 +295,9 @@ try{
   const merged=[...mergedMap.values()]
     .sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
 
-  if(JSON.stringify(merged)!==JSON.stringify(historyRaw)){
+  const historyChanged=JSON.stringify(merged)!==JSON.stringify(historyRaw);
+
+  if(historyChanged){
     await fs.writeFile(HISTORY_FILE,JSON.stringify(merged)+'\n');
   }
 
@@ -321,7 +323,27 @@ try{
     }
   };
 
-  await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
+  let previousStatus=null;
+
+  try{
+    previousStatus=JSON.parse(await fs.readFile(STATUS_FILE,'utf8'));
+  }catch{}
+
+  const statusChanged=historyChanged||!previousStatus||
+    Number(previousStatus.latestDraw)!==status.latestDraw||
+    String(previousStatus.latestDate||'')!==status.latestDate||
+    String(previousStatus.latestTime||'')!==status.latestTime||
+    Number(previousStatus.drawsStored)!==status.drawsStored||
+    Number(previousStatus.latestOfficial?.draw)!==status.latestOfficial.draw||
+    String(previousStatus.latestOfficial?.date||'')!==status.latestOfficial.date||
+    String(previousStatus.latestOfficial?.time||'')!==status.latestOfficial.time||
+    Number(previousStatus.latestOfficial?.column)!==status.latestOfficial.column;
+
+  if(statusChanged){
+    await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
+  }else{
+    console.log(`COMBO NO CHANGE: №${status.latestDraw} уже опубликован, файлы не переписываются`);
+  }
 
   console.log(
     `COMBO TAIL10 PASS: локальный был №${last.draw}; добавлено ${fresh.length}; последний №${status.latestDraw}`
