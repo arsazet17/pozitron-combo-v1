@@ -63,7 +63,10 @@ jobs:
               f.write(f"COMBO_DUE_DATE={due_date}\n")
               f.write(f"COMBO_DUE_TIME={due_time}\n")
 
-          print(f"Frozen COMBO target: {due_date} {due_time}; run={now:%d.%m.%y %H:%M:%S} MSK; grace={grace}m")
+          print(
+              f"Frozen COMBO target: {due_date} {due_time}; "
+              f"run={now:%d.%m.%y %H:%M:%S} MSK; grace={grace}m"
+          )
           PY
 
       - name: Set up Node.js 22
@@ -71,17 +74,47 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Cache Chromium Playwright
+      - name: Cache npm
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-1.54.2-chromium
+          path: ~/.npm
+          key: ${{ runner.os }}-combo-playwright-npm-1.54.2
 
-      - name: Install Playwright
+      - name: Install Playwright package only
         run: |
           npm init -y
-          npm install --no-save playwright@1.54.2
-          npx playwright install --with-deps chromium
+          npm install --no-save --no-audit --no-fund playwright@1.54.2
+
+      - name: Use preinstalled GitHub Chrome
+        shell: bash
+        run: |
+          set -e
+
+          if command -v google-chrome >/dev/null 2>&1 || command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "System Google Chrome found:"
+            (google-chrome --version || google-chrome-stable --version)
+
+            python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("stoloto-combo-update-v1.mjs")
+          s = p.read_text(encoding="utf-8")
+          old = "const browser=await chromium.launch({headless:true});"
+          new = "const browser=await chromium.launch({headless:true,channel:'chrome'});"
+
+          if old not in s and new not in s:
+              raise SystemExit("FAIL: browser launch line changed; safe patch refused")
+
+          if old in s:
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding="utf-8")
+
+          print("FAST MODE: Playwright will use preinstalled Google Chrome")
+          PY
+          else
+            echo "System Chrome not found; safe fallback to bundled Chromium"
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Read Stoloto until frozen due draw is caught
         env:
@@ -127,7 +160,12 @@ jobs:
           except Exception:
               ok = False
 
-          print("frozen_due=", due_date, due_time, "latest=", x.get("date"), x.get("time"), "draw=", x.get("draw"), "caught=", ok)
+          print(
+              "frozen_due=", due_date, due_time,
+              "latest=", x.get("date"), x.get("time"),
+              "draw=", x.get("draw"),
+              "caught=", ok
+          )
           sys.exit(0 if ok else 1)
           PY
               then
@@ -150,6 +188,11 @@ jobs:
             exit 1
           fi
 
+      - name: Restore updater source before commit
+        run: |
+          # Runtime patch must never be committed.
+          git checkout -- stoloto-combo-update-v1.mjs
+
       - name: Commit verified live data
         shell: bash
         run: |
@@ -162,7 +205,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add combo-history-v1.json combo-status-v1.json
-          git commit -m "COMBO v1 · Stoloto frozen-target auto"
+          git commit -m "COMBO v1 · Stoloto frozen-target fast auto"
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
