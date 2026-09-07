@@ -15,8 +15,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,41 +35,19 @@ jobs:
           python3 - <<'PY'
           import os
           from datetime import datetime, timezone, timedelta
-
-          S = [
-            '00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32',
-            '04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32',
-            '08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32',
-            '12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32',
-            '16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32',
-            '20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32'
-          ]
-
-          grace = int(os.environ["COMBO_PUBLICATION_GRACE_MINUTES"])
-          now = datetime.now(timezone.utc) + timedelta(hours=3)
-          cutoff = now - timedelta(minutes=grace)
-          due = [t for t in S if t <= cutoff.strftime('%H:%M')]
-
-          if due:
-              due_date = cutoff.strftime('%d.%m.%y')
-              due_time = due[-1]
+          S=['00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32','04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32','08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32','12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32','16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32','20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32']
+          grace=int(os.environ['COMBO_PUBLICATION_GRACE_MINUTES'])
+          now=datetime.now(timezone.utc)+timedelta(hours=3); cutoff=now-timedelta(minutes=grace)
+          due=[t for t in S if t<=cutoff.strftime('%H:%M')]
+          if due: due_date=cutoff.strftime('%d.%m.%y'); due_time=due[-1]
           else:
-              previous = cutoff - timedelta(days=1)
-              due_date = previous.strftime('%d.%m.%y')
-              due_time = S[-1]
-
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
-              f.write(f"COMBO_DUE_DATE={due_date}\n")
-              f.write(f"COMBO_DUE_TIME={due_time}\n")
-
-          print(
-              f"Frozen COMBO target: {due_date} {due_time}; "
-              f"run={now:%d.%m.%y %H:%M:%S} MSK; grace={grace}m"
-          )
+            prev=cutoff-timedelta(days=1); due_date=prev.strftime('%d.%m.%y'); due_time=S[-1]
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+            f.write(f'COMBO_DUE_DATE={due_date}\nCOMBO_DUE_TIME={due_time}\n')
+          print('Frozen COMBO target:',due_date,due_time)
           PY
 
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -78,9 +55,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-combo-playwright-npm-1.54.2
+          key: ${{ runner.os }}-combo-playwright-tfjs-1.54.2-4.22.0
 
-      - name: Install Playwright package only
+      - name: Install runtime packages
         run: |
           npm init -y
           npm install --no-save --no-audit --no-fund playwright@1.54.2
@@ -89,30 +66,16 @@ jobs:
         shell: bash
         run: |
           set -e
-
           if command -v google-chrome >/dev/null 2>&1 || command -v google-chrome-stable >/dev/null 2>&1; then
-            echo "System Google Chrome found:"
-            (google-chrome --version || google-chrome-stable --version)
-
             python3 - <<'PY'
           from pathlib import Path
-
-          p = Path("stoloto-combo-update-v1.mjs")
-          s = p.read_text(encoding="utf-8")
-          old = "const browser=await chromium.launch({headless:true});"
-          new = "const browser=await chromium.launch({headless:true,channel:'chrome'});"
-
-          if old not in s and new not in s:
-              raise SystemExit("FAIL: browser launch line changed; safe patch refused")
-
-          if old in s:
-              s = s.replace(old, new, 1)
-              p.write_text(s, encoding="utf-8")
-
-          print("FAST MODE: Playwright will use preinstalled Google Chrome")
+          p=Path("stoloto-combo-update-v1.mjs"); s=p.read_text(encoding="utf-8")
+          old="const browser=await chromium.launch({headless:true});"
+          new="const browser=await chromium.launch({headless:true,channel:'chrome'});"
+          if old not in s and new not in s: raise SystemExit("FAIL: browser launch line changed")
+          if old in s: p.write_text(s.replace(old,new,1),encoding="utf-8")
           PY
           else
-            echo "System Chrome not found; safe fallback to bundled Chromium"
             npx playwright install --with-deps chromium
           fi
 
@@ -123,89 +86,51 @@ jobs:
         run: |
           set -u
           success=0
-
           for attempt in 1 2 3 4 5 6; do
             echo "COMBO Stoloto attempt $attempt/6"
-
             if node stoloto-combo-update-v1.mjs; then
               if python3 - <<'PY'
-          import json, os, sys
+          import json,os,sys
           from datetime import datetime
-
-          S = [
-            '00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32',
-            '04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32',
-            '08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32',
-            '12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32',
-            '16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32',
-            '20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32'
-          ]
-
-          due_date = os.environ["COMBO_DUE_DATE"]
-          due_time = os.environ["COMBO_DUE_TIME"]
-
-          try:
-              status = json.load(open("combo-status-v1.json", encoding="utf-8"))
-              x = status.get("latestOfficial") or {}
-          except Exception as exc:
-              print("status read failed:", exc)
-              sys.exit(1)
-
-          def key(ds, tm):
-              d = datetime.strptime(ds, "%d.%m.%y")
-              return (d.toordinal(), S.index(tm) if tm in S else -1)
-
-          try:
-              ok = key(str(x.get("date")), str(x.get("time"))) >= key(due_date, due_time)
-          except Exception:
-              ok = False
-
-          print(
-              "frozen_due=", due_date, due_time,
-              "latest=", x.get("date"), x.get("time"),
-              "draw=", x.get("draw"),
-              "caught=", ok
-          )
-          sys.exit(0 if ok else 1)
+          S=['00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32','04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32','08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32','12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32','16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32','20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32']
+          x=(json.load(open('combo-status-v1.json',encoding='utf-8')).get('latestOfficial') or {})
+          def key(ds,tm): return (datetime.strptime(ds,'%d.%m.%y').toordinal(),S.index(tm) if tm in S else -1)
+          try: ok=key(str(x.get('date')),str(x.get('time')))>=key(os.environ['COMBO_DUE_DATE'],os.environ['COMBO_DUE_TIME'])
+          except Exception: ok=False
+          print('latest=',x,'caught=',ok);sys.exit(0 if ok else 1)
           PY
-              then
-                echo "COMBO is caught up to the frozen target."
-                success=1
-                break
-              fi
-            else
-              echo "Reader failed; retry is allowed."
+              then success=1; break; fi
             fi
-
-            if [ "$attempt" -lt 6 ]; then
-              echo "Retry in 25 sec..."
-              sleep 25
-            fi
+            if [ "$attempt" -lt 6 ]; then sleep 25; fi
           done
-
-          if [ "$success" -ne 1 ]; then
-            echo "::error::COMBO could not catch the frozen due draw after 6 attempts."
-            exit 1
-          fi
+          if [ "$success" -ne 1 ]; then exit 1; fi
 
       - name: Restore updater source before commit
-        run: |
-          # Runtime patch must never be committed.
-          git checkout -- stoloto-combo-update-v1.mjs
+        run: git checkout -- stoloto-combo-update-v1.mjs
 
-      - name: Commit verified live data
+      - name: Build XRAY SERVER LIVE runtime
         shell: bash
         run: |
-          if git diff --quiet -- combo-history-v1.json combo-status-v1.json; then
+          set -e
+          if [ -s xray-ai-model/model.json ]; then
+            npm install --no-save --no-audit --no-fund @tensorflow/tfjs-node@4.22.0
+            node build-xray-runtime.mjs
+          else
+            echo "XRAY model is not trained yet — runtime build skipped"
+          fi
+
+      - name: Commit verified live data + XRAY runtime
+        shell: bash
+        run: |
+          if git diff --quiet -- combo-history-v1.json combo-status-v1.json data/xray-runtime.json; then
             echo "No verified changes"
             exit 0
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add combo-history-v1.json combo-status-v1.json
-          git commit -m "COMBO v1 · Stoloto frozen-target fast auto"
+          if [ -f data/xray-runtime.json ]; then git add data/xray-runtime.json; fi
+          git commit -m "COMBO v1 · Stoloto + XRAY SERVER LIVE"
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main

@@ -53,7 +53,7 @@ jobs:
           grep -q 'name="app-build"' index.html
           grep -q 'xray-engine-v1.js' index.html
           grep -q 'xray-ui-v1.js' index.html
-          grep -q 'xray-engine-v1.js' sw.js
+          grep -q 'data/xray-runtime.json' sw.js
           grep -q 'combo-keno-shell-' sw.js
           grep -q '"start_url": "./?v=' manifest.webmanifest
       - name: Save only real shell changes
