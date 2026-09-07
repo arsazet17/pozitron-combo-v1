@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 
-const VERSION='XRAY-1.0.0';
+const VERSION='XRAY-1.2.0';
 const GRID_COLS=9;
 const MAX_NUMBER=80;
 const DIRS=[];
@@ -49,10 +49,22 @@ function scoreCandidates(model,analogs,calibration){const draws=model.draws,curr
  }
  const list=[...scores.values()].sort((a,b)=>b.score-a.score);const max=list[0]?.score||1;for(const x of list)x.confidence=x.score/max;return list;
 }
+
+function parseDMY(s){const m=String(s||'').match(/^(\d{2})\.(\d{2})\.(\d{2,4})$/);if(!m)return null;let y=Number(m[3]);if(y<100)y+=2000;const d=new Date(Date.UTC(y,Number(m[2])-1,Number(m[1])));return Number.isNaN(d.getTime())?null:d;}
+function fmtDMY(d){if(!(d instanceof Date)||Number.isNaN(d.getTime()))return null;return String(d.getUTCDate()).padStart(2,'0')+'.'+String(d.getUTCMonth()+1).padStart(2,'0')+'.'+String(d.getUTCFullYear()).slice(-2);}
+function inferNextSlot(draws,current){
+ const cur=current||draws?.at?.(-1);if(!cur)return {date:null,time:null};
+ // Most reliable source is the same time slot on previous days: use its observed successor.
+ for(let i=(draws?.length||0)-2;i>=0;i--){const d=draws[i],n=draws[i+1];if(!d||!n)continue;if(String(d.time||'')!==String(cur.time||''))continue;if(Number(n.draw)!==Number(d.draw)+1)continue;let dayDelta=0;const a=parseDMY(d.date),b=parseDMY(n.date);if(a&&b)dayDelta=Math.round((b-a)/86400000);const base=parseDMY(cur.date);if(base){base.setUTCDate(base.getUTCDate()+dayDelta);return {date:fmtDMY(base),time:n.time||null};}return {date:cur.date||null,time:n.time||null};}
+ // Fallback: reuse the latest observed inter-draw time gap.
+ if((draws?.length||0)>=2){const prev=draws.at(-2),pm=String(prev?.time||'').match(/^(\d{1,2}):(\d{2})$/),cm=String(cur.time||'').match(/^(\d{1,2}):(\d{2})$/);if(pm&&cm){let p=Number(pm[1])*60+Number(pm[2]),c=Number(cm[1])*60+Number(cm[2]),gap=c-p;if(gap<=0)gap+=1440;if(gap>0&&gap<=120){let t=c+gap,dd=Math.floor(t/1440);t%=1440;const base=parseDMY(cur.date);if(base){base.setUTCDate(base.getUTCDate()+dd);return {date:fmtDMY(base),time:String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')};}}}}
+ return {date:cur.date||null,time:null};
+}
+
 function movementLabel(dr,dc){if(dr===0&&dc===0)return 'сохранение клетки';const vert=dr<0?'вверх':dr>0?'вниз':'',hor=dc<0?'влево':dc>0?'вправо':'';const parts=[];if(vert)parts.push(`${Math.abs(dr)} ${vert}`);if(hor)parts.push(`${Math.abs(dc)} ${hor}`);return parts.join(' + ')||'без сдвига';}
 function analyze(draws,opts={}){if(!Array.isArray(draws)||draws.length<8)return {ok:false,error:'Для Рентгена нужно минимум 8 тиражей'};const clean=draws.filter(d=>Array.isArray(d?.balls)&&d.balls.length>=1).slice();if(clean.length<8)return {ok:false,error:'Недостаточно корректных тиражей'};const model=buildModel(clean),depth=opts.depth||chooseDepth(model),analogs=topAnalogs(model,depth,opts.analogLimit||24),moves=dominantMoves(model,depth,6);if(analogs.length<3)return {ok:false,error:'Устойчивых исторических аналогов пока недостаточно',depth,analogs};const scored=scoreCandidates(model,analogs,opts.calibration||{});const main=[],reserve=[];for(const x of scored){if(main.length<4 && x.confidence>=.34)main.push(x);else if(main.length>=2 && reserve.length<3 && x.confidence>=.18)reserve.push(x);if(main.length>=4&&reserve.length>=3)break;}if(main.length<2){for(const x of scored){if(!main.some(y=>y.n===x.n)&&main.length<2)main.push(x);}}
- const avgAnalog=analogs.reduce((s,x)=>s+x.similarity,0)/analogs.length;const signal=avgAnalog>=.80?'сильный':avgAnalog>=.68?'средний':'слабый';return {ok:true,version:VERSION,sourceDraw:clean.at(-1).draw,sourceDate:clean.at(-1).date,sourceTime:clean.at(-1).time,targetDraw:Number(clean.at(-1).draw)+1,depth,signal,analogScore:avgAnalog,analogs,moves:moves.map(x=>({...x,label:movementLabel(x.delta[0],x.delta[1])})),main,reserve,scored:scored.slice(0,20)};}
+ const avgAnalog=analogs.reduce((s,x)=>s+x.similarity,0)/analogs.length;const signal=avgAnalog>=.80?'сильный':avgAnalog>=.68?'средний':'слабый';const source=clean.at(-1),slot=inferNextSlot(clean,source);const wi=Math.max(0,clean.length-1-depth),windowStart=clean[wi]||clean[0];const trail=clean.slice(Math.max(0,clean.length-Math.min(depth+1,8))).map(d=>({draw:d.draw,date:d.date,time:d.time,column:Number(d.column)||null}));const analogDetails=analogs.slice(0,6).map(a=>{const d=clean[a.endIndex],n=clean[a.endIndex+1];return {...a,date:d?.date||null,time:d?.time||null,column:Number(d?.column)||null,nextDate:n?.date||null,nextTime:n?.time||null,nextColumn:Number(n?.column)||null};});return {ok:true,version:VERSION,sourceDraw:source.draw,sourceDate:source.date,sourceTime:source.time,sourceColumn:Number(source.column)||null,targetDraw:Number(source.draw)+1,targetDate:slot.date,targetTime:slot.time,depth,signal,analogScore:avgAnalog,windowStartDraw:windowStart?.draw||null,windowStartDate:windowStart?.date||null,windowStartTime:windowStart?.time||null,trail,analogs,analogDetails,moves:moves.map(x=>({...x,label:movementLabel(x.delta[0],x.delta[1])})),main,reserve,scored:scored.slice(0,20)};}
 function buildCalibration(archive){const stats={};for(const e of archive||[]){if(e?.status!=='settled'||!Array.isArray(e?.factBalls))continue;const fact=new Set(e.factBalls.map(Number));for(const p of [...(e.main||[]),...(e.reserve||[])]){const key=(p.dr??p.best?.dr??0)+','+(p.dc??p.best?.dc??0);const s=stats[key]||(stats[key]={tries:0,hits:0});s.tries++;if(fact.has(Number(p.n)))s.hits++;}}
  const out={};for(const [k,s] of Object.entries(stats)){const rate=(s.hits+1)/(s.tries+2);out[k]=.85+.30*rate;}return out;}
-return {VERSION,coord,numAt,analyze,buildCalibration,movementLabel};
+return {VERSION,coord,numAt,analyze,buildCalibration,movementLabel,inferNextSlot};
 });
