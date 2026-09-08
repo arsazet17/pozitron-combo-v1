@@ -1,196 +1,205 @@
 {
   "version": 1,
-  "generation": "327161-1788905265525",
-  "updatedAt": "2026-09-08T22:07:45.524Z",
+  "generation": "327162-1788906233184",
+  "updatedAt": "2026-09-08T22:23:53.184Z",
   "latestOfficial": {
-    "draw": 327161,
+    "draw": 327162,
     "date": "09.09.26",
-    "time": "01:02",
+    "time": "01:17",
     "column": 5,
     "balls": [
-      52,
-      58,
-      66,
-      29,
-      13,
-      15,
+      19,
       14,
-      25,
-      65,
       68,
-      20,
-      35,
-      57,
-      9,
+      28,
+      79,
+      15,
       45,
+      12,
+      4,
+      61,
+      60,
+      41,
+      20,
+      75,
+      77,
+      69,
+      23,
       80,
-      7,
-      30,
-      70,
-      67
+      18,
+      56
     ]
   },
   "forecast": {
-    "id": "xr-server-327161-1788905265524",
+    "id": "xr-server-327162-1788906233184",
     "status": "pending",
-    "createdAt": "2026-09-08T22:07:45.524Z",
+    "createdAt": "2026-09-08T22:23:53.184Z",
     "version": "XRAY-SERVER-1.0",
     "modelVersion": "XRAY-AI-2.0.1",
     "modelLatestDraw": 327120,
-    "sourceDraw": 327161,
+    "sourceDraw": 327162,
     "sourceDate": "09.09.26",
-    "sourceTime": "01:02",
+    "sourceTime": "01:17",
     "sourceColumn": 5,
     "current20": [
-      52,
-      58,
-      66,
-      29,
-      13,
-      15,
+      19,
       14,
-      25,
-      65,
       68,
-      20,
-      35,
-      57,
-      9,
+      28,
+      79,
+      15,
       45,
+      12,
+      4,
+      61,
+      60,
+      41,
+      20,
+      75,
+      77,
+      69,
+      23,
       80,
-      7,
-      30,
-      70,
-      67
+      18,
+      56
     ],
-    "targetDraw": 327162,
+    "targetDraw": 327163,
     "targetDate": "09.09.26",
-    "targetTime": "01:17",
+    "targetTime": "01:32",
     "predicted20": [
       2,
       8,
-      73,
       53,
       9,
+      73,
       36,
       25,
-      60,
-      5,
-      14,
       62,
+      5,
+      60,
       32,
       77,
-      19,
       74,
-      35,
+      19,
+      14,
+      28,
+      55,
       57,
       58,
-      28,
-      55
+      44
     ],
     "combo5": [
       2,
       8,
-      73,
       53,
-      9
+      9,
+      73
     ],
     "combo7": [
+      25,
       36,
       5,
+      57,
+      58,
       32,
-      25,
-      77,
-      14,
-      35
+      77
     ],
     "overlap": [
-      9,
-      25,
+      60,
+      77,
+      19,
       14,
-      35,
-      57,
-      58
+      28
     ],
     "transitions": [
       {
-        "from": 7,
+        "from": 4,
         "to": 2,
         "kind": "change"
       },
       {
-        "from": 13,
+        "from": 12,
         "to": 8,
         "kind": "change"
       },
       {
-        "from": 70,
-        "to": 73,
-        "kind": "change"
-      },
-      {
-        "from": 52,
+        "from": 56,
         "to": 53,
         "kind": "change"
       },
       {
-        "from": 30,
+        "from": 15,
+        "to": 9,
+        "kind": "change"
+      },
+      {
+        "from": 75,
+        "to": 73,
+        "kind": "change"
+      },
+      {
+        "from": 41,
         "to": 36,
         "kind": "change"
       },
       {
-        "from": 65,
-        "to": 60,
+        "from": 23,
+        "to": 25,
         "kind": "change"
       },
       {
-        "from": 15,
-        "to": 5,
-        "kind": "change"
-      },
-      {
-        "from": 66,
+        "from": 61,
         "to": 62,
         "kind": "change"
       },
       {
-        "from": 29,
-        "to": 32,
-        "kind": "change"
-      },
-      {
-        "from": 80,
-        "to": 77,
+        "from": 18,
+        "to": 5,
         "kind": "change"
       },
       {
         "from": 20,
-        "to": 19,
+        "to": 32,
         "kind": "change"
       },
       {
-        "from": 68,
+        "from": 79,
         "to": 74,
         "kind": "change"
       },
       {
         "from": 45,
-        "to": 28,
-        "kind": "change"
-      },
-      {
-        "from": 67,
         "to": 55,
         "kind": "change"
       },
       {
-        "from": 9,
-        "to": 9,
+        "from": 68,
+        "to": 57,
+        "kind": "change"
+      },
+      {
+        "from": 69,
+        "to": 58,
+        "kind": "change"
+      },
+      {
+        "from": 80,
+        "to": 44,
+        "kind": "change"
+      },
+      {
+        "from": 60,
+        "to": 60,
         "kind": "stay"
       },
       {
-        "from": 25,
-        "to": 25,
+        "from": 77,
+        "to": 77,
+        "kind": "stay"
+      },
+      {
+        "from": 19,
+        "to": 19,
         "kind": "stay"
       },
       {
@@ -199,24 +208,241 @@
         "kind": "stay"
       },
       {
-        "from": 35,
-        "to": 35,
-        "kind": "stay"
-      },
-      {
-        "from": 57,
-        "to": 57,
-        "kind": "stay"
-      },
-      {
-        "from": 58,
-        "to": 58,
+        "from": 28,
+        "to": 28,
         "kind": "stay"
       }
     ],
     "payoutVersion": "1.0.0"
   },
   "history": [
+    {
+      "id": "xr-server-327161-1788905265524",
+      "status": "settled",
+      "createdAt": "2026-09-08T22:07:45.524Z",
+      "version": "XRAY-SERVER-1.0",
+      "modelVersion": "XRAY-AI-2.0.1",
+      "modelLatestDraw": 327120,
+      "sourceDraw": 327161,
+      "sourceDate": "09.09.26",
+      "sourceTime": "01:02",
+      "sourceColumn": 5,
+      "current20": [
+        52,
+        58,
+        66,
+        29,
+        13,
+        15,
+        14,
+        25,
+        65,
+        68,
+        20,
+        35,
+        57,
+        9,
+        45,
+        80,
+        7,
+        30,
+        70,
+        67
+      ],
+      "targetDraw": 327162,
+      "targetDate": "09.09.26",
+      "targetTime": "01:17",
+      "predicted20": [
+        2,
+        8,
+        73,
+        53,
+        9,
+        36,
+        25,
+        60,
+        5,
+        14,
+        62,
+        32,
+        77,
+        19,
+        74,
+        35,
+        57,
+        58,
+        28,
+        55
+      ],
+      "combo5": [
+        2,
+        8,
+        73,
+        53,
+        9
+      ],
+      "combo7": [
+        36,
+        5,
+        32,
+        25,
+        77,
+        14,
+        35
+      ],
+      "overlap": [
+        9,
+        25,
+        14,
+        35,
+        57,
+        58
+      ],
+      "transitions": [
+        {
+          "from": 7,
+          "to": 2,
+          "kind": "change"
+        },
+        {
+          "from": 13,
+          "to": 8,
+          "kind": "change"
+        },
+        {
+          "from": 70,
+          "to": 73,
+          "kind": "change"
+        },
+        {
+          "from": 52,
+          "to": 53,
+          "kind": "change"
+        },
+        {
+          "from": 30,
+          "to": 36,
+          "kind": "change"
+        },
+        {
+          "from": 65,
+          "to": 60,
+          "kind": "change"
+        },
+        {
+          "from": 15,
+          "to": 5,
+          "kind": "change"
+        },
+        {
+          "from": 66,
+          "to": 62,
+          "kind": "change"
+        },
+        {
+          "from": 29,
+          "to": 32,
+          "kind": "change"
+        },
+        {
+          "from": 80,
+          "to": 77,
+          "kind": "change"
+        },
+        {
+          "from": 20,
+          "to": 19,
+          "kind": "change"
+        },
+        {
+          "from": 68,
+          "to": 74,
+          "kind": "change"
+        },
+        {
+          "from": 45,
+          "to": 28,
+          "kind": "change"
+        },
+        {
+          "from": 67,
+          "to": 55,
+          "kind": "change"
+        },
+        {
+          "from": 9,
+          "to": 9,
+          "kind": "stay"
+        },
+        {
+          "from": 25,
+          "to": 25,
+          "kind": "stay"
+        },
+        {
+          "from": 14,
+          "to": 14,
+          "kind": "stay"
+        },
+        {
+          "from": 35,
+          "to": 35,
+          "kind": "stay"
+        },
+        {
+          "from": 57,
+          "to": 57,
+          "kind": "stay"
+        },
+        {
+          "from": 58,
+          "to": 58,
+          "kind": "stay"
+        }
+      ],
+      "payoutVersion": "1.0.0",
+      "factDraw": 327162,
+      "factDate": "09.09.26",
+      "factTime": "01:17",
+      "factColumn": 5,
+      "factBalls": [
+        19,
+        14,
+        68,
+        28,
+        79,
+        15,
+        45,
+        12,
+        4,
+        61,
+        60,
+        41,
+        20,
+        75,
+        77,
+        69,
+        23,
+        80,
+        18,
+        56
+      ],
+      "combo5Hits": [],
+      "combo7Hits": [
+        77,
+        14
+      ],
+      "layerHits": [
+        60,
+        14,
+        77,
+        19,
+        28
+      ],
+      "combo5Payout": 0,
+      "combo7Payout": 0,
+      "settledAt": "2026-09-08T22:23:53.137Z"
+    },
     {
       "id": "xr-server-327160-1788903515779",
       "status": "settled",
