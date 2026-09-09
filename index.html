@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="93ed3826981c">
+<meta name="app-build" content="02a85efbb2f8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=93ed3826981c">
+<link rel="stylesheet" href="xray-v1.css?v=02a85efbb2f8">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -73,9 +73,9 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <div class="navSpacer"></div><div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=93ed3826981c"></script>
-<script src="xray-ui-v1.js?v=93ed3826981c"></script>
-<script src="xray-analog-columns-v1.js?v=93ed3826981c"></script>
+<script src="xray-engine-v1.js?v=02a85efbb2f8"></script>
+<script src="xray-ui-v1.js?v=02a85efbb2f8"></script>
+<script src="xray-analog-columns-v1.js?v=02a85efbb2f8"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>String(n).padStart(2,'0');
@@ -180,9 +180,9 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=93ed3826981c',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=02a85efbb2f8',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-search-v1.js?v=93ed3826981c"></script>
+<script src="combo-search-v1.js?v=02a85efbb2f8"></script>
 <script id="comboAutoUpdate">
 (()=>{
  let reloading=false;
