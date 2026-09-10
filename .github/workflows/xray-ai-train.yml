@@ -1,4 +1,4 @@
-name: XRAY AI 5→1 TRAIN
+name: XRAY STRUCTURE LIVE REBUILD
 
 on:
   workflow_dispatch:
@@ -7,20 +7,21 @@ on:
   push:
     branches: [main]
     paths:
-      - "train-xray-ai-v2.mjs"
+      - "xray-structure-engine-v4.mjs"
+      - "build-xray-runtime.mjs"
       - ".github/workflows/xray-ai-train.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: xray-ai-train
+  group: xray-structure-live
   cancel-in-progress: true
 
 jobs:
-  train:
+  rebuild:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,33 +29,26 @@ jobs:
           ref: main
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-      - name: Install TensorFlow.js Node
-        run: npm install --no-save @tensorflow/tfjs-node@4.22.0
-      - name: Train Attention LSTM 5→1
-        env:
-          XRAY_TRAIN_DRAWS: "2000"
-          XRAY_EPOCHS: "100"
-          XRAY_BATCH_SIZE: "8"
-        run: node train-xray-ai-v2.mjs
-      - name: Build first SERVER LIVE runtime
-        run: node build-xray-runtime.mjs
-      - name: Verify
+          node-version: "22"
+      - name: Verify XRAY V4 engine
         run: |
-          test -s xray-ai-model/model.json
-          test -s xray-ai-model/meta.json
-          test -s data/xray-runtime.json
-      - name: Save model + runtime
+          node --check xray-structure-engine-v4.mjs
+          node --check build-xray-runtime.mjs
+      - name: Build frozen runtime
+        run: node build-xray-runtime.mjs
+      - name: Verify runtime
+        run: test -s data/xray-runtime.json
+      - name: Save runtime
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add xray-ai-model data/xray-runtime.json
+          git config user.email "4189822+github-actions[bot]@users.noreply.github.com"
+          git add data/xray-runtime.json
           if git diff --cached --quiet; then
-            echo "XRAY unchanged"
+            echo "XRAY runtime unchanged"
             exit 0
           fi
-          git commit -m "XRAY AI · model + SERVER LIVE runtime"
+          git commit -m "XRAY STRUCTURE V4 · SERVER LIVE runtime"
           git pull --rebase origin main
           git push origin HEAD:main
