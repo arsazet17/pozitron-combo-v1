@@ -23,6 +23,12 @@ function lexSort(rows){return [...rows].sort((a,b)=>{const A=a.key||[],B=b.key||
 function topEdges(m,n=12){return [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k,strength])=>{const [from,to]=k.split('>').map(Number);return {from,to,strength:Number(strength.toFixed(4))}})}
 function avgPerDraw(c,k,w){return Number((get(c,k)/w).toFixed(3))}
 function topDifferent(pool,k,avoid,scoreFn){const avoidSet=new Set(avoid);const rows=pool.filter(n=>!avoidSet.has(n)).map(n=>({n,key:scoreFn(n)}));return lexSort(rows).slice(0,k).map(x=>x.n)}
+function topWithOverlapCap(pool,k,avoid,maxOverlap,scoreFn){
+  const avoidSet=new Set(avoid||[]), ranked=lexSort(pool.map(n=>({n,key:scoreFn(n)}))).map(x=>x.n), out=[];let overlap=0;
+  for(const n of ranked){if(out.includes(n))continue;const hit=avoidSet.has(n);if(hit&&overlap>=maxOverlap)continue;out.push(n);if(hit)overlap++;if(out.length===k)break}
+  if(out.length<k){for(const n of ranked){if(!out.includes(n)){out.push(n);if(out.length===k)break}}}
+  return out;
+}
 function uniq(arr){return [...new Set(arr.map(Number).filter(n=>n>=1&&n<=80))]}
 export function analyzeStructure(past){
   if(!Array.isArray(past)||past.length<20)throw new Error('XRAY STRUCTURE V4: нужно минимум 20 тиражей');
@@ -43,19 +49,30 @@ export function analyzeStructure(past){
   }
   const ranked=lexSort(rows).map(x=>x.n), predicted20=uniq(ranked.slice(0,20));
   const byNum=new Map(rows.map(x=>[x.n,x]));
-  const combo5A=predicted20.slice(0,5), combo7A=predicted20.slice(0,7);
   const vortexTargets=new Set(columnRank.slice(0,4).map(vortexNext));
-  const altKey=n=>{const x=byNum.get(n);return [Number(vortexTargets.has(x.column)),Number(extC.has(x.column)),Number(extL.has(x.level)),Number(x.ascSupport>0),x.ascSupport,Number(x.drawSupport>0),x.drawSupport,x.fresh,get(nc[5],n),get(nc[10],n),-n]};
-  let combo5B=topDifferent(predicted20,5,combo5A,altKey);if(combo5B.length<5)combo5B=uniq([...combo5B,...predicted20.filter(n=>!combo5A.includes(n))]).slice(0,5);
-  let combo7B=topDifferent(predicted20,7,combo7A,altKey);if(combo7B.length<7)combo7B=uniq([...combo7B,...predicted20.filter(n=>!combo7A.includes(n))]).slice(0,7);
+
+  // Четыре САМОСТОЯТЕЛЬНЫЕ структурные ветки. Ни одна семёрка больше не строится как "пятёрка + 2".
+  const ascKey=n=>{const x=byNum.get(n);return [Number(x.ascSupport>0),x.ascSupport,Number(topC.has(x.column)),Number(topL.has(x.level)),Number(x.drawSupport>0),x.drawSupport,x.fresh,get(nc[5],n),get(nc[10],n),-n]};
+  const vortexKey=n=>{const x=byNum.get(n);return [Number(vortexTargets.has(x.column)),Number(extC.has(x.column)),Number(x.drawSupport>0),x.drawSupport,Number(x.ascSupport>0),x.ascSupport,Number(extL.has(x.level)),x.fresh,get(nc[5],n),-n]};
+  const rootLevelKey=n=>{const x=byNum.get(n);return [Number(topC.has(x.column))+Number(topL.has(x.level)),Number(topC.has(x.column)),Number(topL.has(x.level)),Number(x.ascSupport>0),x.ascSupport,Number(x.drawSupport>0),x.drawSupport,x.fresh,get(nc[10],n),-n]};
+  const drawVortexKey=n=>{const x=byNum.get(n);return [Number(x.drawSupport>0),x.drawSupport,Number(vortexTargets.has(x.column)),Number(x.ascSupport>0),x.ascSupport,Number(extC.has(x.column)),Number(extL.has(x.level)),x.fresh,get(nc[5],n),-n]};
+
+  const combo5A=topWithOverlapCap(predicted20,5,[],0,ascKey);
+  let combo5B=topDifferent(predicted20,5,combo5A,vortexKey);
+  if(combo5B.length<5)combo5B=topWithOverlapCap(predicted20,5,combo5A,0,vortexKey);
+
+  // 7A считается отдельно и может пересечься с 5A максимум двумя узлами — никакого механического расширения 5A.
+  const combo7A=topWithOverlapCap(predicted20,7,combo5A,2,rootLevelKey);
+  // 7B — самостоятельная DRAW/Vortex ветка; с 7A держим максимум 2 общих узла, если 20-ка это позволяет.
+  const combo7B=topWithOverlapCap(predicted20,7,combo7A,2,drawVortexKey);
   const neighborFront=lexSort(rows.filter(x=>!lastSet.has(x.n)).map(x=>({n:x.n,key:[Number(x.ascSupport>0),x.ascSupport,Number(x.drawSupport>0),x.drawSupport,Number(topC.has(x.column)),Number(topL.has(x.level))]}))).slice(0,12).map(x=>x.n);
   return {
-    version:'XRAY-STRUCTURE-4.0',windows:WINDOWS,
+    version:'XRAY-STRUCTURE-4.1',windows:WINDOWS,
     concentrationColumns:columnRows,levelRows,columnRank,levelRank,
     vortex:{ring:VORTEX_RING,forward:Object.fromEntries(vf),reverse:Object.fromEntries(vr)},
     adjacency:{ascTop:topEdges(asc),drawTop:topEdges(draw)},neighborFront,
     ranked20:predicted20,combo5A,combo5B,combo7A,combo7B,
-    method:'TABLE→COLUMNS→LEVEL→ASC/DRAW→VORTEX→20→COMBOS'
+    method:'TABLE→COLUMNS→LEVEL→ASC/DRAW→VORTEX→20→4 INDEPENDENT COMBOS'
   };
 }
 export function movementEdges(current20,predicted20,past){
