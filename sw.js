@@ -1,4 +1,4 @@
-const CACHE='combo-keno-shell-b47c9e21d6a4';
+const CACHE='combo-keno-shell-de67c303a5b3';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./combo-presets-v1.json','./keno-payouts-v1.json','./combo-search-v1.js','./xray-engine-v1.js','./xray-ui-v1.js','./xray-analog-columns-v1.js','./xray-v1.css'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
