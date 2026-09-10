@@ -118,17 +118,14 @@ jobs:
             echo "Verified live data changed"
           fi
 
-      - name: Build XRAY SERVER LIVE runtime
+      - name: Build XRAY STRUCTURE SERVER LIVE runtime
         if: steps.live_data.outputs.changed == 'true'
         shell: bash
         run: |
-          set -e
-          if [ -s xray-ai-model/model.json ]; then
-            npm install --no-save --no-audit --no-fund @tensorflow/tfjs-node@4.22.0
-            node build-xray-runtime.mjs
-          else
-            echo "XRAY model is not trained yet — runtime build skipped"
-          fi
+          set -euo pipefail
+          node --check xray-structure-engine-v4.mjs
+          node --check build-xray-runtime.mjs
+          node build-xray-runtime.mjs
 
       - name: Commit only changed live data + XRAY runtime
         shell: bash
