@@ -1,0 +1,17 @@
+name: Structural routes analysis
+on:
+  push:
+    branches:
+      - analysis/structural-routes-20260911
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run structural routes analysis
+        run: node tools/structural-routes-analysis.mjs
