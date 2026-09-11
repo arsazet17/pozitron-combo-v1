@@ -11,7 +11,7 @@ const disk=Object.fromEntries(await Promise.all(names.map(async name=>[name,awai
 const tests=[];
 async function check(name,fn){await fn();tests.push(name);console.log('PASS '+name)}
 const n20=Array.from({length:20},(_,i)=>i+1);
-const forecast={sourceDraw:10,targetDraw:11,createdAt:'2026-01-01T00:00:00Z',engineVersion:'test',forecastFingerprint:'abc',predicted20:n20,current20:n20,combo5A:n20.slice(0,5),combo5B:n20.slice(5,10),combo7A:n20.slice(0,7),combo7B:n20.slice(7,14),movementEdges:[{from:1,to:2,type:'ASC'}]};
+const forecast={sourceDraw:10,targetDraw:11,createdAt:'2026-01-01T00:00:00Z',engineVersion:'test',forecastFingerprint:'abc',predicted20:[...n20.slice(1),21],current20:n20,combo5A:n20.slice(0,5),combo5B:n20.slice(5,10),combo7A:n20.slice(0,7),combo7B:n20.slice(7,14),structure:{},movementEdges:[...Array.from({length:12},()=>({from:2,to:21,type:'ASC'})),{from:1,to:21,type:'ASC'},{from:1,to:2,type:'ASC'},{from:2,to:2,type:'ASC'}]};
 const entry={...forecast,sourceDraw:9,targetDraw:10,factDraw:10,factBalls:n20,forecast20Hits:[1,2],combo5AHits:[1],combo5BHits:[],combo7AHits:[],combo7BHits:[],combo5Payout:40,combo5BPayout:0,combo7Payout:0,combo7BPayout:0,lateForecast:true,replacedForecast:true,statisticsEligible:false};
 let fixture={status:'live',generation:'a',forecast,history:[entry],latestOfficial:{draw:10,balls:n20}};
 let offline=false,width=0;const raf=[],events={},attrs={},children=[],observers={};
@@ -45,6 +45,15 @@ await check('UI hidden overlay waits for dimensions and redraws after activation
  width=200;observers.visibility();drawFrames();assert.equal(attrs.viewBox,'0 0 200 200');
  assert.equal(children.length,2);assert.equal(children[1].attrs['marker-end'],'url(#xrayArrow-asc)');
  width=300;observers.resize();events.resize();events.orientationchange();events['root:toggle']();drawFrames();assert.equal(attrs.viewBox,'0 0 300 300');
+});
+await check('UI arrows and movement list exclude retained numbers before the display limit',()=>{
+ const lines=children.filter(x=>x.attrs.class?.startsWith('xrayArrowLine'));
+ assert.equal(lines.length,1);
+ assert.equal(lines[0].attrs.x1,15);assert.equal(lines[0].attrs.x2,215);
+ assert(nodes.xrayRoot.innerHTML.includes('01→21 · ASC'));
+ assert(!nodes.xrayRoot.innerHTML.includes('02→21 · ASC'));
+ assert(!nodes.xrayRoot.innerHTML.includes('01→02 · ASC'));
+ assert(!nodes.xrayRoot.innerHTML.includes('02→02 · ASC'));
 });
 await check('UI shows stopped runtime and retains last good data offline',async()=>{
  fixture={...fixture,status:'error',anomaly:{code:'MISSING_TARGET_FACT',targetDraw:11,latestDraw:12}};
