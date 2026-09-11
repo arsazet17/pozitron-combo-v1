@@ -1,144 +1,62 @@
-name: COMBO v1 · Stoloto AUTO
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-concurrency:
-  group: update-combo-v1
-  cancel-in-progress: false
-
-jobs:
-  update:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-
-      - name: Fresh main
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
-
-      - name: Freeze target draw for this run
-        env:
-          COMBO_PUBLICATION_GRACE_MINUTES: "3"
-        run: |
-          python3 - <<'PY'
-          import os
-          from datetime import datetime, timezone, timedelta
-          S=['00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32','04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32','08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32','12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32','16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32','20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32']
-          grace=int(os.environ['COMBO_PUBLICATION_GRACE_MINUTES'])
-          now=datetime.now(timezone.utc)+timedelta(hours=3); cutoff=now-timedelta(minutes=grace)
-          due=[t for t in S if t<=cutoff.strftime('%H:%M')]
-          if due: due_date=cutoff.strftime('%d.%m.%y'); due_time=due[-1]
-          else:
-            prev=cutoff-timedelta(days=1); due_date=prev.strftime('%d.%m.%y'); due_time=S[-1]
-          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
-            f.write(f'COMBO_DUE_DATE={due_date}\nCOMBO_DUE_TIME={due_time}\n')
-          print('Frozen COMBO target:',due_date,due_time)
-          PY
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-combo-playwright-tfjs-1.54.2-4.22.0
-
-      - name: Install runtime packages
-        run: |
-          npm init -y
-          npm install --no-save --no-audit --no-fund playwright@1.54.2
-
-      - name: Use preinstalled GitHub Chrome
-        shell: bash
-        run: |
-          set -e
-          if command -v google-chrome >/dev/null 2>&1 || command -v google-chrome-stable >/dev/null 2>&1; then
-            python3 - <<'PY'
-          from pathlib import Path
-          p=Path("stoloto-combo-update-v1.mjs"); s=p.read_text(encoding="utf-8")
-          old="const browser=await chromium.launch({headless:true});"
-          new="const browser=await chromium.launch({headless:true,channel:'chrome'});"
-          if old not in s and new not in s: raise SystemExit("FAIL: browser launch line changed")
-          if old in s: p.write_text(s.replace(old,new,1),encoding="utf-8")
-          PY
-          else
-            npx playwright install --with-deps chromium
-          fi
-
-      - name: Read Stoloto until frozen due draw is caught
-        env:
-          STOLOTO_EMAIL: ${{ secrets.STOLOTO_EMAIL }}
-          STOLOTO_PASSWORD: ${{ secrets.STOLOTO_PASSWORD }}
-        run: |
-          set -u
-          success=0
-          for attempt in 1 2 3 4 5 6; do
-            echo "COMBO Stoloto attempt $attempt/6"
-            if node stoloto-combo-update-v1.mjs; then
-              if python3 - <<'PY'
-          import json,os,sys
-          from datetime import datetime
-          S=['00:02','00:17','00:32','01:02','01:17','01:32','02:02','02:17','02:32','03:02','03:32','04:02','04:17','04:32','05:02','05:17','05:32','06:02','06:17','06:32','07:02','07:32','08:02','08:17','08:32','09:02','09:17','09:32','10:02','10:17','10:32','11:02','11:32','12:02','12:17','12:32','13:02','13:17','13:32','14:02','14:17','14:32','15:02','15:32','16:02','16:17','16:32','17:02','17:17','17:32','18:02','18:17','18:32','19:02','19:32','20:02','20:17','20:32','21:02','21:17','21:32','22:02','22:17','22:32','23:02','23:32']
-          x=(json.load(open('combo-status-v1.json',encoding='utf-8')).get('latestOfficial') or {})
-          def key(ds,tm): return (datetime.strptime(ds,'%d.%m.%y').toordinal(),S.index(tm) if tm in S else -1)
-          try: ok=key(str(x.get('date')),str(x.get('time')))>=key(os.environ['COMBO_DUE_DATE'],os.environ['COMBO_DUE_TIME'])
-          except Exception: ok=False
-          print('latest=',x,'caught=',ok);sys.exit(0 if ok else 1)
-          PY
-              then success=1; break; fi
-            fi
-            if [ "$attempt" -lt 6 ]; then sleep 25; fi
-          done
-          if [ "$success" -ne 1 ]; then exit 1; fi
-
-      - name: Restore updater source before commit
-        run: git checkout -- stoloto-combo-update-v1.mjs
-
-      - name: Detect verified live-data changes
-        id: live_data
-        shell: bash
-        run: |
-          if git diff --quiet -- combo-history-v1.json combo-status-v1.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No new verified draw — XRAY rebuild is not needed"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Verified live data changed"
-          fi
-
-      - name: Build XRAY STRUCTURE SERVER LIVE runtime
-        if: steps.live_data.outputs.changed == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check xray-structure-engine-v4.mjs
-          node --check build-xray-runtime.mjs
-          node build-xray-runtime.mjs
-
-      - name: Commit only changed live data + XRAY runtime
-        shell: bash
-        run: |
-          if git diff --quiet -- combo-history-v1.json combo-status-v1.json data/xray-runtime.json; then
-            echo "No verified changes"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add combo-history-v1.json combo-status-v1.json
-          if [ -f data/xray-runtime.json ]; then git add data/xray-runtime.json; fi
-          git commit -m "COMBO v1 · Stoloto + XRAY SERVER LIVE"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+{
+  "name": "COMBO v1 · Stoloto AUTO",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "write"
+  },
+  "concurrency": {
+    "group": "combo-main-writer",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "publish": {
+      "if": "${{ github.ref == 'refs/heads/main' }}",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 35,
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "ref": "main"
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Install pinned official-source browser client",
+          "run": "npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.54.2"
+        },
+        {
+          "name": "Install browser",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Reconcile current main, test, then publish",
+          "run": "node .github/scripts/ci-publish.mjs data",
+          "env": {
+            "STOLOTO_EMAIL": "${{ secrets.STOLOTO_EMAIL }}",
+            "STOLOTO_PASSWORD": "${{ secrets.STOLOTO_PASSWORD }}"
+          }
+        },
+        {
+          "name": "Preserve failure diagnostics",
+          "if": "${{ failure() }}",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "combo-data-diagnostics",
+            "path": "data/xray-runtime.json\ndata/xray-runtime.guard.json",
+            "retention-days": 7,
+            "if-no-files-found": "ignore"
+          }
+        }
+      ]
+    }
+  }
+}

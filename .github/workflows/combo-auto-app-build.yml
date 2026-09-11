@@ -1,72 +1,73 @@
-name: COMBO · AUTO APP BUILD
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "index.html"
-      - "app-version.json"
-      - "manifest.webmanifest"
-      - "combo-search-v1.js"
-      - "combo-presets-v1.json"
-      - "keno-payouts-v1.json"
-      - "refresh-combo-build.mjs"
-      - "xray-engine-v1.js"
-      - "xray-ui-v1.js"
-      - "xray-analog-columns-v1.js"
-      - "xray-v1.css"
-      - "icon-192.png"
-      - "icon-512.png"
-
-permissions:
-  contents: write
-
-concurrency:
-  group: combo-auto-app-build
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-      - name: Fresh main
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Refresh build
-        run: node refresh-combo-build.mjs
-      - name: Check
-        run: |
-          node --check refresh-combo-build.mjs
-          node --check combo-search-v1.js
-          node --check xray-engine-v1.js
-          node --check xray-ui-v1.js
-          grep -q 'name="app-build"' index.html
-          grep -q 'xray-engine-v1.js' index.html
-          grep -q 'xray-ui-v1.js' index.html
-          grep -q 'data/xray-runtime.json' sw.js
-          grep -q 'combo-keno-shell-' sw.js
-          grep -q '"start_url": "./?v=' manifest.webmanifest
-      - name: Save only real shell changes
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- index.html manifest.webmanifest sw.js; then
-            echo "APP BUILD unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html manifest.webmanifest sw.js
-          git commit -m "COMBO · AUTO APP BUILD"
-          git pull --rebase origin main
-          git push origin HEAD:main
+{
+  "name": "COMBO · AUTO APP BUILD",
+  "on": {
+    "workflow_dispatch": {},
+    "push": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "index.html",
+        "app-version.json",
+        "manifest.webmanifest",
+        "sw.js",
+        "combo-search-v1.js",
+        "combo-presets-v1.json",
+        "keno-payouts-v1.json",
+        "refresh-combo-build.mjs",
+        "xray-engine-v1.js",
+        "xray-structure-engine-v4.mjs",
+        "xray-ui-v1.js",
+        "xray-analog-columns-v1.js",
+        "xray-v1.css",
+        "icon-192.png",
+        "icon-512.png",
+        ".github/workflows/combo-auto-app-build.yml"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "write"
+  },
+  "concurrency": {
+    "group": "combo-main-writer",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "publish": {
+      "if": "${{ github.ref == 'refs/heads/main' }}",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 35,
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "ref": "main"
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Reconcile current main, test, then publish",
+          "run": "node .github/scripts/ci-publish.mjs app"
+        },
+        {
+          "name": "Preserve failure diagnostics",
+          "if": "${{ failure() }}",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "combo-app-diagnostics",
+            "path": "data/xray-runtime.json\ndata/xray-runtime.guard.json",
+            "retention-days": 7,
+            "if-no-files-found": "ignore"
+          }
+        }
+      ]
+    }
+  }
+}

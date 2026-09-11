@@ -1,0 +1,100 @@
+{
+  "name": "COMBO · XRAY lifecycle and integration checks",
+  "on": {
+    "workflow_dispatch": {},
+    "pull_request": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "xray-structure-engine-v4.mjs",
+        "build-xray-runtime.mjs",
+        "xray-runtime-core.mjs",
+        "validate-xray-runtime.mjs",
+        "self-test-*.mjs",
+        "xray-ui-v1.js",
+        "xray-v1.css",
+        "keno-payouts-v1.json",
+        "combo-history-v1.json",
+        "data/xray-runtime.json",
+        "data/xray-runtime.guard.json",
+        "data/xray-recovery*.json",
+        "index.html",
+        "sw.js",
+        "manifest.webmanifest",
+        "app-version.json",
+        "refresh-combo-build.mjs",
+        ".github/workflows/**",
+        ".github/scripts/**",
+        "xray-runtime-io.mjs",
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.cjs"
+      ]
+    },
+    "push": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "xray-structure-engine-v4.mjs",
+        "build-xray-runtime.mjs",
+        "xray-runtime-core.mjs",
+        "validate-xray-runtime.mjs",
+        "self-test-*.mjs",
+        "xray-ui-v1.js",
+        "xray-v1.css",
+        "keno-payouts-v1.json",
+        "combo-history-v1.json",
+        "data/xray-runtime.json",
+        "data/xray-runtime.guard.json",
+        "data/xray-recovery*.json",
+        "index.html",
+        "sw.js",
+        "manifest.webmanifest",
+        "app-version.json",
+        "refresh-combo-build.mjs",
+        ".github/workflows/**",
+        ".github/scripts/**",
+        "xray-runtime-io.mjs",
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.cjs"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "checks": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 15,
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Syntax, lifecycle, frozen, payouts, UI/PWA and workflow tests",
+          "run": "node .github/scripts/check-stage1.mjs"
+        },
+        {
+          "name": "Validate against the previous published runtime",
+          "env": {
+            "COMBO_BASE_SHA": "${{ github.event.pull_request.base.sha || github.event.before || '' }}"
+          },
+          "run": "node .github/scripts/check-published-baseline.mjs"
+        }
+      ]
+    }
+  }
+}
