@@ -117,7 +117,7 @@ async function loadFast(){
       if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');
       d.sort((a,b)=>a.draw-b.draw);
       const received=Number(d.at(-1)?.draw||0);
-      if(official && received<official)throw new Error(`История ещё не догнала status: ${received}<${official}`);
+      if(official && received<official)throw new Error('История ещё не догнала status: '+received+'<'+official);
       DRAWS=d;
       await saveDrawCache(DRAWS);
       paintBaseAfterDraws();

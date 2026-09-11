@@ -1,7 +1,21 @@
-const CACHE='combo-keno-shell-de67c303a5b3';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./combo-presets-v1.json','./keno-payouts-v1.json','./combo-search-v1.js','./xray-engine-v1.js','./xray-ui-v1.js','./xray-analog-columns-v1.js','./xray-v1.css'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);
-if(u.pathname.endsWith('/combo-history-v1.json')||u.pathname.endsWith('/combo-status-v1.json')||u.pathname.endsWith('/data/xray-runtime.json')||u.pathname.includes('/xray-ai-model/')){e.respondWith(fetch(new Request(e.request,{cache:'no-store'})));return}
-if(u.origin!==self.location.origin)return;e.respondWith(fetch(new Request(e.request,{cache:'no-store'})).then(r=>{const c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c)).catch(()=>{});return r}).catch(()=>caches.match(e.request)))});
+'use strict';
+const BUILD='5a9ce5e2d395';
+const CACHE_PREFIX='combo-keno-shell-';
+const CACHE=CACHE_PREFIX+BUILD;
+const SHELL=['./','./index.html','./?v='+BUILD,'./manifest.webmanifest?v='+BUILD,'./icon-192.png','./icon-512.png','./combo-search-v1.js?v='+BUILD,'./xray-engine-v1.js?v='+BUILD,'./xray-ui-v1.js?v='+BUILD,'./xray-analog-columns-v1.js?v='+BUILD,'./xray-v1.css?v='+BUILD];
+const SCOPE=new URL(self.registration.scope);
+const SHELL_URLS=new Set(SHELL.map(path=>new URL(path,SCOPE).href));
+function liveData(url){return /\/(?:combo-history-v1|combo-status-v1|combo-presets-v1|keno-payouts-v1|app-version)\.json$/.test(url.pathname)||url.pathname.startsWith(new URL('./data/',SCOPE).pathname)||url.pathname.includes('/xray-ai-model/')}
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{
+ if(event.request.method!=='GET')return;
+ const url=new URL(event.request.url);
+ if(url.origin!==SCOPE.origin||!url.pathname.startsWith(SCOPE.pathname))return;
+ const network=()=>fetch(new Request(event.request,{cache:'no-store'}));
+ if(liveData(url)){event.respondWith(network());return}
+ if(event.request.mode==='navigate'){event.respondWith(network().catch(async()=>{const cache=await caches.open(CACHE),shell=await cache.match(new URL('./index.html',SCOPE).href);return shell||Response.error()}));return}
+ if(SHELL_URLS.has(url.href)){event.respondWith(caches.open(CACHE).then(async cache=>(await cache.match(event.request))||network()));return}
+ // Unknown and old-build URLs are never populated into this build's cache.
+ event.respondWith(network());
+});

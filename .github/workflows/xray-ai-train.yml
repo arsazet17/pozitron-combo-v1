@@ -1,54 +1,83 @@
-name: XRAY STRUCTURE LIVE REBUILD
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "17 2 * * *"
-  push:
-    branches: [main]
-    paths:
-      - "xray-structure-engine-v4.mjs"
-      - "build-xray-runtime.mjs"
-      - ".github/workflows/xray-ai-train.yml"
-
-permissions:
-  contents: write
-
-concurrency:
-  group: xray-structure-live
-  cancel-in-progress: true
-
-jobs:
-  rebuild:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Verify XRAY V4 engine
-        run: |
-          node --check xray-structure-engine-v4.mjs
-          node --check build-xray-runtime.mjs
-      - name: Build frozen runtime
-        run: node build-xray-runtime.mjs
-      - name: Verify runtime
-        run: test -s data/xray-runtime.json
-      - name: Save runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "4189822+github-actions[bot]@users.noreply.github.com"
-          git add data/xray-runtime.json
-          if git diff --cached --quiet; then
-            echo "XRAY runtime unchanged"
-            exit 0
-          fi
-          git commit -m "XRAY STRUCTURE V4 · SERVER LIVE runtime"
-          git pull --rebase origin main
-          git push origin HEAD:main
+{
+  "name": "XRAY STRUCTURE LIVE REBUILD",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "resume_live_after_gap": {
+          "description": "Explicitly resume after recording missed unpublished forecasts; never backfill old predictions",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      }
+    },
+    "schedule": [
+      {
+        "cron": "17 2 * * *"
+      }
+    ],
+    "push": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "xray-structure-engine-v4.mjs",
+        "build-xray-runtime.mjs",
+        "xray-runtime-core.mjs",
+        "xray-runtime-io.mjs",
+        "validate-xray-runtime.mjs",
+        "keno-payouts-v1.json",
+        "combo-history-v1.json",
+        ".github/workflows/xray-ai-train.yml",
+        ".github/scripts/**"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "write"
+  },
+  "concurrency": {
+    "group": "combo-main-writer",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "publish": {
+      "if": "${{ github.ref == 'refs/heads/main' }}",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 35,
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "ref": "main"
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Reconcile current main, test, then publish",
+          "run": "node .github/scripts/ci-publish.mjs runtime",
+          "env": {
+            "XRAY_RESUME_LIVE_AFTER_GAP": "${{ github.event_name == 'workflow_dispatch' && inputs.resume_live_after_gap && 'true' || 'false' }}"
+          }
+        },
+        {
+          "name": "Preserve failure diagnostics",
+          "if": "${{ failure() }}",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "combo-runtime-diagnostics",
+            "path": "data/xray-runtime.json\ndata/xray-runtime.guard.json",
+            "retention-days": 7,
+            "if-no-files-found": "ignore"
+          }
+        }
+      ]
+    }
+  }
+}
