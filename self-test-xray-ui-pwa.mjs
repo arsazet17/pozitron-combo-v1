@@ -71,7 +71,7 @@ await check('PWA build ID, shell queries and manifest are consistent',()=>{
 const handlers={},deleted=[],networkCalls=[];let networkOffline=true,cachedShell=new Response('offline-shell'),cachedAsset=new Response('offline-js'),added=[];
 const cacheMock={async addAll(list){added=list},async match(req){const url=typeof req==='string'?req:req.url;return url.endsWith('/index.html')?cachedShell:url.includes('xray-ui-v1.js?v='+build)?cachedAsset:undefined}};
 let activated=0,claimed=0;
-const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{activated++},clients:{claim:async()=>{claimed++}},addEventListener(type,fn){handlers[type]=fn}};
+const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{activated++},clients:{claim:async()=>{claimed++},matchAll:async()=>[]},addEventListener(type,fn){handlers[type]=fn}};
 const cacheStorage={open:async()=>cacheMock,keys:async()=>['other-app-cache','combo-keno-shell-old','combo-keno-shell-'+build],delete:async key=>{deleted.push(key);return true}};
 new Function('self','caches','fetch','URL','Request','Response',sw)(selfMock,cacheStorage,async req=>{networkCalls.push(req);if(networkOffline)throw new Error('offline');return new Response('live')},URL,Request,Response);
 async function eventDone(name){let promise;handlers[name]({waitUntil(p){promise=p}});await promise}
@@ -116,15 +116,42 @@ await check('APP BUILD changes when installed mathematical engine or UI changes'
   for(const output of ['index.html','sw.js','manifest.webmanifest','app-version.json'])assert.equal(again[output],changed[output],file+': repeated build');
  }
 });
-await check('PWA activation reloads once; returning to the phone app checks for updates',async()=>{
+await check('PWA checks app-version no-store, reloads once per build and retries offline',async()=>{
  const code=index.match(/<script id="comboAutoUpdate">([\s\S]*?)<\/script>/)[1];
- const callbacks={};let reloads=0,updates=0;
- const worker={addEventListener:(name,fn)=>{callbacks[name]=fn},getRegistration:async()=>({update:async()=>{updates++}})};
- new Function('navigator','location','document','addEventListener','setInterval','setTimeout',code)(
-  {serviceWorker:worker},{reload:()=>{reloads++}},
-  {hidden:false,addEventListener:(name,fn)=>{callbacks[name]=fn}},
-  (name,fn)=>{callbacks[name]=fn},()=>{},()=>{});
- callbacks.controllerchange();callbacks.controllerchange();assert.equal(reloads,1);
- await callbacks.focus();await callbacks.pageshow();assert.equal(updates,2);
+ const callbacks={},requests=[],deleted=[],replaced=[],storage=new Map();
+ let loaded='9ff2db6d7075',offline=false,registers=0;
+ const active={state:'activated',scriptURL:scope+'sw.js?v='+build};
+ const reg={active,update:async()=>{}};
+ const navigatorMock={serviceWorker:{
+  register:async(url,options)=>{registers++;assert.equal(options.updateViaCache,'none');return reg},
+  addEventListener:(name,fn)=>{callbacks[name]=fn}
+ }};
+ const locationMock={href:scope+'?v=9ff2db6d7075',replace:url=>{replaced.push(url);locationMock.href=url}};
+ const session={getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)};
+ const fetchMock=async(url,options)=>{
+  requests.push({url:String(url),cache:options.cache});
+  if(offline)throw new Error('offline');
+  return {ok:true,json:async()=>({version:version.version,build}),text:async()=>index};
+ };
+ const run=()=>new Function('navigator','location','document','window','caches','fetch','sessionStorage','URL','history','addEventListener','setInterval','setTimeout','clearTimeout','console',code)(
+  navigatorMock,locationMock,
+  {hidden:false,querySelector:()=>({content:loaded}),addEventListener:(name,fn)=>{callbacks[name]=fn}},
+  {caches:{}},{keys:async()=>['other-app','combo-keno-shell-9ff2db6d7075','combo-keno-shell-'+build],delete:async key=>{deleted.push(key)}},
+  fetchMock,session,URL,{replaceState:(_a,_b,url)=>{locationMock.href=url}},(name,fn)=>{callbacks[name]=fn},()=>{},setTimeout,clearTimeout,{warn(){}});
+ const settle=async()=>{for(let i=0;i<100;i++)await Promise.resolve()};
+ run();await settle();
+ assert.equal(replaced.length,1);assert.equal(new URL(replaced[0]).searchParams.get('v'),build);
+ assert.equal(registers,1);assert.deepEqual(deleted,['combo-keno-shell-9ff2db6d7075']);
+ assert(requests.every(r=>r.cache==='no-store'));assert(requests.some(r=>r.url.includes('app-version.json')));
+ await callbacks.focus();await callbacks.pageshow();assert.equal(replaced.length,1);
+ // Even if a server returns old HTML at the new URL, do not loop after navigation.
+ run();await settle();assert.equal(replaced.length,1);
+ loaded=build;run();await settle();const before=requests.length;
+ await callbacks.focus();await callbacks.pageshow();await callbacks.visibilitychange();
+ assert(requests.length>=before+3);assert.equal(replaced.length,1);
+ // No reload/cache deletion on network failure; coming online retries automatically.
+ storage.clear();loaded='9ff2db6d7075';locationMock.href=scope+'?v=9ff2db6d7075';
+ offline=true;run();await settle();assert.equal(replaced.length,1);
+ offline=false;await callbacks.online();assert.equal(replaced.length,2);
 });
 console.log('XRAY UI / PWA PASS '+tests.length+' checks');
