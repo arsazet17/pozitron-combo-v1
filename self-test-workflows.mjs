@@ -18,7 +18,7 @@ for (const name of names) {
     continue;
   }
   if (w.permissions.contents === 'write') {
-    assert.equal(w.concurrency.group, 'combo-main-writer');
+    assert.equal(w.concurrency.group, name === 'combo-auto-app-build.yml' ? 'combo-app-writer' : 'combo-main-writer');
     assert.equal(w.concurrency['cancel-in-progress'], false);
     const jobs = Object.values(w.jobs);
     assert.equal(jobs.length, 1);

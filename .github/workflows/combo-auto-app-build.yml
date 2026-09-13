@@ -33,7 +33,7 @@
     "contents": "write"
   },
   "concurrency": {
-    "group": "combo-main-writer",
+    "group": "combo-app-writer",
     "cancel-in-progress": false
   },
   "jobs": {
