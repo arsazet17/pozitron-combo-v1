@@ -7,6 +7,7 @@ const SCOPE=new URL(self.registration.scope);
 const SHELL_URLS=new Set(SHELL.map(path=>new URL(path,SCOPE).href));
 function liveData(url){return /\/(?:combo-history-v1|combo-search-log-v1|combo-status-v1|combo-presets-v1|keno-payouts-v1|app-version)\.json$/.test(url.pathname)||url.pathname.startsWith(new URL('./data/',SCOPE).pathname)||url.pathname.includes('/xray-ai-model/')}
 async function migrateClients(){
+ if(!self.clients||typeof self.clients.matchAll!=='function')return;
  const target=new URL('./',SCOPE);
  target.searchParams.set('v',BUILD);
  target.searchParams.set('_sw_migrate',String(Date.now()));
