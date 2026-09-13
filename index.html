@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="03907be87d68">
-<link rel="manifest" href="manifest.webmanifest?v=03907be87d68">
+<meta name="app-build" content="c72a8a49810f">
+<link rel="manifest" href="manifest.webmanifest?v=c72a8a49810f">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=03907be87d68">
+<link rel="stylesheet" href="xray-v1.css?v=c72a8a49810f">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -31,7 +31,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.6</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.7</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -73,9 +73,9 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <div class="navSpacer"></div><div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=03907be87d68"></script>
-<script src="xray-ui-v1.js?v=03907be87d68"></script>
-<script src="xray-analog-columns-v1.js?v=03907be87d68"></script>
+<script src="xray-engine-v1.js?v=c72a8a49810f"></script>
+<script src="xray-ui-v1.js?v=c72a8a49810f"></script>
+<script src="xray-analog-columns-v1.js?v=c72a8a49810f"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>String(n).padStart(2,'0');
@@ -180,17 +180,78 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=03907be87d68',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-search-v1.js?v=03907be87d68"></script>
+<script src="combo-search-v1.js?v=c72a8a49810f"></script>
 <script id="comboAutoUpdate">
 (()=>{
- let reloading=false;
- const check=async()=>{try{if(!('serviceWorker' in navigator))return;const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update();}catch(e){console.warn('COMBO auto update',e)}};
- if('serviceWorker' in navigator){
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloading)return;reloading=true;location.reload();});
-  setInterval(check,600000);addEventListener('focus',check);addEventListener('pageshow',check);document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});setTimeout(check,1500);
+ const current=document.querySelector('meta[name="app-build"]').content;
+ const base=new URL('./',location.href);
+ const reloadKey='combo-app-reload:'+base.pathname;
+ let busy=false,navigating=false,registered=false;
+ const registerCurrent=()=>navigator.serviceWorker.register('sw.js?v=c72a8a49810f',{updateViaCache:'none'});
+ function alreadyReloaded(build){
+  if(new URL(location.href).searchParams.get('v')===build)return true;
+  try{return sessionStorage.getItem(reloadKey)===build}catch{return false}
  }
+ function waitForActive(reg,build){
+  const matches=worker=>worker&&worker.state==='activated'&&new URL(worker.scriptURL).searchParams.get('v')===build;
+  if(matches(reg.active))return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+   const workers=[reg.installing,reg.waiting,reg.active].filter(Boolean);
+   const done=()=>{clearTimeout(timer);workers.forEach(w=>w.removeEventListener('statechange',changed))};
+   const changed=()=>{if(matches(reg.active)||workers.some(matches)){done();resolve()}};
+   const timer=setTimeout(()=>{done();reject(new Error('SW activation timeout'))},15000);
+   workers.forEach(w=>w.addEventListener('statechange',changed));
+   if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
+   changed();
+  });
+ }
+ const check=async()=>{
+  if(busy||navigating||document.hidden)return;
+  busy=true;
+  try{
+   const versionURL=new URL('app-version.json',base);
+   versionURL.searchParams.set('_app_check',Date.now());
+   const response=await fetch(versionURL,{cache:'no-store'});
+   if(!response.ok)throw new Error('App version HTTP '+response.status);
+   const {build}=await response.json();
+   if(!/^[a-f0-9]{12}$/.test(build))throw new Error('Invalid app build');
+   if(build===current){
+    const url=new URL(location.href);
+    if(url.searchParams.has('v')&&url.searchParams.get('v')!==build){
+     url.searchParams.set('v',build);history.replaceState(null,'',url.href);
+    }
+    if('serviceWorker' in navigator&&!registered){const reg=await registerCurrent();registered=true;await reg.update()}
+    return;
+   }
+   // A failed/stale navigation must never produce a reload loop.
+   if(alreadyReloaded(build))return;
+   const target=new URL('./',base);target.searchParams.set('v',build);
+   const html=await fetch(target,{cache:'no-store'});
+   if(!html.ok||!(await html.text()).includes('name="app-build" content="'+build+'"'))return;
+   if('serviceWorker' in navigator){
+    const reg=await navigator.serviceWorker.register(new URL('sw.js?v='+build,base).href,{updateViaCache:'none'});
+    await reg.update();
+    await waitForActive(reg,build);
+   }
+   if('caches' in window){
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k.startsWith('combo-keno-shell-')&&k!=='combo-keno-shell-'+build).map(k=>caches.delete(k)));
+   }
+   navigating=true;
+   try{sessionStorage.setItem(reloadKey,build)}catch{}
+   location.replace(target.href);
+  }catch(e){console.warn('COMBO app update',e)}finally{busy=false}
+ };
+ if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',check);
+  navigator.serviceWorker.addEventListener('message',event=>{
+   if(event.data?.type==='COMBO_UPDATE_CLIENT')event.ports[0]?.postMessage({managed:true});
+  });
+ }
+ addEventListener('load',check);addEventListener('focus',check);addEventListener('pageshow',check);addEventListener('online',check);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)return check()});
+ setInterval(check,600000);check();
 })();
 </script>
 </body></html>

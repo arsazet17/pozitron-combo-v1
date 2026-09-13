@@ -34,7 +34,8 @@
     },
     "push": {
       "branches": [
-        "main"
+        "main",
+        "codex/pwa-delivery-check"
       ],
       "paths": [
         "xray-structure-engine-v4.mjs",
@@ -93,6 +94,14 @@
             "COMBO_BASE_SHA": "${{ github.event.pull_request.base.sha || github.event.before || '' }}"
           },
           "run": "node .github/scripts/check-published-baseline.mjs"
+        },
+        {
+          "name": "Install pinned PWA test browser",
+          "run": "npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.54.2\nnpx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Real Chromium Android PWA upgrade from published v4.3.1",
+          "run": "node self-test-pwa-upgrade.mjs"
         }
       ]
     }
