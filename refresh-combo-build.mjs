@@ -12,7 +12,13 @@ let html=await fs.readFile(INDEX,'utf8');
 const manifest=JSON.parse(await fs.readFile(MANIFEST,'utf8'));
 html=html.replace(/Версия v\d+\.\d+\.\d+/g,`Версия v${version}`);
 function versionAssets(text,value){for(const file of [...ASSETS,'manifest.webmanifest']){const escaped=file.replace(/\./g,'\\.');text=text.replace(new RegExp('('+escaped+')(?:\\?v=[^"\\\'\\s<>]+)?(?=["\\\'])','g'),'$1?v='+value)}return text}
-function normalizedHTML(text){return versionAssets(text,'BUILD').replace(/(<meta\s+name=["']app-build["']\s+content=["'])[^"']*(["'])/i,'$1BUILD$2').replace(/serviceWorker\.register\(['"]sw\.js(?:\?v=[^'"]*)?['"]/g,"serviceWorker.register('sw.js?v=BUILD'")}
+function stripVersionOwner(text){return text.replace(/\n?<script id=["']appVersionOwner["']>[\s\S]*?<\/script>/g,'')}
+function normalizedHTML(text){return versionAssets(stripVersionOwner(text),'BUILD').replace(/(<meta\s+name=["']app-build["']\s+content=["'])[^"']*(["'])/i,'$1BUILD$2').replace(/serviceWorker\.register\(['"]sw\.js(?:\?v=[^'"]*)?['"]/g,"serviceWorker.register('sw.js?v=BUILD'")}
+function installVersionOwner(text,value){
+ text=stripVersionOwner(text);
+ const script=`<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v${value}'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>`;
+ return text.replace(/(<script\s+src=["']combo-search-v1\.js(?:\?v=[^"']*)?["']><\/script>)/i,'$1\n'+script);
+}
 const normalizedManifest={...manifest,start_url:'./?v=BUILD',scope:'./'};
 async function fingerprint(){
  const hash=crypto.createHash('sha256').update(normalizedHTML(html)).update(JSON.stringify(normalizedManifest)).update(version);
@@ -28,6 +34,7 @@ if(build!==appVersion.build){
  build=await fingerprint();
 }
 html=versionAssets(html,build);
+html=installVersionOwner(html,version);
 if(!/<meta\s+name=["']app-build["']/i.test(html))throw new Error('Missing app-build meta');
 html=html.replace(/(<meta\s+name=["']app-build["']\s+content=["'])[^"']*(["'])/i,'$1'+build+'$2');
 if(!html.includes("updateViaCache:'none'"))throw new Error('Missing uncached Service Worker registration');
