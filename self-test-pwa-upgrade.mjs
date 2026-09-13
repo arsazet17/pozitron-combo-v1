@@ -5,8 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { chromium, devices } from 'playwright';
 
 // Real published v4.3.1 files, including its original bootstrap and Service Worker.
-const legacyRef='d83e480002aac13bd33c3fbfcbc3836f34f9b299';
-const legacyBuild='9ff2db6d7075';
+const legacyRef='99f8cd8b22fddbd81089db9f836edb208b635a90';
+const legacyBuild='1c41849b5328';
 const release=JSON.parse(await fs.readFile('app-version.json','utf8'));
 const nextBuild='abcdef012345';
 const parts=release.version.split('.').map(Number);parts[2]++;

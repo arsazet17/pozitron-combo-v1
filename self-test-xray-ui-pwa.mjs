@@ -119,14 +119,14 @@ await check('APP BUILD changes when installed mathematical engine or UI changes'
 await check('PWA checks app-version no-store, reloads once per build and retries offline',async()=>{
  const code=index.match(/<script id="comboAutoUpdate">([\s\S]*?)<\/script>/)[1];
  const callbacks={},requests=[],deleted=[],replaced=[],storage=new Map();
- let loaded='9ff2db6d7075',offline=false,registers=0;
+ let loaded='1c41849b5328',offline=false,registers=0;
  const active={state:'activated',scriptURL:scope+'sw.js?v='+build};
  const reg={active,update:async()=>{}};
  const navigatorMock={serviceWorker:{
   register:async(url,options)=>{registers++;assert.equal(options.updateViaCache,'none');return reg},
   addEventListener:(name,fn)=>{callbacks[name]=fn}
  }};
- const locationMock={href:scope+'?v=9ff2db6d7075',replace:url=>{replaced.push(url);locationMock.href=url}};
+ const locationMock={href:scope+'?v=1c41849b5328',replace:url=>{replaced.push(url);locationMock.href=url}};
  const session={getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)};
  const fetchMock=async(url,options)=>{
   requests.push({url:String(url),cache:options.cache});
@@ -136,12 +136,12 @@ await check('PWA checks app-version no-store, reloads once per build and retries
  const run=()=>new Function('navigator','location','document','window','caches','fetch','sessionStorage','URL','history','addEventListener','setInterval','setTimeout','clearTimeout','console',code)(
   navigatorMock,locationMock,
   {hidden:false,querySelector:()=>({content:loaded}),addEventListener:(name,fn)=>{callbacks[name]=fn}},
-  {caches:{}},{keys:async()=>['other-app','combo-keno-shell-9ff2db6d7075','combo-keno-shell-'+build],delete:async key=>{deleted.push(key)}},
+  {caches:{}},{keys:async()=>['other-app','combo-keno-shell-1c41849b5328','combo-keno-shell-'+build],delete:async key=>{deleted.push(key)}},
   fetchMock,session,URL,{replaceState:(_a,_b,url)=>{locationMock.href=url}},(name,fn)=>{callbacks[name]=fn},()=>{},setTimeout,clearTimeout,{warn(){}});
  const settle=async()=>{for(let i=0;i<100;i++)await Promise.resolve()};
  run();await settle();
  assert.equal(replaced.length,1);assert.equal(new URL(replaced[0]).searchParams.get('v'),build);
- assert.equal(registers,1);assert.deepEqual(deleted,['combo-keno-shell-9ff2db6d7075']);
+ assert.equal(registers,1);assert.deepEqual(deleted,['combo-keno-shell-1c41849b5328']);
  assert(requests.every(r=>r.cache==='no-store'));assert(requests.some(r=>r.url.includes('app-version.json')));
  await callbacks.focus();await callbacks.pageshow();assert.equal(replaced.length,1);
  // Even if a server returns old HTML at the new URL, do not loop after navigation.
@@ -150,7 +150,7 @@ await check('PWA checks app-version no-store, reloads once per build and retries
  await callbacks.focus();await callbacks.pageshow();await callbacks.visibilitychange();
  assert(requests.length>=before+3);assert.equal(replaced.length,1);
  // No reload/cache deletion on network failure; coming online retries automatically.
- storage.clear();loaded='9ff2db6d7075';locationMock.href=scope+'?v=9ff2db6d7075';
+ storage.clear();loaded='1c41849b5328';locationMock.href=scope+'?v=1c41849b5328';
  offline=true;run();await settle();assert.equal(replaced.length,1);
  offline=false;await callbacks.online();assert.equal(replaced.length,2);
 });
