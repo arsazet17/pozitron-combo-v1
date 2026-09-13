@@ -6,8 +6,8 @@ const read=file=>fs.readFile(file,'utf8');
 const ui=await read('xray-ui-v1.js'),index=await read('index.html'),sw=await read('sw.js'),buildScript=await read('refresh-combo-build.mjs');
 const manifest=JSON.parse(await read('manifest.webmanifest')),version=JSON.parse(await read('app-version.json'));
 const sources=[...buildScript.matchAll(/'([^']+\.(?:js|mjs|css))'/g)].map(x=>x[1]);
-const names=[...new Set(['index.html','manifest.webmanifest','sw.js','app-version.json',...sources.filter(x=>x!=='sw.js')])];
-const disk=Object.fromEntries(await Promise.all(names.map(async name=>[name,await read(name)])));
+const names=[...new Set(['index.html','manifest.webmanifest','sw.js','app-version.json','icon-192.png','icon-512.png',...sources.filter(x=>x!=='sw.js')])];
+const disk=Object.fromEntries(await Promise.all(names.map(async name=>[name,await fs.readFile(name,name.endsWith('.png')?'base64':'utf8')])));
 const tests=[];
 async function check(name,fn){await fn();tests.push(name);console.log('PASS '+name)}
 const n20=Array.from({length:20},(_,i)=>i+1);
@@ -70,14 +70,15 @@ await check('PWA build ID, shell queries and manifest are consistent',()=>{
 });
 const handlers={},deleted=[],networkCalls=[];let networkOffline=true,cachedShell=new Response('offline-shell'),cachedAsset=new Response('offline-js'),added=[];
 const cacheMock={async addAll(list){added=list},async match(req){const url=typeof req==='string'?req:req.url;return url.endsWith('/index.html')?cachedShell:url.includes('xray-ui-v1.js?v='+build)?cachedAsset:undefined}};
-const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{},clients:{claim:async()=>{}},addEventListener(type,fn){handlers[type]=fn}};
+let activated=0,claimed=0;
+const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{activated++},clients:{claim:async()=>{claimed++}},addEventListener(type,fn){handlers[type]=fn}};
 const cacheStorage={open:async()=>cacheMock,keys:async()=>['other-app-cache','combo-keno-shell-old','combo-keno-shell-'+build],delete:async key=>{deleted.push(key);return true}};
 new Function('self','caches','fetch','URL','Request','Response',sw)(selfMock,cacheStorage,async req=>{networkCalls.push(req);if(networkOffline)throw new Error('offline');return new Response('live')},URL,Request,Response);
 async function eventDone(name){let promise;handlers[name]({waitUntil(p){promise=p}});await promise}
 async function request(url,mode){let handled=false,promise;const req=new Request(url);handlers.fetch({request:mode?{url:req.url,method:'GET',mode}:req,respondWith(p){handled=true;promise=p}});return {handled,response:handled?await promise:null}}
 await check('PWA install caches actual versioned requests; activate retains foreign cache',async()=>{
- await eventDone('install');assert(added.includes('./xray-ui-v1.js?v='+build));assert(!added.some(x=>/history|runtime|payout|presets|status/.test(x)));
- await eventDone('activate');assert.deepEqual(deleted,['combo-keno-shell-old']);
+ await eventDone('install');assert(added.some(x=>x.url===scope+'xray-ui-v1.js?v='+build));assert(added.every(x=>x.cache==='no-store'));assert(!added.some(x=>/history|runtime|payout|presets|status/.test(x.url)));
+ await eventDone('activate');assert.equal(activated,1);assert.equal(claimed,1);assert.deepEqual(deleted,['combo-keno-shell-old']);
  const asset=await request(scope+'xray-ui-v1.js?v='+build);assert.equal(await asset.response.text(),'offline-js');
 });
 await check('PWA offline navigation uses shell, data always uses network no-store',async()=>{
@@ -87,7 +88,7 @@ await check('PWA offline navigation uses shell, data always uses network no-stor
  class RequestShim{constructor(request,options){this.url=request.url;this.method=request.method;this.cache=options?.cache}}
  new Function('self','caches','fetch','URL','Request','Response',sw)(selfMock,cacheStorage,async req=>{networkCalls.push(req);throw new Error('offline')},URL,RequestShim,Response);
  handlers.fetch({request:nav,respondWith(p){promise=p}});assert.equal(await (await promise).text(),'offline-shell');
- for(const path of ['combo-history-v1.json','combo-status-v1.json','combo-presets-v1.json','keno-payouts-v1.json','app-version.json','data/xray-runtime.json']){
+ for(const path of ['combo-search-log-v1.json','combo-history-v1.json','combo-status-v1.json','combo-presets-v1.json','keno-payouts-v1.json','app-version.json','data/xray-runtime.json']){
   await assert.rejects(()=>request(scope+path),/offline/);assert.equal(networkCalls.at(-1).cache,'no-store');
  }
  assert.equal((await request('https://other.test/data/xray-runtime.json')).handled,false);
@@ -101,10 +102,29 @@ await check('APP BUILD is idempotent and independent of live archive/runtime/sta
 });
 await check('APP BUILD changes when installed mathematical engine or UI changes',async()=>{
  const first=await generate(disk);
- for(const file of ['xray-structure-engine-v4.mjs','xray-runtime-core.mjs','xray-ui-v1.js']){
+ for(const file of ['index.html','xray-v1.css','icon-192.png','xray-structure-engine-v4.mjs','xray-runtime-core.mjs','xray-ui-v1.js']){
   assert(file in first,'Missing build input '+file);
   const changed=await generate({...first,[file]:first[file]+'\n// build-input-test\n'});
-  assert.notEqual(JSON.parse(first['app-version.json']).build,JSON.parse(changed['app-version.json']).build,file);
+  const before=JSON.parse(first['app-version.json']),after=JSON.parse(changed['app-version.json']);
+  assert.notEqual(before.build,after.build,file);
+  const parts=before.version.split('.').map(Number);parts[2]++;
+  assert.equal(after.version,parts.join('.'),file+': patch increment');
+  assert(changed['index.html'].includes('Версия v'+after.version));
+  assert(changed['sw.js'].includes("const BUILD='"+after.build+"'"));
+  assert.equal(JSON.parse(changed['manifest.webmanifest']).start_url,'./?v='+after.build);
+  const again=await generate(changed);
+  for(const output of ['index.html','sw.js','manifest.webmanifest','app-version.json'])assert.equal(again[output],changed[output],file+': repeated build');
  }
+});
+await check('PWA activation reloads once; returning to the phone app checks for updates',async()=>{
+ const code=index.match(/<script id="comboAutoUpdate">([\s\S]*?)<\/script>/)[1];
+ const callbacks={};let reloads=0,updates=0;
+ const worker={addEventListener:(name,fn)=>{callbacks[name]=fn},getRegistration:async()=>({update:async()=>{updates++}})};
+ new Function('navigator','location','document','addEventListener','setInterval','setTimeout',code)(
+  {serviceWorker:worker},{reload:()=>{reloads++}},
+  {hidden:false,addEventListener:(name,fn)=>{callbacks[name]=fn}},
+  (name,fn)=>{callbacks[name]=fn},()=>{},()=>{});
+ callbacks.controllerchange();callbacks.controllerchange();assert.equal(reloads,1);
+ await callbacks.focus();await callbacks.pageshow();assert.equal(updates,2);
 });
 console.log('XRAY UI / PWA PASS '+tests.length+' checks');

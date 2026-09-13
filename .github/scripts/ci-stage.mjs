@@ -32,7 +32,7 @@ if (!Array.isArray(archive) || !archive.length || !Array.isArray(journal.snapsho
 }
 if (Number(journal.latestDraw) !== Number(archive.at(-1).draw)) node('build-combo-search-log.mjs');
 console.log('APP BUILD: reconcile source fingerprint; draw/runtime data do not change app version');
-node('refresh-combo-build.mjs');
+if (mode === 'app') node('refresh-combo-build.mjs');
 node('.github/scripts/check-stage1.mjs');
 node('validate-xray-runtime.mjs', baselineArgs);
 process.exitCode = runtimeStatus;

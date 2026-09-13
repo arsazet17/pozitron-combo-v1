@@ -39,7 +39,7 @@ export async function main() {
   const allowedPaths = [
     'combo-history-v1.json', 'combo-status-v1.json', 'combo-search-log-v1.json',
     'data/xray-runtime.json', 'data/xray-runtime.guard.json',
-    'app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'
+    ...(mode === 'app' ? ['app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'] : [])
   ];
   function git(args, { capture = false, allowFailure = false } = {}) {
     const result = spawnSync('git', args, { stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit', encoding: 'utf8' });
