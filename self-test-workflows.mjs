@@ -103,3 +103,11 @@ assert.deepEqual(dueTarget(new Date('2026-09-10T21:03:00Z')), { date: '10.09.26'
 assert.deepEqual(dueTarget(new Date('2026-09-10T21:05:00Z')), { date: '11.09.26', time: '00:02' });
 assert(Number.isNaN(publicationStamp({ date: '31.02.26', time: '00:02' })));
 console.log('PASS stale HEAD retry, rejected push recomputation, uncertain push verification, no-op, anomaly diagnostics and publication grace');
+
+// Data/runtime/journal runs cannot regenerate or stage application outputs.
+const stageSource=await fs.readFile('.github/scripts/ci-stage.mjs','utf8');
+assert(stageSource.includes("if (mode === 'app') node('refresh-combo-build.mjs')"));
+const publisherSource=await fs.readFile('.github/scripts/ci-publish.mjs','utf8');
+assert(publisherSource.includes("...(mode === 'app' ? ['app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'] : [])"));
+for(const p of ['xray-runtime-core.mjs','xray-runtime-io.mjs','build-xray-runtime.mjs'])assert(app.on.push.paths.includes(p));
+console.log('PASS data writers cannot regenerate or stage application releases');
