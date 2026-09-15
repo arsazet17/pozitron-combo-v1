@@ -37,7 +37,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.6</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.7</div></div>
 
  <div class="card">
   <b>Правильная логика интервалов</b>
@@ -122,11 +122,15 @@ function buildNumberStats(draws){
    for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++)soft.push(p[j]-p[i]-1);
    const sc=countsOf(strict),mc=countsOf(soft),cur=p.length?draws.length-1-p[p.length-1]:draws.length;
    const last=p.length?draws[p[p.length-1]]:null;
+   const freq=draws.length?p.length/draws.length:0;
+   const strictRate=(sc[cur]||0)/Math.max(1,strict.length);
+   const expectedStrict=freq>0?freq*Math.pow(1-freq,cur):0;
+   const strictLift=expectedStrict>0?strictRate/expectedStrict:0;
    out.push({
-     n,cur,last,occ:p.length,freq:draws.length?p.length/draws.length:0,
+     n,cur,last,occ:p.length,freq,
      strict,soft,strictCounts:sc,softCounts:mc,
      strictHits:sc[cur]||0,softHits:mc[cur]||0,
-     strictRate:(sc[cur]||0)/Math.max(1,strict.length),
+     strictRate,strictLift,expectedStrict,
      softRate:(mc[cur]||0)/Math.max(1,soft.length),
      repeat0:sc[0]||0,score:0
    });
@@ -135,19 +139,20 @@ function buildNumberStats(draws){
 }
 
 function scoreStats(stats,mode){
+ const ml=Math.max(.000001,...stats.map(s=>Math.min(4,s.strictLift||0)));
  const ms=Math.max(.000001,...stats.map(s=>s.strictRate));
  const mm=Math.max(.000001,...stats.map(s=>s.softRate));
  const mf=Math.max(.000001,...stats.map(s=>s.freq));
  for(const s of stats){
-   const ns=s.strictRate/ms,nm=s.softRate/mm,nf=s.freq/mf;
+   const nl=Math.min(4,s.strictLift||0)/ml,ns=s.strictRate/ms,nm=s.softRate/mm,nf=s.freq/mf;
    let v=0;
-   if(mode==='strict')v=.80*ns+.20*nf;
-   else if(mode==='soft')v=.75*nm+.25*nf;
-   else v=.50*ns+.25*nm+.25*nf;
+   if(mode==='strict')v=.70*nl+.15*ns+.15*nf;
+   else if(mode==='soft')v=.55*nm+.25*nl+.20*nf;
+   else v=.40*nl+.20*ns+.20*nm+.20*nf;
    const support=clamp(s.occ/80,.65,1);
    s.score=100*v*support;
  }
- stats.sort((a,b)=>b.score-a.score||b.strictHits-a.strictHits||b.softHits-a.softHits||b.freq-a.freq||a.n-b.n);
+ stats.sort((a,b)=>b.score-a.score||b.strictLift-a.strictLift||b.strictHits-a.strictHits||b.softHits-a.softHits||b.freq-a.freq||a.n-b.n);
  return stats;
 }
 
@@ -162,6 +167,7 @@ function pairMatrix(draws){
 
 function generateCombos(stats,draws,mode,poolN,count){
  const pool=stats.slice(0,poolN).map(s=>s.n),by=Object.fromEntries(stats.map(s=>[s.n,s])),pair=pairMatrix(draws),used=new Map(),out=[];
+ const poolCurCounts={};pool.forEach(n=>{const g=by[n].cur;poolCurCounts[g]=(poolCurCounts[g]||0)+1});
  const use=n=>used.get(n)||0;
  for(let k=0;k<count;k++){
    const chosen=[pool[(k*3)%pool.length]];
@@ -171,8 +177,11 @@ function generateCombos(stats,draws,mode,poolN,count){
        if(chosen.includes(n))continue;
        let compat=0;for(const x of chosen)compat+=pair[n][x]/Math.max(1,draws.length);compat/=chosen.length;
        const newCol=chosen.some(x=>colOf(x)===colOf(n))?0:1;
-       let v=by[n].score*.78+compat*100*.12+newCol*6-use(n)*2.2;
-       if(mode==='balance')v=by[n].score*.66+compat*100*.20+newCol*12-use(n)*2.2;
+       const sameInt=chosen.filter(x=>by[x].cur===by[n].cur).length;
+       const intervalShare=(poolCurCounts[by[n].cur]||1)/Math.max(1,pool.length);
+       const intervalBalance=(sameInt===0?7:0)-sameInt*(1.8+intervalShare*4);
+       let v=by[n].score*.76+compat*100*.12+newCol*6+intervalBalance-use(n)*2.2;
+       if(mode==='balance')v=by[n].score*.64+compat*100*.20+newCol*12+intervalBalance-use(n)*2.2;
        v+=((n*17+k*11)%13)/1000;
        if(v>bv){bv=v;best=n}
      }
@@ -193,7 +202,7 @@ function signal(score){return score>=70?['СИЛЬНО','h']:score>=40?['СРЕ�
 function renderRank(){
  $('rank').innerHTML=STATS.slice(0,20).map((s,i)=>{
    const [lab,cl]=signal(s.score),l=s.last;
-   return `<div class="rrow"><div>#${i+1}</div><div class="rnum">${fmt(s.n)}</div><div class="rscore">${s.score.toFixed(0)}</div><div class="meta"><span class="signal ${cl}">${lab}</span> · инт <b>${s.cur}</b> · Стр. <b>${s.strictHits}</b> · Мяг. <b>${s.softHits}</b> · част. ${(s.freq*100).toFixed(1)}% · 0:${s.repeat0}<br>${l?`посл. №${l.draw} · ${l.date} ${l.time} · ст${drawCol(l)}`:'не было'}</div></div>`
+   return `<div class="rrow"><div>#${i+1}</div><div class="rnum">${fmt(s.n)}</div><div class="rscore">${s.score.toFixed(0)}</div><div class="meta"><span class="signal ${cl}">${lab}</span> · инт <b>${s.cur}</b> · Стр. <b>${s.strictHits}</b> · Мяг. <b>${s.softHits}</b> · lift <b>${(s.strictLift||0).toFixed(2)}×</b> · част. ${(s.freq*100).toFixed(1)}% · 0:${s.repeat0}<br>${l?`посл. №${l.draw} · ${l.date} ${l.time} · ст${drawCol(l)}`:'не было'}</div></div>`
  }).join('');
 }
 
@@ -267,10 +276,11 @@ function renderCombos(combos){
  LAST_COMBOS=combos||[];
  const by=Object.fromEntries(STATS.map(s=>[s.n,s]));
  $('combos').innerHTML=LAST_COMBOS.map((c,i)=>{
-   const details=c.nums.map(n=>`${fmt(n)}: инт${by[n].cur}/С${by[n].strictHits}/М${by[n].softHits}/F${(by[n].freq*100).toFixed(0)}%`).join(' · ');
+   const details=c.nums.map(n=>`${fmt(n)}: инт${by[n].cur}/С${by[n].strictHits}/М${by[n].softHits}/L${(by[n].strictLift||0).toFixed(2)}×/F${(by[n].freq*100).toFixed(0)}%`).join(' · ');
+   const curDist=Object.entries(c.nums.reduce((o,n)=>{const g=by[n].cur;o[g]=(o[g]||0)+1;return o},{})).sort((a,b)=>Number(a[0])-Number(b[0])).map(([g,v])=>`инт${g}:${v}`).join(' · ');
    const full7=CURRENT_DRAWS.filter(d=>c.nums.every(n=>(d.balls||[]).map(Number).includes(n))).length;
    const saved=isSaved(c.nums);
-   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7 · полных 7/7 в окне: <b>${full7}</b></div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-save="${c.key}" class="ghost saveBtn ${saved?'saved':''}" ${saved?'disabled':''}>${saved?'✅ СОХРАНЕНА':'💾 СОХРАНИТЬ K7'}</button><button data-check="${c.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button></div></div>`
+   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7 · ${curDist} · полных 7/7 в окне: <b>${full7}</b></div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-save="${c.key}" class="ghost saveBtn ${saved?'saved':''}" ${saved?'disabled':''}>${saved?'✅ СОХРАНЕНА':'💾 СОХРАНИТЬ K7'}</button><button data-check="${c.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button></div></div>`
  }).join('');
  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const nums=b.dataset.save.split('-').map(Number);saveK7(nums)});
  document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{
