@@ -54,9 +54,9 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
   <div class="muted">Расчёт делается только по известным тиражам до следующего тиража. Основной параметр — текущий пропуск числа и его исторические совпадения в строгой/мягкой матрице.</div>
   <div class="controls">
    <label>Глубина архива<input id="window" type="number" inputmode="numeric" min="1" step="1" value="400" placeholder="Например 137"><span id="windowHint" class="muted" style="display:block;margin-top:4px">Можно указать любое число тиражей</span></label>
-   <label>Пул кандидатов<select id="pool"><option>12</option><option selected>18</option><option>24</option><option>30</option></select></label>
-   <label>Режим генератора<select id="mode"><option value="strict">Строгий + частота</option><option value="soft">Мягкий + частота</option><option value="combo" selected>Строгий + мягкий + частота</option><option value="balance">Комбо + пары + столбы</option></select></label>
-   <label>Сколько K7<select id="count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
+   <label>Пул кандидатов<input id="pool" type="number" inputmode="numeric" min="7" max="80" step="1" value="18" placeholder="Например 18"><span class="muted" style="display:block;margin-top:4px">Свободно: от 7 до 80 чисел. Чем больше пул, тем шире выбор генератора.</span></label>
+   <label>Режим генератора<select id="mode"><option value="strict">R1 · Строгий + частота</option><option value="soft">R2 · Мягкий + частота</option><option value="combo" selected>R3 · Строгий + мягкий + частота</option><option value="balance">R4 · Комбо + пары + столбы</option></select></label>
+   <label>Сколько K7<input id="count" type="number" inputmode="numeric" min="1" step="1" value="10" placeholder="Например 23"><span class="muted" style="display:block;margin-top:4px">Свободное количество: 1, 2, 3, 10, 23…</span></label>
   </div>
   <button id="build" class="primary" style="width:100%;margin-top:9px">СФОРМИРОВАТЬ K7</button>
   <div id="summary" class="stats"></div>
@@ -70,7 +70,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 
  <div class="card">
   <b>🎯 Готовые K7</b>
-  <div class="muted">Для наблюдения вперёд нажмите <b>«СОХРАНИТЬ K7»</b>. В отдельный архив попадут только сохранённые вручную комбинации. «ПРОВЕРИТЬ ЭТУ K7» открывает полный архив проверки с подсветкой попаданий.</div>
+  <div class="muted">Готовая K7 ещё не имеет истории. Для наблюдения вперёд нажмите <b>«СОХРАНИТЬ K7»</b>. Только после сохранения комбинация попадёт в архив, и отсчёт начнётся со следующего тиража.</div>
   <div id="combos" class="combos"></div>
  </div>
 
@@ -84,7 +84,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 
  <div class="card checkCard" id="checkCard">
   <b>🔎 История K7 — что реально совпало</b>
-  <div class="muted">Для готовой K7 просто нажмите выше <b>«ПРОВЕРИТЬ ЭТУ K7»</b> — числа подставятся сами. Для своей K7 введите ровно 7 чисел и нажмите «ПРОВЕРИТЬ».</div>
+  <div class="muted">Этот блок предназначен только для ручной проверки своей K7. Сохранённые комбинации открываются из «Архива сохранённых K7».</div>
   <div id="selectedK7" class="selectedK7"></div>
   <div class="k7input" style="margin-top:8px"><input id="k7" placeholder="Например: 05 16 20 28 48 65 80"><button id="checkK7" class="gold">🔎 ПРОВЕРИТЬ</button></div>
   <div id="occ" class="occ"><div class="muted">Результат появится здесь: 7/7, № тиража, дата, время, столб, интервал и дополнительные совпавшие числа.</div></div>
@@ -245,10 +245,20 @@ async function writeSaved(a){
 }
 function savedKey(nums){return [...nums].sort((a,b)=>a-b).join('-')}
 function isSaved(nums){const k=savedKey(nums);return readSaved().some(x=>x.key===k)}
-async function saveK7(nums){
+function modeCode(mode){return mode==='strict'?'R1':mode==='soft'?'R2':mode==='combo'?'R3':'R4'}
+function savedItem(nums){const k=savedKey(nums);return readSaved().find(x=>x.key===k)||null}
+function liveSavedStats(item){
+ if(!item)return '';
+ const idx=DRAWS.findIndex(d=>Number(d.draw)===Number(item.savedDraw));
+ const future=idx>=0?DRAWS.slice(idx+1):DRAWS.filter(d=>Number(d.draw)>Number(item.savedDraw));
+ const dist=Array(8).fill(0);let wins=0,sum=0;
+ future.forEach(d=>{const h=hitCount(item.nums,d);dist[h]++;const pay=Number(PAYOUT7[h]||0);if(pay>0){wins++;sum+=pay}});
+ return `<div class="hitDist" style="margin-top:10px"><b>Тиражей после сохранения:</b> ${future.length}<br>💰 <b>Выигрышных:</b> ${wins} / ${future.length}<br>🔥 <b>Сумма выигрышей:</b> ${rub(sum)}<br>${dist.map((v,h)=>`${h}/7: ${v}`).join(' · ')}</div>`;
+}
+async function saveK7(nums,meta={}){
  const a=readSaved(),key=savedKey(nums);if(a.some(x=>x.key===key))return false;
  const last=DRAWS[DRAWS.length-1];if(!last)return false;
- a.unshift({key,nums:[...nums].sort((a,b)=>a-b),savedDraw:Number(last.draw),savedDate:last.date||'',savedTime:last.time||'',savedColumn:drawCol(last),savedAt:Date.now()});
+ a.unshift({key,nums:[...nums].sort((a,b)=>a-b),savedDraw:Number(last.draw),savedDate:last.date||'',savedTime:last.time||'',savedColumn:drawCol(last),savedAt:Date.now(),k7Index:Number(meta.k7Index)||null,mode:meta.mode||$('mode').value,modeCode:modeCode(meta.mode||$('mode').value),window:Number(meta.window)||CURRENT_DRAWS.length,pool:Number(meta.pool)||Number($('pool').value)});
  await writeSaved(a);renderSavedArchive();renderCombos(LAST_COMBOS);return true;
 }
 async function removeSaved(key){await writeSaved(readSaved().filter(x=>x.key!==key));renderSavedArchive();renderCombos(LAST_COMBOS)}
@@ -266,7 +276,7 @@ function renderSavedArchive(){
    const sum=wins.reduce((a,x)=>a+x.pay,0),full7=wins.filter(x=>x.h===7);
    const distText=dist.map((v,h)=>`${h}/7: ${v}`).join(' · ');
    const winRows=wins.length?wins.slice().reverse().map(w=>`<div class="winRow"><div class="winHit">+${w.after}</div><div>№${w.d.draw} · ${w.d.date} <b>${w.d.time}</b> · ст${drawCol(w.d)} · <b>${w.h}/7</b>${w.h===7?'<span class="full7tag">7/7</span>':''}</div><div class="winMoney">${rub(w.pay)}</div></div>`).join(''):'<div class="muted" style="margin-top:6px">После сохранения выигрышных тиражей пока нет.</div>';
-   return `<div class="savedItem"><div class="savedTop"><div><div class="savedTitle">${item.nums.map(fmt).join(' ')}</div><div class="savedMeta">Сохранена после №${item.savedDraw} · ${item.savedDate} ${item.savedTime} · ст${item.savedColumn}. Отсчёт — со следующего тиража.</div></div></div><div class="savedNums">${item.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="savedStats"><div class="savedStat"><b>${future.length}</b><span>ТИРАЖЕЙ ПОСЛЕ</span></div><div class="savedStat"><b>${wins.length}</b><span>ВЫИГРЫШНЫХ</span></div><div class="savedStat"><b>${full7.length}</b><span>ПОЛНЫХ 7/7</span></div></div><div class="hitDist">${distText}<br><b>Сумма выигрышей:</b> ${rub(sum)}</div><details class="wins"><summary>🔥 Выигрышные выходы (${wins.length})</summary>${winRows}</details><div class="savedActions"><button data-saved-check="${item.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button><button data-remove-saved="${item.key}" class="danger">✕ УДАЛИТЬ</button></div></div>`
+   return `<div class="savedItem"><div class="savedTop"><div><div class="savedTitle">${item.k7Index?`K7-${item.k7Index} · `:''}${item.modeCode||modeCode(item.mode||'combo')} · T${item.window||'?'} · P${item.pool||'?'}</div><div class="savedTitle" style="margin-top:6px">${item.nums.map(fmt).join(' ')}</div><div class="savedMeta">Сохранена после №${item.savedDraw} · ${item.savedDate} ${item.savedTime} · ст${item.savedColumn}. Отсчёт — со следующего тиража.</div></div></div><div class="savedNums">${item.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="savedStats"><div class="savedStat"><b>${future.length}</b><span>ТИРАЖЕЙ ПОСЛЕ</span></div><div class="savedStat"><b>${wins.length}</b><span>ВЫИГРЫШНЫХ</span></div><div class="savedStat"><b>${full7.length}</b><span>ПОЛНЫХ 7/7</span></div></div><div class="hitDist">${distText}<br><b>Сумма выигрышей:</b> ${rub(sum)}</div><details class="wins"><summary>🔥 Выигрышные выходы (${wins.length})</summary>${winRows}</details><div class="savedActions"><button data-saved-check="${item.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button><button data-remove-saved="${item.key}" class="danger">✕ УДАЛИТЬ</button></div></div>`
  }).join('');
  document.querySelectorAll('[data-remove-saved]').forEach(b=>b.onclick=()=>removeSaved(b.dataset.removeSaved));
  document.querySelectorAll('[data-saved-check]').forEach(b=>b.onclick=()=>{const item=readSaved().find(x=>x.key===b.dataset.savedCheck);if(item)openK7History(item.nums)});
@@ -274,25 +284,18 @@ function renderSavedArchive(){
 
 function renderCombos(combos){
  LAST_COMBOS=combos||[];
- const by=Object.fromEntries(STATS.map(s=>[s.n,s]));
+ const mode=$('mode').value,rc=modeCode(mode),t=CURRENT_DRAWS.length,p=Math.max(7,Math.min(80,Math.floor(Number($('pool').value)||18)));
  $('combos').innerHTML=LAST_COMBOS.map((c,i)=>{
-   const details=c.nums.map(n=>`${fmt(n)}: инт${by[n].cur}/С${by[n].strictHits}/М${by[n].softHits}/L${(by[n].strictLift||0).toFixed(2)}×/F${(by[n].freq*100).toFixed(0)}%`).join(' · ');
-   const curDist=Object.entries(c.nums.reduce((o,n)=>{const g=by[n].cur;o[g]=(o[g]||0)+1;return o},{})).sort((a,b)=>Number(a[0])-Number(b[0])).map(([g,v])=>`инт${g}:${v}`).join(' · ');
-   const full7=CURRENT_DRAWS.filter(d=>c.nums.every(n=>(d.balls||[]).map(Number).includes(n))).length;
    const saved=isSaved(c.nums);
-   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7 · ${curDist} · полных 7/7 в окне: <b>${full7}</b></div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-save="${c.key}" class="ghost saveBtn ${saved?'saved':''}" ${saved?'disabled':''}>${saved?'✅ СОХРАНЕНА':'💾 СОХРАНИТЬ K7'}</button><button data-check="${c.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button></div></div>`
+   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1} · ${rc} · T${t} · P${p}</b></div></div><div class="nums" style="margin-top:9px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="comboBtns"><button data-save="${c.key}" data-k7-index="${i+1}" class="ghost saveBtn ${saved?'saved':''}" ${saved?'disabled':''}>${saved?'✅ СОХРАНЕНА':'💾 СОХРАНИТЬ K7'}</button></div></div>`
  }).join('');
- document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const nums=b.dataset.save.split('-').map(Number);saveK7(nums)});
- document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{
-   const nums=b.dataset.check.split('-').map(Number);
-   $('k7').value=nums.map(fmt).join(' ');
-   checkK7(nums);
-   $('checkCard').scrollIntoView({behavior:'smooth',block:'start'});
- });
+ document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const nums=b.dataset.save.split('-').map(Number);saveK7(nums,{k7Index:Number(b.dataset.k7Index),mode:$('mode').value,window:CURRENT_DRAWS.length,pool:Number($('pool').value)})});
 }
 
 function build(){
- let w=Math.floor(Number($('window').value));const pool=+$('pool').value,count=+$('count').value,mode=$('mode').value;
+ let w=Math.floor(Number($('window').value));let pool=Math.floor(Number($('pool').value)),count=Math.floor(Number($('count').value));const mode=$('mode').value;
+ if(!Number.isFinite(pool)||pool<7)pool=7;pool=Math.min(80,pool);$('pool').value=String(pool);
+ if(!Number.isFinite(count)||count<1)count=1;count=Math.min(100,count);$('count').value=String(count);
  if(!Number.isFinite(w)||w<1)w=1;
  w=Math.min(w,DRAWS.length);
  $('window').value=String(w);
