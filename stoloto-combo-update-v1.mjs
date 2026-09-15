@@ -6,348 +6,40 @@ const LOGIN_URL='https://oauth.stoloto.ru/login';
 const ARCHIVE_URL='https://m.stoloto.ru/keno2/archive/';
 const HISTORY_FILE='combo-history-v1.json';
 const STATUS_FILE='combo-status-v1.json';
-const TAIL_SIZE=10;
+const NORMAL_TAIL=10;
+const MAX_CATCHUP=500;
 const EMAIL=process.env.STOLOTO_EMAIL||'';
 const PASSWORD=process.env.STOLOTO_PASSWORD||'';
-
 if(!EMAIL||!PASSWORD) throw new Error('FAIL: нет GitHub Secrets STOLOTO_EMAIL / STOLOTO_PASSWORD');
 
 const MONTHS={января:1,февраля:2,марта:3,апреля:4,мая:5,июня:6,июля:7,августа:8,сентября:9,октября:10,ноября:11,декабря:12};
 const pad2=n=>String(n).padStart(2,'0');
 const norm=s=>String(s??'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim();
-
-function moscowToday(){
-  const f=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'});
-  const p=Object.fromEntries(f.formatToParts(new Date()).map(x=>[x.type,x.value]));
-  return {y:+p.year,m:+p.month,d:+p.day};
-}
-function shiftDate(p,delta){const d=new Date(Date.UTC(p.y,p.m-1,p.d));d.setUTCDate(d.getUTCDate()+delta);return{y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate()}}
-function normalizeDateLabel(label){
-  const raw=norm(label).toLowerCase(),today=moscowToday();let p=null;
-  if(raw==='сегодня')p=today;else if(raw==='вчера')p=shiftDate(today,-1);else{
-    let m=raw.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
-    if(m){let y=+m[3];if(y<100)y+=2000;p={d:+m[1],m:+m[2],y}}
-    else{m=raw.match(/^(\d{1,2})\s+([а-яё]+)(?:\s+(\d{4}))?$/i);if(m&&MONTHS[m[2]]){let y=m[3]?+m[3]:today.y;p={d:+m[1],m:MONTHS[m[2]],y};if(!m[3]&&p.m>today.m+6)p.y--}}
-  }
-  return p?`${pad2(p.d)}.${pad2(p.m)}.${String(p.y).slice(-2)}`:null;
-}
-function normalizeTime(v){const m=String(v??'').match(/(\d{1,2}):(\d{2})/);if(!m)return null;const h=+m[1],min=+m[2];if(h>23||min>59)return null;return`${pad2(h)}:${pad2(min)}`}
+function moscowToday(){const f=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'});const p=Object.fromEntries(f.formatToParts(new Date()).map(x=>[x.type,x.value]));return{y:+p.year,m:+p.month,d:+p.day}}
+function shiftDate(p,n){const d=new Date(Date.UTC(p.y,p.m-1,p.d));d.setUTCDate(d.getUTCDate()+n);return{y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate()}}
+function normalizeDateLabel(label){const raw=norm(label).toLowerCase(),today=moscowToday();let p=null;if(raw==='сегодня')p=today;else if(raw==='вчера')p=shiftDate(today,-1);else{let m=raw.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);if(m){let y=+m[3];if(y<100)y+=2000;p={d:+m[1],m:+m[2],y}}else{m=raw.match(/^(\d{1,2})\s+([а-яё]+)(?:\s+(\d{4}))?$/i);if(m&&MONTHS[m[2]]){let y=m[3]?+m[3]:today.y;p={d:+m[1],m:MONTHS[m[2]],y};if(!m[3]&&p.m>today.m+6)p.y--}}}return p?`${pad2(p.d)}.${pad2(p.m)}.${String(p.y).slice(-2)}`:null}
+function normalizeTime(v){const m=String(v??'').match(/(\d{1,2}):(\d{2})/);if(!m)return null;const h=+m[1],mi=+m[2];return h<=23&&mi<=59?`${pad2(h)}:${pad2(mi)}`:null}
 function parseDraw(t){const m=String(t).match(/№\s*([0-9]{4,})/);return m?+m[1]:null}
 function parseTime(t){const m=String(t).match(/\b([01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/);return m?normalizeTime(m[0]):null}
-function parseColumn(text){const m=norm(text).match(/столбец\s*([1-9]|10)\b/i);return m?Number(m[1]):null}
-function findDateLabel(text){
-  const s=String(text);let m=s.match(/(?:^|\n)\s*(Сегодня|Вчера)\s*(?:\n|$)/i);if(m)return norm(m[1]);
-  m=s.match(/(?:^|\n)\s*(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})\s*(?:\n|$)/);if(m)return norm(m[1]);
-  m=s.match(/(?:^|\n)\s*(\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?)\s*(?:\n|$)/i);
-  return m?norm(m[1]):null
-}
-
-async function login(page){
-  await page.goto(LOGIN_URL,{waitUntil:'domcontentloaded',timeout:60000});
-  const logins=['input[type="email"]','input[name*="email" i]','input[name*="login" i]','input[autocomplete="username"]','input[type="text"]'];
-  const passes=['input[type="password"]','input[name*="password" i]','input[autocomplete="current-password"]'];
-  let login=null,pass=null;
-  for(const s of logins){const l=page.locator(s).first();if(await l.count()){login=l;break}}
-  for(const s of passes){const l=page.locator(s).first();if(await l.count()){pass=l;break}}
-  if(!login||!pass)throw new Error('FAIL: не найдены поля OAuth Столото');
-  await login.fill(EMAIL);await pass.fill(PASSWORD);
-  const buttons=[page.getByRole('button',{name:/войти/i}).first(),page.locator('button[type="submit"]').first(),page.locator('input[type="submit"]').first()];
-  let clicked=false;for(const b of buttons){if(await b.count()){await b.click();clicked=true;break}}
-  if(!clicked)throw new Error('FAIL: не найдена кнопка Войти');
-  await page.waitForLoadState('domcontentloaded',{timeout:60000}).catch(()=>{});
-  await page.waitForTimeout(1800);
-}
-
-async function expandArchive(page,targetRows=TAIL_SIZE){
-  let last=0,stable=0;
-  for(let round=0;round<6;round++){
-    const count=await page.locator('tr').evaluateAll(list=>list.filter(el=>/№\s*\d{4,}/.test(el.innerText||'')).length);
-    if(count>=targetRows)break;
-    stable=count===last?stable+1:0;last=count;
-
-    const more=page.getByRole('button',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last();
-    try{if(await more.count()&&await more.isVisible()){await more.click({timeout:3500});await page.waitForTimeout(700);continue}}catch{}
-    const link=page.getByRole('link',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last();
-    try{if(await link.count()&&await link.isVisible()){await link.click({timeout:3500});await page.waitForTimeout(700);continue}}catch{}
-    await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
-    await page.waitForTimeout(700);
-    if(stable>=2)break;
-  }
-  await page.evaluate(()=>window.scrollTo(0,0));
-}
-
-async function collectRows(page){
-  await page.goto(ARCHIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForTimeout(2200);
-  await expandArchive(page,TAIL_SIZE);
-
-  return await page.locator('body').evaluate(()=>{
-    const drawRx=/№\s*\d{4,}/;
-    const dateRx=/^(Сегодня|Вчера|\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}|\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?)$/i;
-    const n=s=>String(s||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim();
-    const all=[...document.querySelectorAll('body *')];
-
-    function nearestDate(el){
-      let best=null;
-      for(const node of all){
-        if(node===el||el.contains(node))continue;
-        const pos=node.compareDocumentPosition(el);
-        if(!(pos&Node.DOCUMENT_POSITION_FOLLOWING))continue;
-        const t=n(node.innerText||node.textContent||'');
-        if(!t||t.length>40||!dateRx.test(t))continue;
-        if(node.children&&node.children.length>3)continue;
-        best=t;
-      }
-      return best;
-    }
-
-    let c=[...document.querySelectorAll('tr')].filter(el=>drawRx.test(el.innerText||''));
-    if(!c.length)c=all.filter(el=>{
-      const t=n(el.innerText||'');
-      if(!drawRx.test(t)||el.querySelectorAll('button').length<20)return false;
-      return ![...el.children].some(ch=>drawRx.test(n(ch.innerText||''))&&ch.querySelectorAll('button').length>=20);
-    });
-
-    return c.map(el=>({
-      text:el.innerText||'',
-      dateLabel:nearestDate(el),
-      buttons:[...el.querySelectorAll('button')].map(b=>n(b.innerText||''))
-    }));
-  });
-}
-
-function parseRows(raw){
-  const out=[];let carry=null;
-  for(const row of raw){
-    const text=String(row.text||'');
-    const local=norm(row.dateLabel||'')||findDateLabel(text);
-    if(local)carry=local;
-    const draw=parseDraw(text);if(!draw)continue;
-    const time=parseTime(text);if(!time)continue;
-    const column=parseColumn(text);if(!column)throw new Error(`FAIL: №${draw}: Столото не отдал «Столбец N»`);
-    const date=normalizeDateLabel(local||carry);if(!date)continue;
-    let balls=(row.buttons||[]).map(x=>Number(norm(x))).filter(n=>Number.isInteger(n)&&n>=1&&n<=80);
-    if(balls.length>20)balls=balls.slice(-20);
-    if(balls.length!==20||new Set(balls).size!==20)continue;
-    out.push({draw,date,time,column,balls});
-  }
-  return [...new Map(out.map(d=>[d.draw,d])).values()]
-    .sort((a,b)=>a.draw-b.draw)
-    .slice(-TAIL_SIZE);
-}
+function parseColumn(t){const m=norm(t).match(/столбец\s*([1-9]|10)\b/i);return m?+m[1]:null}
+function findDateLabel(text){const s=String(text);let m=s.match(/(?:^|\n)\s*(Сегодня|Вчера)\s*(?:\n|$)/i);if(m)return norm(m[1]);m=s.match(/(?:^|\n)\s*(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})\s*(?:\n|$)/);if(m)return norm(m[1]);m=s.match(/(?:^|\n)\s*(\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?)\s*(?:\n|$)/i);return m?norm(m[1]):null}
 function canon(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.time,balls:d.balls})}
 function canonOfficial(d){return JSON.stringify({draw:d.draw,date:d.date,time:d.time,column:d.column,balls:d.balls})}
 
-async function readThree(page){
-  const reads=[];
-  const failures=[];
+async function login(page){await page.goto(LOGIN_URL,{waitUntil:'domcontentloaded',timeout:60000});let user=null,pass=null;for(const s of ['input[type="email"]','input[name*="email" i]','input[name*="login" i]','input[autocomplete="username"]','input[type="text"]']){const l=page.locator(s).first();if(await l.count()){user=l;break}}for(const s of ['input[type="password"]','input[name*="password" i]','input[autocomplete="current-password"]']){const l=page.locator(s).first();if(await l.count()){pass=l;break}}if(!user||!pass)throw new Error('FAIL: не найдены поля OAuth Столото');await user.fill(EMAIL);await pass.fill(PASSWORD);let clicked=false;for(const b of [page.getByRole('button',{name:/войти/i}).first(),page.locator('button[type="submit"]').first(),page.locator('input[type="submit"]').first()]){if(await b.count()){await b.click();clicked=true;break}}if(!clicked)throw new Error('FAIL: не найдена кнопка Войти');await page.waitForLoadState('domcontentloaded',{timeout:60000}).catch(()=>{});await page.waitForTimeout(1800)}
 
-  for(let i=1;i<=3;i++){
-    try{
-      const parsed=parseRows(await collectRows(page));
+async function expandArchive(page,targetRows){let last=-1,stable=0;const maxRounds=Math.min(120,Math.max(12,Math.ceil(targetRows/5)*3));for(let round=0;round<maxRounds;round++){const count=await page.locator('tr').evaluateAll(list=>list.filter(el=>/№\s*\d{4,}/.test(el.innerText||'')).length);if(count>=targetRows)return count;stable=count===last?stable+1:0;last=count;let acted=false;for(const loc of [page.getByRole('button',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last(),page.getByRole('link',{name:/показать\s*(ещё|еще)|загрузить\s*(ещё|еще)|^(ещё|еще)$/i}).last()]){try{if(await loc.count()&&await loc.isVisible()){await loc.click({timeout:3500});await page.waitForTimeout(650);acted=true;break}}catch{}}if(!acted){await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));await page.waitForTimeout(650)}if(stable>=5)break}return last}
 
-      if(parsed.length<TAIL_SIZE){
-        throw new Error(`только ${parsed.length} из ${TAIL_SIZE} тиражей`);
-      }
-
-      reads.push({
-        read:i,
-        parsed,
-        key:JSON.stringify(parsed.map(canonOfficial))
-      });
-
-      console.log(`Чтение ${i}: последние ${TAIL_SIZE}, №${parsed[0].draw}–№${parsed.at(-1).draw}`);
-    }catch(error){
-      failures.push({
-        read:i,
-        message:error?.message||String(error)
-      });
-
-      console.warn(`Чтение ${i}: FAIL · ${error?.message||error}`);
-    }
-
-    if(i<3){
-      await page.waitForTimeout(900);
-    }
-  }
-
-  const groups=new Map();
-
-  for(const item of reads){
-    if(!groups.has(item.key)){
-      groups.set(item.key,[]);
-    }
-
-    groups.get(item.key).push(item);
-  }
-
-  const winner=[...groups.values()].find(group=>group.length>=2);
-
-  if(!winner){
-    const good=reads.map(x=>`#${x.read}`).join(', ')||'нет';
-    const bad=failures.map(x=>`#${x.read}: ${x.message}`).join('; ')||'нет';
-
-    throw new Error(
-      `SAFE RETRY: нет двух одинаковых чтений из 3. Валидные: ${good}. Ошибки: ${bad}`
-    );
-  }
-
-  const matched=winner.map(x=>x.read).join('+');
-
-  const ignored=[...reads,...failures]
-    .filter(x=>!winner.some(w=>w.read===x.read))
-    .map(x=>`#${x.read}`)
-    .join(', ')||'нет';
-
-  console.log(
-    `Проверка 2/3 PASS: совпали чтения ${matched}; игнорировано: ${ignored}; ${TAIL_SIZE}/${TAIL_SIZE}`
-  );
-
-  return winner[0].parsed;
-}
-
-async function readHistory(){
-  const p=JSON.parse(await fs.readFile(HISTORY_FILE,'utf8'));
-  return Array.isArray(p)?p:(p.draws||[]);
-}
-function normalizeHistory(d){
-  return {
-    draw:Number(d?.draw??d?.number??d?.id),
-    date:norm(d?.date),
-    time:normalizeTime(d?.time),
-    balls:Array.isArray(d?.balls)?d.balls.map(Number):Array.isArray(d?.numbers)?d.numbers.map(Number):[]
-  };
-}
-
-function validateAndFindFresh(stoloto,historyRaw){
-  const history=historyRaw.map(normalizeHistory).filter(d=>Number.isInteger(d.draw)&&d.balls.length===20).sort((a,b)=>a.draw-b.draw);
-  if(!history.length)throw new Error('FAIL: локальная история пуста');
-
-  const last=history.at(-1);
-  const oldest=stoloto[0];
-  const newest=stoloto.at(-1);
-  if(!oldest||!newest)throw new Error('FAIL: последние 10 Столото пусты');
-
-  const officialMap=new Map(stoloto.map(d=>[d.draw,d]));
-  const anchor=officialMap.get(last.draw);
-
-  if(anchor){
-    if(canon(anchor)!==canon(last))throw new Error(`FAIL: anchor №${last.draw} не совпал со Столото`);
-  }else if(oldest.draw!==last.draw+1){
-    throw new Error(`FAIL SAFE: локальная база слишком отстала для tail10. Последний локальный №${last.draw}, Столото начинается с №${oldest.draw}`);
-  }
-
-  const fresh=stoloto.filter(d=>d.draw>last.draw).sort((a,b)=>a.draw-b.draw);
-  let expected=last.draw+1;
-
-  for(const d of fresh){
-    if(d.draw!==expected)throw new Error(`FAIL: пропуск тиража: ожидался №${expected}, получен №${d.draw}`);
-    expected++;
-  }
-
-  return {last,fresh,newest};
-}
+async function collectRows(page,targetRows){await page.goto(ARCHIVE_URL,{waitUntil:'domcontentloaded',timeout:60000});await page.waitForTimeout(1800);await expandArchive(page,targetRows);await page.evaluate(()=>window.scrollTo(0,0));return page.locator('body').evaluate(()=>{const drawRx=/№\s*\d{4,}/;const dateRx=/^(Сегодня|Вчера|\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}|\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?)$/i;const n=s=>String(s||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim();const all=[...document.querySelectorAll('body *')];function nearestDate(el){let best=null;for(const node of all){if(node===el||el.contains(node))continue;const pos=node.compareDocumentPosition(el);if(!(pos&Node.DOCUMENT_POSITION_FOLLOWING))continue;const t=n(node.innerText||node.textContent||'');if(!t||t.length>40||!dateRx.test(t))continue;if(node.children&&node.children.length>3)continue;best=t}return best}let c=[...document.querySelectorAll('tr')].filter(el=>drawRx.test(el.innerText||''));if(!c.length)c=all.filter(el=>{const t=n(el.innerText||'');if(!drawRx.test(t)||el.querySelectorAll('button').length<20)return false;return ![...el.children].some(ch=>drawRx.test(n(ch.innerText||''))&&ch.querySelectorAll('button').length>=20)});return c.map(el=>({text:el.innerText||'',dateLabel:nearestDate(el),buttons:[...el.querySelectorAll('button')].map(b=>n(b.innerText||''))}))})}
+function parseRows(raw){const out=[];let carry=null;for(const row of raw){const text=String(row.text||''),local=norm(row.dateLabel||'')||findDateLabel(text);if(local)carry=local;const draw=parseDraw(text),time=parseTime(text);if(!draw||!time)continue;const column=parseColumn(text);if(!column)throw new Error(`FAIL: №${draw}: Столото не отдал «Столбец N»`);const date=normalizeDateLabel(local||carry);if(!date)continue;let balls=(row.buttons||[]).map(x=>Number(norm(x))).filter(n=>Number.isInteger(n)&&n>=1&&n<=80);if(balls.length>20)balls=balls.slice(-20);if(balls.length!==20||new Set(balls).size!==20)continue;out.push({draw,date,time,column,balls})}return[...new Map(out.map(d=>[d.draw,d])).values()].sort((a,b)=>a.draw-b.draw)}
+async function readThree(page,targetRows){const reads=[],failures=[];for(let i=1;i<=3;i++){try{const all=parseRows(await collectRows(page,targetRows));const parsed=all.slice(-targetRows);if(parsed.length<targetRows)throw new Error(`только ${parsed.length} из ${targetRows} тиражей`);reads.push({read:i,parsed,key:JSON.stringify(parsed.map(canonOfficial))});console.log(`Чтение ${i}: ${targetRows} тиражей, №${parsed[0].draw}–№${parsed.at(-1).draw}`)}catch(e){failures.push({read:i,message:e?.message||String(e)});console.warn(`Чтение ${i}: FAIL · ${e?.message||e}`)}if(i<3)await page.waitForTimeout(900)}const groups=new Map();for(const x of reads){if(!groups.has(x.key))groups.set(x.key,[]);groups.get(x.key).push(x)}const winner=[...groups.values()].find(g=>g.length>=2);if(!winner){const good=reads.map(x=>`#${x.read}`).join(', ')||'нет',bad=failures.map(x=>`#${x.read}: ${x.message}`).join('; ')||'нет';throw new Error(`SAFE RETRY: нет двух одинаковых чтений из 3. Валидные: ${good}. Ошибки: ${bad}`)}console.log(`Проверка 2/3 PASS: чтения ${winner.map(x=>x.read).join('+')}; проверено ${targetRows}`);return winner[0].parsed}
+async function readHistory(){const p=JSON.parse(await fs.readFile(HISTORY_FILE,'utf8'));return Array.isArray(p)?p:(p.draws||[])}
+function normalizeHistory(d){return{draw:Number(d?.draw??d?.number??d?.id),date:norm(d?.date),time:normalizeTime(d?.time),balls:Array.isArray(d?.balls)?d.balls.map(Number):Array.isArray(d?.numbers)?d.numbers.map(Number):[]}}
+function validate(stoloto,historyRaw){const history=historyRaw.map(normalizeHistory).filter(d=>Number.isInteger(d.draw)&&d.balls.length===20).sort((a,b)=>a.draw-b.draw);if(!history.length)throw new Error('FAIL: локальная история пуста');const last=history.at(-1),oldest=stoloto[0],newest=stoloto.at(-1);if(!oldest||!newest)throw new Error('FAIL: официальный диапазон пуст');const map=new Map(stoloto.map(d=>[d.draw,d])),anchor=map.get(last.draw);if(anchor&&canon(anchor)!==canon(last))throw new Error(`FAIL: anchor №${last.draw} не совпал со Столото`);if(!anchor&&oldest.draw!==last.draw+1)throw new Error(`FAIL SAFE: не удалось получить начало разрыва №${last.draw+1}; официальный диапазон начинается №${oldest.draw}`);const fresh=stoloto.filter(d=>d.draw>last.draw).sort((a,b)=>a.draw-b.draw);let expected=last.draw+1;for(const d of fresh){if(d.draw!==expected)throw new Error(`FAIL: пропуск тиража: ожидался №${expected}, получен №${d.draw}`);expected++}return{last,fresh,newest}}
 
 const browser=await chromium.launch({headless:true});
-
-try{
-  const context=await browser.newContext({
-    locale:'ru-RU',
-    timezoneId:'Europe/Moscow',
-    viewport:{width:390,height:844},
-    userAgent:'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36'
-  });
-
-  const page=await context.newPage();
-  await login(page);
-
-  const historyRaw=await readHistory();
-  const stoloto=await readThree(page);
-  const {last,fresh,newest}=validateAndFindFresh(stoloto,historyRaw);
-
-  const source='Официальный Столото · OAuth · tail10 · проверка 2 из 3';
-  const officialMap=new Map(stoloto.map(d=>[Number(d.draw),d]));
-  const mergedMap=new Map();
-
-  for(const old of historyRaw){
-    const id=Number(old?.draw??old?.number??old?.id);
-    const official=officialMap.get(id);
-
-    mergedMap.set(id, official ? {
-      ...old,
-      draw:official.draw,
-      date:official.date,
-      time:official.time,
-      balls:official.balls,
-      column:official.column,
-      source
-    } : old);
-  }
-
-  for(const official of stoloto){
-    const id=Number(official.draw);
-
-    if(!mergedMap.has(id)){
-      mergedMap.set(id,{...official,source});
-    }
-  }
-
-  const merged=[...mergedMap.values()]
-    .sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));
-
-  const historyChanged=JSON.stringify(merged)!==JSON.stringify(historyRaw);
-
-  if(historyChanged){
-    await fs.writeFile(HISTORY_FILE,JSON.stringify(merged)+'\n');
-  }
-
-  const finalLast=merged.at(-1);
-
-  const status={
-    version:'1.0.4',
-    source:ARCHIVE_URL,
-    updatedAt:new Date().toISOString(),
-    drawsStored:merged.length,
-    latestDraw:Number(finalLast.draw??finalLast.number??finalLast.id),
-    latestDate:String(finalLast.date||''),
-    latestTime:String(finalLast.time||''),
-    verification:'2of3-tail10',
-    stableDraws:TAIL_SIZE,
-    checkedTail:TAIL_SIZE,
-    added:fresh.length,
-    latestOfficial:{
-      draw:newest.draw,
-      date:newest.date,
-      time:newest.time,
-      column:newest.column
-    }
-  };
-
-  let previousStatus=null;
-
-  try{
-    previousStatus=JSON.parse(await fs.readFile(STATUS_FILE,'utf8'));
-  }catch{}
-
-  const statusChanged=historyChanged||!previousStatus||
-    Number(previousStatus.latestDraw)!==status.latestDraw||
-    String(previousStatus.latestDate||'')!==status.latestDate||
-    String(previousStatus.latestTime||'')!==status.latestTime||
-    Number(previousStatus.drawsStored)!==status.drawsStored||
-    Number(previousStatus.latestOfficial?.draw)!==status.latestOfficial.draw||
-    String(previousStatus.latestOfficial?.date||'')!==status.latestOfficial.date||
-    String(previousStatus.latestOfficial?.time||'')!==status.latestOfficial.time||
-    Number(previousStatus.latestOfficial?.column)!==status.latestOfficial.column;
-
-  if(statusChanged){
-    await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');
-  }else{
-    console.log(`COMBO NO CHANGE: №${status.latestDraw} уже опубликован, файлы не переписываются`);
-  }
-
-  console.log(
-    `COMBO TAIL10 PASS: локальный был №${last.draw}; добавлено ${fresh.length}; последний №${status.latestDraw}`
-  );
-}finally{
-  await browser.close();
-}
+try{const context=await browser.newContext({locale:'ru-RU',timezoneId:'Europe/Moscow',viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36'});const page=await context.newPage();await login(page);const historyRaw=await readHistory();const local=historyRaw.map(normalizeHistory).filter(d=>Number.isInteger(d.draw)&&d.balls.length===20).sort((a,b)=>a.draw-b.draw);if(!local.length)throw new Error('FAIL: локальная история пуста');const localLast=local.at(-1);
+  // Probe only the normal tail first. If it no longer contains our anchor, automatically deepen the same 2-of-3 verification far enough to include the whole gap plus anchor.
+  const probe=await readThree(page,NORMAL_TAIL);const officialNewest=probe.at(-1).draw;const gap=Math.max(0,officialNewest-localLast.draw);let checked=NORMAL_TAIL;let stoloto=probe;if(gap>=NORMAL_TAIL){checked=Math.min(MAX_CATCHUP,gap+1);if(gap+1>MAX_CATCHUP)throw new Error(`FAIL SAFE: разрыв ${gap} превышает MAX_CATCHUP=${MAX_CATCHUP}`);console.log(`AUTO CATCH-UP: локальный №${localLast.draw}, официальный №${officialNewest}, углубляем проверку до ${checked}`);stoloto=await readThree(page,checked)}
+  const {last,fresh,newest}=validate(stoloto,historyRaw);const source=`Официальный Столото · OAuth · 2/3 · checked${checked}`;const officialMap=new Map(stoloto.map(d=>[Number(d.draw),d])),mergedMap=new Map();for(const old of historyRaw){const id=Number(old?.draw??old?.number??old?.id),o=officialMap.get(id);mergedMap.set(id,o?{...old,draw:o.draw,date:o.date,time:o.time,balls:o.balls,column:o.column,source}:old)}for(const o of stoloto)if(!mergedMap.has(Number(o.draw)))mergedMap.set(Number(o.draw),{...o,source});const merged=[...mergedMap.values()].sort((a,b)=>Number(a.draw??a.number??a.id)-Number(b.draw??b.number??b.id));const historyChanged=JSON.stringify(merged)!==JSON.stringify(historyRaw);if(historyChanged)await fs.writeFile(HISTORY_FILE,JSON.stringify(merged)+'\n');const finalLast=merged.at(-1);const status={version:'1.0.5',source:ARCHIVE_URL,updatedAt:new Date().toISOString(),drawsStored:merged.length,latestDraw:Number(finalLast.draw??finalLast.number??finalLast.id),latestDate:String(finalLast.date||''),latestTime:String(finalLast.time||''),verification:'2of3-auto-catchup',stableDraws:checked,checkedTail:checked,added:fresh.length,latestOfficial:{draw:newest.draw,date:newest.date,time:newest.time,column:newest.column}};let prev=null;try{prev=JSON.parse(await fs.readFile(STATUS_FILE,'utf8'))}catch{}const changed=historyChanged||!prev||Number(prev.latestDraw)!==status.latestDraw||Number(prev.latestOfficial?.draw)!==status.latestOfficial.draw||String(prev.latestTime||'')!==status.latestTime||Number(prev.checkedTail)!==checked;if(changed)await fs.writeFile(STATUS_FILE,JSON.stringify(status,null,2)+'\n');else console.log(`COMBO NO CHANGE: №${status.latestDraw} уже опубликован`);console.log(`COMBO AUTO-CATCHUP PASS: локальный был №${last.draw}; добавлено ${fresh.length}; проверено ${checked}; последний №${status.latestDraw}`)
+}finally{await browser.close()}
