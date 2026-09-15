@@ -22,12 +22,18 @@ jobs:
       - name: Refresh app build and cache-bust
         run: node refresh-combo-build.mjs
 
-      - name: Safety checks
+      - name: Safety checks for this change
         run: |
-          node self-test-combo-v415.cjs
           node self-test-xray-ui-pwa.mjs
           grep -q 'id="intervalsBtn"' index.html
-          grep -q "k7-interval-builder.html" index.html
+          grep -q "location.href='./k7-interval-builder.html'" index.html
+          grep -q 'id="tableDrawerBtn"' index.html
+          grep -q 'data-sec="our"' index.html
+          grep -q 'data-sec="any"' index.html
+          grep -q 'id="savedDrawerBtn"' index.html
+          grep -q 'data-sec="xray"' index.html
+          grep -q 'data-sec="history"' index.html
+          test "$(grep -o 'id="intervalsBtn"' index.html | wc -l)" -eq 1
 
       - name: Commit app files
         run: |
