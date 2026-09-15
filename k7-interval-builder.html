@@ -70,7 +70,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 
  <div class="card">
   <b>🎯 Готовые K7</b>
-  <div class="muted">Для наблюдения вперёд нажмите <b>«СОХРАНИТЬ K7»</b>. В отдельный архив попадут только сохранённые вручную комбинации. «ПРОВЕРИТЬ ЭТУ K7» показывает прошлую историю 7/7.</div>
+  <div class="muted">Для наблюдения вперёд нажмите <b>«СОХРАНИТЬ K7»</b>. В отдельный архив попадут только сохранённые вручную комбинации. «ПРОВЕРИТЬ ЭТУ K7» открывает полный архив проверки с подсветкой попаданий.</div>
   <div id="combos" class="combos"></div>
  </div>
 
@@ -266,10 +266,10 @@ function renderSavedArchive(){
    const sum=wins.reduce((a,x)=>a+x.pay,0),full7=wins.filter(x=>x.h===7);
    const distText=dist.map((v,h)=>`${h}/7: ${v}`).join(' · ');
    const winRows=wins.length?wins.slice().reverse().map(w=>`<div class="winRow"><div class="winHit">+${w.after}</div><div>№${w.d.draw} · ${w.d.date} <b>${w.d.time}</b> · ст${drawCol(w.d)} · <b>${w.h}/7</b>${w.h===7?'<span class="full7tag">7/7</span>':''}</div><div class="winMoney">${rub(w.pay)}</div></div>`).join(''):'<div class="muted" style="margin-top:6px">После сохранения выигрышных тиражей пока нет.</div>';
-   return `<div class="savedItem"><div class="savedTop"><div><div class="savedTitle">${item.nums.map(fmt).join(' ')}</div><div class="savedMeta">Сохранена после №${item.savedDraw} · ${item.savedDate} ${item.savedTime} · ст${item.savedColumn}. Отсчёт — со следующего тиража.</div></div></div><div class="savedNums">${item.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="savedStats"><div class="savedStat"><b>${future.length}</b><span>ТИРАЖЕЙ ПОСЛЕ</span></div><div class="savedStat"><b>${wins.length}</b><span>ВЫИГРЫШНЫХ</span></div><div class="savedStat"><b>${full7.length}</b><span>ПОЛНЫХ 7/7</span></div></div><div class="hitDist">${distText}<br><b>Сумма выигрышей:</b> ${rub(sum)}</div><details class="wins"><summary>🔥 Выигрышные выходы (${wins.length})</summary>${winRows}</details><div class="savedActions"><button data-saved-check="${item.key}" class="gold">🔎 ПРОВЕРИТЬ ИСТОРИЮ</button><button data-remove-saved="${item.key}" class="danger">✕ УДАЛИТЬ</button></div></div>`
+   return `<div class="savedItem"><div class="savedTop"><div><div class="savedTitle">${item.nums.map(fmt).join(' ')}</div><div class="savedMeta">Сохранена после №${item.savedDraw} · ${item.savedDate} ${item.savedTime} · ст${item.savedColumn}. Отсчёт — со следующего тиража.</div></div></div><div class="savedNums">${item.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="savedStats"><div class="savedStat"><b>${future.length}</b><span>ТИРАЖЕЙ ПОСЛЕ</span></div><div class="savedStat"><b>${wins.length}</b><span>ВЫИГРЫШНЫХ</span></div><div class="savedStat"><b>${full7.length}</b><span>ПОЛНЫХ 7/7</span></div></div><div class="hitDist">${distText}<br><b>Сумма выигрышей:</b> ${rub(sum)}</div><details class="wins"><summary>🔥 Выигрышные выходы (${wins.length})</summary>${winRows}</details><div class="savedActions"><button data-saved-check="${item.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button><button data-remove-saved="${item.key}" class="danger">✕ УДАЛИТЬ</button></div></div>`
  }).join('');
  document.querySelectorAll('[data-remove-saved]').forEach(b=>b.onclick=()=>removeSaved(b.dataset.removeSaved));
- document.querySelectorAll('[data-saved-check]').forEach(b=>b.onclick=()=>{const nums=b.dataset.savedCheck.split('-').map(Number);$('k7').value=nums.map(fmt).join(' ');checkK7(nums);$('checkCard').scrollIntoView({behavior:'smooth',block:'start'})});
+ document.querySelectorAll('[data-saved-check]').forEach(b=>b.onclick=()=>{const item=readSaved().find(x=>x.key===b.dataset.savedCheck);if(item)openK7History(item.nums)});
 }
 
 function renderCombos(combos){
@@ -326,7 +326,14 @@ function ballsHTML(d,nums,extraNums=[]){
  return `<div class="ballRow">${balls.map(n=>`<span class="ball ${k7.has(n)?'k7':extra.has(n)?'extra':''}">${fmt(n)}</span>`).join('')}</div>`;
 }
 
-function checkK7(nums){
+function openK7History(nums){
+ const url=new URL('./index.html',location.href);
+ url.searchParams.set('intervalK7',nums.join('-'));
+ url.hash='history';
+ location.href=url.href;
+}
+function checkK7(nums){openK7History(nums)}
+function checkK7FullMatches(nums){
  const draws=CURRENT_DRAWS.length?CURRENT_DRAWS:DRAWS;
  const setNums=new Set(nums);
  const selected=$('selectedK7');
