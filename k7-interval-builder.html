@@ -22,11 +22,13 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 .matrixWrap{overflow:auto;border:1px solid #24445e;border-radius:10px;margin-top:8px}.matrix{border-collapse:collapse;min-width:740px;width:100%;font-size:10px}.matrix th,.matrix td{border:1px solid #24445e;padding:5px;text-align:center}.matrix th{background:#0f2a43;color:#cfe4f3;position:sticky;top:0}.matrix td.hot{background:#174c36;color:#fff;font-weight:900}.matrix td.warm{background:#3d3513;color:#ffe59a}
 .footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px}.footerIn{max-width:780px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}.err{color:#ffb6b6}.ok{color:#9af274}
 @media(max-width:520px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.rrow{grid-template-columns:34px 40px 44px 1fr}.comboBtns{grid-template-columns:1fr}.k7input{grid-template-columns:1fr}.occRow{grid-template-columns:68px 1fr auto}}
+
+.checkCard{scroll-margin-top:12px}.selectedK7{display:none;margin:9px 0;padding:9px;border:1px solid #4f7da0;border-radius:10px;background:#0a2135}.selectedK7.on{display:block}.selectedK7 b{display:block;margin-bottom:5px}.occSummary{padding:10px;border:1px solid #2c5675;border-radius:11px;background:#0b2032;font-size:12px;line-height:1.4}.occCard{border:1px solid #294b66;background:#081827;border-radius:12px;padding:10px}.occHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.occDraw{font-weight:950;font-size:16px}.occWhen{color:#b8c9d8;font-size:11px;line-height:1.35;margin-top:2px}.occGap{color:var(--gold);font-weight:950;text-align:right;font-size:12px;white-space:nowrap}.matchLine{margin-top:8px;font-size:11px;color:#cfe0ed}.ballRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.ball{min-width:29px;text-align:center;padding:4px 5px;border-radius:7px;background:#0d2538;border:1px solid #294b66;color:#bcd0df;font-size:11px;font-weight:800}.ball.k7{background:linear-gradient(180deg,#4a9e26,#236d22);border-color:#7ade5a;color:#fff}.ball.extra{background:linear-gradient(180deg,#a37b11,#6b4e08);border-color:#e2bd42;color:#fff}.expandBox{margin-top:8px;padding:7px 8px;border-radius:9px;background:#0a1c2d;border:1px solid #294b66;font-size:11px;line-height:1.45;color:#c7d8e5}.expandBox strong{color:var(--gold)}
 </style>
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.2</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.3</div></div>
 
  <div class="card">
   <b>Правильная логика интервалов</b>
@@ -59,15 +61,16 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 
  <div class="card">
   <b>🎯 Готовые K7</b>
-  <div class="muted">Ничего автоматически не сохраняется в COMBO. Можно только скопировать комбинацию.</div>
+  <div class="muted">Копировать ничего не нужно. Нажмите <b>«ПРОВЕРИТЬ ЭТУ K7»</b> — ниже автоматически откроется её история 7/7.</div>
   <div id="combos" class="combos"></div>
  </div>
 
- <div class="card">
-  <b>🧪 Проверить свою K7</b>
-  <div class="muted">Показываются все полные 7/7 в выбранном окне: № тиража, дата, время, столб, интервал до следующего повторения и расширение общими числами.</div>
-  <div class="k7input" style="margin-top:8px"><input id="k7" placeholder="05 16 20 28 48 65 80"><button id="checkK7" class="gold">ПРОВЕРИТЬ</button></div>
-  <div id="occ" class="occ"></div>
+ <div class="card checkCard" id="checkCard">
+  <b>🔎 История K7 — что реально совпало</b>
+  <div class="muted">Для готовой K7 просто нажмите выше <b>«ПРОВЕРИТЬ ЭТУ K7»</b> — числа подставятся сами. Для своей K7 введите ровно 7 чисел и нажмите «ПРОВЕРИТЬ».</div>
+  <div id="selectedK7" class="selectedK7"></div>
+  <div class="k7input" style="margin-top:8px"><input id="k7" placeholder="Например: 05 16 20 28 48 65 80"><button id="checkK7" class="gold">🔎 ПРОВЕРИТЬ</button></div>
+  <div id="occ" class="occ"><div class="muted">Результат появится здесь: 7/7, № тиража, дата, время, столб, интервал и дополнительные совпавшие числа.</div></div>
  </div>
 
  <div class="card">
@@ -181,10 +184,15 @@ function renderCombos(combos){
  const by=Object.fromEntries(STATS.map(s=>[s.n,s]));
  $('combos').innerHTML=combos.map((c,i)=>{
    const details=c.nums.map(n=>`${fmt(n)}: инт${by[n].cur}/С${by[n].strictHits}/М${by[n].softHits}/F${(by[n].freq*100).toFixed(0)}%`).join(' · ');
-   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">ср. рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7</div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-copy="${c.key}" class="ghost">📋 КОПИРОВАТЬ K7</button><button data-check="${c.key}" class="gold">🧪 ПРОВЕРИТЬ 7/7</button></div></div>`
+   const full7=CURRENT_DRAWS.filter(d=>c.nums.every(n=>(d.balls||[]).map(Number).includes(n))).length;
+   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7 · полных 7/7 в окне: <b>${full7}</b></div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-check="${c.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button></div></div>`
  }).join('');
- document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await copyText(b.dataset.copy.split('-').map(x=>fmt(+x)).join(' '));b.textContent='✅ СКОПИРОВАНО';setTimeout(()=>b.textContent='📋 КОПИРОВАТЬ K7',1200)});
- document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{const nums=b.dataset.check.split('-').map(Number);$('k7').value=nums.map(fmt).join(' ');checkK7(nums);$('occ').scrollIntoView({behavior:'smooth',block:'center'})});
+ document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{
+   const nums=b.dataset.check.split('-').map(Number);
+   $('k7').value=nums.map(fmt).join(' ');
+   checkK7(nums);
+   $('checkCard').scrollIntoView({behavior:'smooth',block:'start'});
+ });
 }
 
 function build(){
@@ -217,21 +225,44 @@ function parseK7(){
  if(a.length!==7){$('occ').innerHTML='<div class="notice err">Нужно ровно 7 разных чисел.</div>';return null}return a.sort((a,b)=>a-b);
 }
 
+function ballsHTML(d,nums,extraNums=[]){
+ const k7=new Set(nums),extra=new Set(extraNums),balls=(d.balls||[]).map(Number);
+ return `<div class="ballRow">${balls.map(n=>`<span class="ball ${k7.has(n)?'k7':extra.has(n)?'extra':''}">${fmt(n)}</span>`).join('')}</div>`;
+}
+
 function checkK7(nums){
  const draws=CURRENT_DRAWS.length?CURRENT_DRAWS:DRAWS;
+ const setNums=new Set(nums);
+ const selected=$('selectedK7');
+ selected.classList.add('on');
+ selected.innerHTML=`<b>Проверяем K7:</b><div class="nums">${nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div>`;
  const hits=draws.filter(d=>nums.every(n=>(d.balls||[]).map(Number).includes(n)));
- if(!hits.length){$('occ').innerHTML='<div class="notice">В выбранном окне полного 7/7 нет.</div>';return}
- $('occ').innerHTML=hits.map((d,i)=>{
-   let gap='первый',extra='—';
+ if(!hits.length){
+   $('occ').innerHTML=`<div class="occSummary"><b>Полных 7/7: 0</b> из ${draws.length} тиражей.<br><span class="muted">Все семь выбранных чисел одновременно в одном тираже в этом окне не встречались.</span></div>`;
+   return;
+ }
+ const cards=hits.map((d,i)=>{
+   let gapText='Первый полный выход',compare='Первое появление этой K7 в выбранном окне.',extraNums=[];
    if(i>0){
-     const prev=hits[i-1],idxA=draws.findIndex(x=>Number(x.draw)===Number(prev.draw)),idxB=draws.findIndex(x=>Number(x.draw)===Number(d.draw));
-     gap='+'+(idxB-idxA);
-     const common=uniq((prev.balls||[]).map(Number)).filter(n=>(d.balls||[]).map(Number).includes(n));
-     const ex=Math.max(0,common.length-7);
-     extra=ex?`K7 +${ex} (${common.filter(n=>!nums.includes(n)).map(fmt).join(' ')||'доп.'})`:'просто 7/7';
+     const prev=hits[i-1];
+     const idxA=draws.findIndex(x=>Number(x.draw)===Number(prev.draw)),idxB=draws.findIndex(x=>Number(x.draw)===Number(d.draw));
+     const gap=idxB-idxA;
+     const prevSet=new Set((prev.balls||[]).map(Number));
+     const common=uniq((d.balls||[]).map(Number).filter(n=>prevSet.has(n)));
+     extraNums=common.filter(n=>!setNums.has(n)).sort((a,b)=>a-b);
+     gapText=`Повтор через ${gap} тир.`;
+     compare=extraNums.length
+       ? `Между №${prev.draw} и №${d.draw} совпало <strong>${common.length} из 20</strong>: сама K7 = <strong>7/7</strong> + расширение <strong>+${extraNums.length}</strong>: ${extraNums.map(fmt).join(' ')}`
+       : `Между №${prev.draw} и №${d.draw}: сама K7 совпала <strong>7/7</strong>, дополнительных общих чисел нет — простой повтор.`;
    }
-   return `<div class="occRow"><div class="occDraw">№${d.draw}</div><div class="occMeta">${d.date} · <b>${d.time}</b> · <b>ст${drawCol(d)}</b><br>${extra}</div><div class="occGap">${gap}</div></div>`
+   return `<div class="occCard">
+     <div class="occHead"><div><div class="occDraw">№${d.draw}</div><div class="occWhen">${d.date} · <b>${d.time}</b> · <b>столб ${drawCol(d)}</b></div></div><div class="occGap">${gapText}</div></div>
+     <div class="matchLine"><b>Совпали 7/7:</b></div><div class="ballRow">${nums.map(n=>`<span class="ball k7">${fmt(n)}</span>`).join('')}</div>
+     <div class="matchLine"><b>Все 20 чисел тиража:</b> зелёные = K7${extraNums.length?', жёлтые = дополнительное расширение':''}</div>${ballsHTML(d,nums,extraNums)}
+     <div class="expandBox">${compare}</div>
+   </div>`;
  }).join('');
+ $('occ').innerHTML=`<div class="occSummary"><b>Найдено полных 7/7: ${hits.length}</b> из ${draws.length} тиражей.<br><span class="muted">Ниже по каждому выходу видно: какие 7 чисел совпали, все 20 чисел тиража, время, столб и расширение относительно предыдущего полного выхода.</span></div>${cards}`;
 }
 
 async function load(){
