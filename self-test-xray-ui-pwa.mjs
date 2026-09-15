@@ -123,9 +123,9 @@ await check('PWA activation reloads once; returning to the phone app checks for 
  const locationMock={href:scope+'?v=old',replace:url=>{reloads++;assert.equal(new URL(url).searchParams.get('v'),build)}};
  const documentMock={hidden:true,querySelector:()=>({content:'old'}),addEventListener:(name,fn)=>{callbacks[name]=fn}};
  const fetchMock=async(_url,options)=>{assert.equal(options.cache,'no-store');return {ok:true,json:async()=>({build})}};
- const run=()=>new Function('navigator','location','document','addEventListener','setInterval','fetch','window','sessionStorage',code)(
+ const run=()=>new Function('navigator','location','document','addEventListener','setInterval','fetchJSONLive','window','sessionStorage',code)(
   {serviceWorker:worker},locationMock,documentMock,
-  (name,fn)=>{callbacks[name]=fn},()=>{},fetchMock,{},
+  (name,fn)=>{callbacks[name]=fn},()=>{},async name=>{assert.equal(name,'app-version.json');return {build}}, {},
   {getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)});
  run();documentMock.hidden=false;await callbacks.focus();
  assert.equal(reloads,1);assert.equal(updates,1);

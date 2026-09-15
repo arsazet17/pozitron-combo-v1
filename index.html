@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="2b2753f0de6a">
-<link rel="manifest" href="manifest.webmanifest?v=2b2753f0de6a">
+<meta name="app-build" content="3315a94a0532">
+<link rel="manifest" href="manifest.webmanifest?v=3315a94a0532">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=2b2753f0de6a">
+<link rel="stylesheet" href="xray-v1.css?v=3315a94a0532">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -31,7 +31,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.10</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.11</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -74,9 +74,9 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=2b2753f0de6a"></script>
-<script src="xray-ui-v1.js?v=2b2753f0de6a"></script>
-<script src="xray-analog-columns-v1.js?v=2b2753f0de6a"></script>
+<script src="xray-engine-v1.js?v=3315a94a0532"></script>
+<script src="xray-ui-v1.js?v=3315a94a0532"></script>
+<script src="xray-analog-columns-v1.js?v=3315a94a0532"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>String(n).padStart(2,'0');
@@ -164,11 +164,22 @@ function notifyComboXray(){try{const x=window.ComboXrayUI;if(typeof x?.notifyDat
 function switchSec(id){try{document.activeElement?.blur()}catch(e){}document.querySelectorAll('.section').forEach(s=>s.classList.toggle('on',s.id===id));document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('on',b.dataset.sec===id));if(id==='xray')notifyComboXray();window.scrollTo({top:0,behavior:'smooth'})}
 function updateDbLine(){const last=DRAWS.at(-1);if(!last){$('dbline').textContent='База пуста';return}$('dbline').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} · последний №${last.draw} · ${last.date} ${last.time}`;if($('tableDrawer') && !$('tableDrawer').classList.contains('hidden'))renderTableDrawer();}
 function refreshOpenHistory(){if(!lastResult)return;const nums=[...lastResult.nums],name=lastResult.name;const a=getFiltered();lastResult={nums,name,draws:a,st:stats(nums,a)};renderHistory();}
-async function fetchJSONLive(name){const sep=name.includes('?')?'&':'?';const r=await fetch(`${name}${sep}_live=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);const text=await r.text();if(/^\s*</.test(text))throw new Error(`${name}: получен HTML вместо JSON`);return JSON.parse(text);}
+async function fetchJSONLive(name){
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),30000);
+ try{
+  const sep=name.includes('?')?'&':'?';
+  const r=await fetch(`${name}${sep}_live=${Date.now()}`,{cache:'no-store',signal:controller.signal});
+  if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);
+  const text=await r.text();
+  if(/^\s*</.test(text))throw new Error(`${name}: получен HTML вместо JSON`);
+  return JSON.parse(text);
+ }finally{clearTimeout(timer)}
+}
 async function autoRefreshLive(force=false){if(autoRefreshBusy||document.hidden)return;autoRefreshBusy=true;try{const s=await fetchJSONLive('combo-status-v1.json');const current=Number(DRAWS.at(-1)?.draw||0);const official=Number(s?.latestDraw||0);syncMeta=s;if(!force && official<=current)return;const d=await fetchJSONLive('combo-history-v1.json');if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');d.sort((a,b)=>a.draw-b.draw);const received=Number(d.at(-1)?.draw||0);if(official && received<official)throw new Error(`История ещё не догнала status: ${received}<${official}`);if(received>current || force){DRAWS=d;updateDbLine();renderFields('anyP');renderFields('ourP');refreshOpenHistory();notifyComboXray();}}catch(e){console.warn('COMBO LIVE AUTO',e);}finally{autoRefreshBusy=false;}}
 function startAutoRefresh(){window.setTimeout(()=>autoRefreshLive(false),1000);window.setInterval(()=>autoRefreshLive(false),AUTO_REFRESH_MS);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoRefreshLive(true)});window.addEventListener('focus',()=>autoRefreshLive(false));window.addEventListener('pageshow',()=>autoRefreshLive(false));window.addEventListener('online',()=>autoRefreshLive(true));}
 async function forceUpdate(){const b=$('refreshBtn');if(!b)return;b.disabled=true;b.textContent='↻ Обновляю…';try{if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.update().catch(()=>{})))}if('caches' in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('combo-keno-shell')).map(k=>caches.delete(k)))}}catch(e){console.warn(e)}finally{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString())}}
-async function load(){let d,p,s,pay;try{[d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json').catch(()=>null),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error('COMBO DB LOAD',e);return}try{updateDbLine();renderGroups();renderCombos();renderPick();}catch(e){console.error('COMBO UI RENDER',e)}startAutoRefresh();notifyComboXray();}
+async function load(){let d,p,s,pay;try{[d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json').catch(()=>null),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error('COMBO DB LOAD',e);window.setTimeout(load,AUTO_REFRESH_MS);return}try{updateDbLine();renderGroups();renderCombos();renderPick();}catch(e){console.error('COMBO UI RENDER',e)}startAutoRefresh();notifyComboXray();}
 
 document.querySelectorAll('.nav[data-sec]').forEach(b=>b.onclick=()=>{closeSavedDrawer();closeTableDrawer();switchSec(b.dataset.sec)});
 $('anyParams').innerHTML=paramsHTML('anyP');bindParams(document);renderFields('anyP');$('checkAny').onclick=()=>runCheck(selected,'Любая комба');$('refreshBtn').onclick=forceUpdate;
@@ -181,10 +192,10 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=2b2753f0de6a',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=3315a94a0532',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-search-v1.js?v=2b2753f0de6a"></script>
-<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.3.10'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
+<script src="combo-search-v1.js?v=3315a94a0532"></script>
+<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.3.11'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
 <script id="comboAutoUpdate">
 (()=>{
  const current=document.querySelector('meta[name="app-build"]')?.content;
@@ -193,9 +204,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{co
   if(busy||reloading||document.hidden)return;
   busy=true;
   try{
-   const response=await fetch('app-version.json?_app_check='+Date.now(),{cache:'no-store'});
-   if(!response.ok)return;
-   const {build}=await response.json();
+   const {build}=await fetchJSONLive('app-version.json');
    if(!/^[a-f0-9]{12}$/.test(build)||build===current)return;
    const url=new URL(location.href);
    const key='combo-app-reloaded:'+url.pathname+':'+build;
