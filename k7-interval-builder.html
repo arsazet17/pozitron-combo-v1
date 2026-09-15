@@ -6,21 +6,45 @@
 <meta name="theme-color" content="#061321">
 <title>K7 · Интервалы → комбы</title>
 <style>
-:root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--gold:#ffbd23;--blue:#35a9ff;--red:#ff5c58}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0b2842 0,#04111e 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}.app{max-width:760px;margin:auto;padding:12px 10px 80px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between}.top h1{font-size:21px;margin:0}.ver{font-size:11px;color:#7fd8ff;border:1px solid var(--line);border-radius:8px;padding:4px 7px}.card{background:linear-gradient(180deg,rgba(15,39,62,.98),rgba(7,24,39,.98));border:1px solid var(--line);border-radius:15px;padding:12px;margin:10px 0}.muted{font-size:12px;color:var(--muted)}button,select,input{font:inherit}button{border:1px solid #315677;border-radius:11px;background:#132e48;color:#fff;font-weight:850;padding:10px;cursor:pointer}.primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}.ghost{background:#0a1c2d}.gold{background:#45350b;border-color:#876916;color:#ffe08a}.controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.controls label{font-size:11px;color:var(--muted)}select,input{width:100%;margin-top:4px;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}.stat{background:#081827;border:1px solid #294b66;border-radius:10px;padding:8px;text-align:center}.stat b{display:block;color:var(--green);font-size:18px}.stat span{font-size:10px;color:var(--muted)}.rank{display:grid;gap:5px;margin-top:8px}.rrow{display:grid;grid-template-columns:42px 46px 48px 52px 1fr;gap:5px;align-items:center;padding:7px;border:1px solid #24445e;border-radius:10px;background:#071827;font-size:11px}.rnum{font-size:16px;font-weight:950;color:#fff}.rscore{font-weight:950;color:var(--gold)}.sig{font-weight:900}.sig.h{color:#7ff158}.sig.m{color:#ffd15d}.sig.l{color:#8fa4b7}.meta{color:#a8bdce;line-height:1.25}.combos{display:grid;gap:8px;margin-top:9px}.combo{border:1px solid #294b66;background:#081827;border-radius:12px;padding:9px}.comboTop{display:flex;justify-content:space-between;gap:8px;align-items:center}.nums{display:flex;gap:5px;flex-wrap:wrap}.n{padding:6px 7px;border-radius:8px;background:#26752d;border:1px solid #67c93f;font-weight:950;font-size:13px}.badge{font-size:10px;color:#a9c0d2}.comboBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.detail{font-size:10px;color:#9fb4c5;line-height:1.45;margin-top:7px}.matrixWrap{overflow:auto;border:1px solid #24445e;border-radius:10px;margin-top:8px}.matrix{border-collapse:collapse;min-width:720px;width:100%;font-size:10px}.matrix th,.matrix td{border:1px solid #24445e;padding:5px;text-align:center}.matrix th{background:#0f2a43;color:#cfe4f3;position:sticky;top:0}.matrix td.hot{background:#174c36;color:#fff;font-weight:900}.matrix td.warm{background:#3d3513;color:#ffe59a}.k7input{display:grid;grid-template-columns:1fr auto;gap:7px}.occ{display:grid;gap:6px;margin-top:8px}.occRow{display:grid;grid-template-columns:72px 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid #294b66;border-radius:10px;background:#081827;font-size:11px}.occDraw{font-weight:950}.occMeta{color:#b8c9d8}.occGap{color:var(--gold);font-weight:950;text-align:right}.notice{font-size:11px;color:#ffd78b;background:#28200d;border:1px solid #6f5717;border-radius:10px;padding:8px;margin-top:8px}.footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px}.footerIn{max-width:760px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}.err{color:#ffb6b6}.ok{color:#9af274}@media(max-width:520px){.rrow{grid-template-columns:36px 40px 42px 46px 1fr}.controls{grid-template-columns:1fr}.comboBtns{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}}
+:root{--bg:#04111e;--p:#0c2135;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--gold:#ffbd23;--blue:#35a9ff;--red:#ff5c58}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0b2842 0,#04111e 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+.app{max-width:780px;margin:auto;padding:12px 10px 88px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between}.top h1{font-size:21px;margin:0}
+.ver{font-size:11px;color:#7fd8ff;border:1px solid var(--line);border-radius:8px;padding:4px 7px}.card{background:linear-gradient(180deg,rgba(15,39,62,.98),rgba(7,24,39,.98));border:1px solid var(--line);border-radius:15px;padding:12px;margin:10px 0}
+.muted{font-size:12px;color:var(--muted);line-height:1.4}.notice{font-size:11px;color:#ffd78b;background:#28200d;border:1px solid #6f5717;border-radius:10px;padding:8px;margin-top:8px}
+button,select,input{font:inherit}button{border:1px solid #315677;border-radius:11px;background:#132e48;color:#fff;font-weight:850;padding:10px;cursor:pointer}.primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}.ghost{background:#0a1c2d}.gold{background:#45350b;border-color:#876916;color:#ffe08a}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.controls label{font-size:11px;color:var(--muted)}select,input{width:100%;margin-top:4px;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.stat{background:#081827;border:1px solid #294b66;border-radius:10px;padding:8px;text-align:center}.stat b{display:block;color:var(--green);font-size:18px}.stat span{font-size:10px;color:var(--muted)}
+.rules{display:grid;gap:7px;margin-top:9px}.rule{border:1px solid #294b66;background:#081827;border-radius:10px;padding:9px}.rule b{color:#dceeff}.rule strong{color:var(--gold)}
+.rank{display:grid;gap:5px;margin-top:8px}.rrow{display:grid;grid-template-columns:38px 42px 48px 1fr;gap:5px;align-items:center;padding:8px;border:1px solid #24445e;border-radius:10px;background:#071827;font-size:11px}.rnum{font-size:17px;font-weight:950}.rscore{font-weight:950;color:var(--gold)}.meta{color:#a8bdce;line-height:1.3}.signal{font-weight:950}.signal.h{color:#7ff158}.signal.m{color:#ffd15d}.signal.l{color:#8fa4b7}
+.combos{display:grid;gap:8px;margin-top:9px}.combo{border:1px solid #294b66;background:#081827;border-radius:12px;padding:9px}.comboTop{display:flex;justify-content:space-between;gap:8px;align-items:center}.nums{display:flex;gap:5px;flex-wrap:wrap}.n{padding:6px 7px;border-radius:8px;background:#26752d;border:1px solid #67c93f;font-weight:950;font-size:13px}.badge{font-size:10px;color:#a9c0d2}.detail{font-size:10px;color:#9fb4c5;line-height:1.5;margin-top:7px}.comboBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.k7input{display:grid;grid-template-columns:1fr auto;gap:7px}.occ{display:grid;gap:6px;margin-top:8px}.occRow{display:grid;grid-template-columns:74px 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid #294b66;border-radius:10px;background:#081827;font-size:11px}.occDraw{font-weight:950}.occMeta{color:#b8c9d8;line-height:1.3}.occGap{color:var(--gold);font-weight:950;text-align:right}
+.matrixBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.matrixBtns button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876}
+.matrixWrap{overflow:auto;border:1px solid #24445e;border-radius:10px;margin-top:8px}.matrix{border-collapse:collapse;min-width:740px;width:100%;font-size:10px}.matrix th,.matrix td{border:1px solid #24445e;padding:5px;text-align:center}.matrix th{background:#0f2a43;color:#cfe4f3;position:sticky;top:0}.matrix td.hot{background:#174c36;color:#fff;font-weight:900}.matrix td.warm{background:#3d3513;color:#ffe59a}
+.footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px}.footerIn{max-width:780px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}.err{color:#ffb6b6}.ok{color:#9af274}
+@media(max-width:520px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.rrow{grid-template-columns:34px 40px 44px 1fr}.comboBtns{grid-template-columns:1fr}.k7input{grid-template-columns:1fr}.occRow{grid-template-columns:68px 1fr auto}}
 </style>
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">v1.0</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.1</div></div>
 
  <div class="card">
-  <b>Формирование K7 по интервалам возврата</b>
-  <div class="muted" style="margin-top:4px">Берём текущий интервал каждого числа, смотрим как часто такой интервал уже закрывался в архиве, добавляем мягкое ±1 и совместимость пар. Никакой постфактум-подгонки: расчёт только по тиражам ДО следующего.</div>
+  <b>Правильная логика интервалов</b>
+  <div class="rules">
+   <div class="rule"><b>Строгий режим</b><div class="muted">Считает только соседние появления числа: 1→2, 2→3, 3→4. Интервал <strong>0</strong> — число вышло в двух соседних тиражах.</div></div>
+   <div class="rule"><b>Мягкий режим</b><div class="muted">Считает <strong>все пары появлений</strong>: кроме соседних добавляет 1→3, 1→4, 2→4 и т.д. Это не «±1», а плотная картина общего ритма числа.</div></div>
+   <div class="rule"><b>Фильтр частоты</b><div class="muted">Интервальный сигнал усиливается, если число само по себе достаточно часто встречалось в выбранном архивном окне.</div></div>
+  </div>
+  <div class="notice">Это отдельная лабораторная страница. В основное приложение COMBO ничего не встроено и его файлы интерфейса не меняются.</div>
+ </div>
+
+ <div class="card">
+  <b>Формирование K7</b>
+  <div class="muted">Расчёт делается только по известным тиражам до следующего тиража. Основной параметр — текущий пропуск числа и его исторические совпадения в строгой/мягкой матрице.</div>
   <div class="controls">
    <label>Глубина архива<select id="window"><option>100</option><option>200</option><option selected>400</option><option>800</option></select></label>
-   <label>Пул для генератора<select id="pool"><option>12</option><option selected>18</option><option>24</option><option>30</option></select></label>
-   <label>Режим<select id="mode"><option value="exact">Точный интервал</option><option value="soft" selected>Мягкий ±1</option><option value="balance">Баланс + пары + столбы</option></select></label>
+   <label>Пул кандидатов<select id="pool"><option>12</option><option selected>18</option><option>24</option><option>30</option></select></label>
+   <label>Режим генератора<select id="mode"><option value="strict">Строгий + частота</option><option value="soft">Мягкий + частота</option><option value="combo" selected>Строгий + мягкий + частота</option><option value="balance">Комбо + пары + столбы</option></select></label>
    <label>Сколько K7<select id="count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
   </div>
   <button id="build" class="primary" style="width:100%;margin-top:9px">СФОРМИРОВАТЬ K7</button>
@@ -29,83 +53,198 @@
 
  <div class="card">
   <b>🔥 Рейтинг чисел сейчас</b>
-  <div class="muted">Тек. инт. = сколько тиражей прошло после последнего выхода. Точно = сколько раз этот же интервал закрывался в выбранном окне.</div>
+  <div class="muted">Тек. инт. — сколько тиражей пропущено после последнего появления. «Стр.» — сколько раз этот интервал закрывался между соседними появлениями. «Мяг.» — сколько раз он встречался среди всех пар.</div>
   <div id="rank" class="rank"></div>
  </div>
 
  <div class="card">
   <b>🎯 Готовые K7</b>
-  <div class="muted">Кнопка «Запомнить» кладёт комбинацию прямо в раздел ⏰ «Комбы» основного COMBO.</div>
+  <div class="muted">Ничего автоматически не сохраняется в COMBO. Можно только скопировать комбинацию.</div>
   <div id="combos" class="combos"></div>
  </div>
 
  <div class="card">
   <b>🧪 Проверить свою K7</b>
-  <div class="muted">Введите 7 чисел через пробел/запятую. Покажу каждый полный 7/7, интервал, время, столб и расширение.</div>
+  <div class="muted">Показываются все полные 7/7 в выбранном окне: № тиража, дата, время, столб, интервал до следующего повторения и расширение общими числами.</div>
   <div class="k7input" style="margin-top:8px"><input id="k7" placeholder="05 16 20 28 48 65 80"><button id="checkK7" class="gold">ПРОВЕРИТЬ</button></div>
   <div id="occ" class="occ"></div>
  </div>
 
  <div class="card">
-  <b>📊 Матрица текущих лидеров</b>
-  <div class="muted">Строки — интервалы 0–19, столбцы — TOP-20 чисел. В клетке число исторических возвратов.</div>
+  <b>📊 Матрица интервалов</b>
+  <div class="matrixBtns"><button id="mStrict" class="active">СТРОГАЯ</button><button id="mSoft">МЯГКАЯ</button></div>
+  <div class="muted" id="matrixInfo" style="margin-top:7px">Строгая: только соседние появления.</div>
   <div id="matrix" class="matrixWrap"></div>
-  <div class="notice">Это не гарантия выигрыша. Матрица используется как дополнительный фильтр для формирования K7, а не как самостоятельный прогноз.</div>
  </div>
 </div>
 <div class="footer"><div class="footerIn"><button id="back" class="ghost">← COMBO</button><button id="refresh" class="primary">↻ ОБНОВИТЬ</button></div></div>
+
 <script>
 'use strict';
-const $=id=>document.getElementById(id), fmt=n=>String(n).padStart(2,'0');
-const SAVED_ANY_KEY='comboKenoSavedAnyCombosV2';
-let DRAWS=[], STATS=[];
-function colOf(n){return ((Number(n)-1)%10)+1}
-function drawCol(d){const c=Number(d?.column);return Number.isInteger(c)&&c>=1&&c<=10?c:'—'}
+const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
+let DRAWS=[],STATS=[],CURRENT_DRAWS=[],MATRIX_MODE='strict';
 function uniq(a){return [...new Set(a)]}
+function colOf(n){return((Number(n)-1)%10)+1}
+function drawCol(d){const c=Number(d?.column);return Number.isInteger(c)&&c>=1&&c<=10?c:'—'}
+function countsOf(a){const o={};for(const x of a)o[x]=(o[x]||0)+1;return o}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-async function fetchJSON(name){const u=name+'?v='+Date.now();const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error(name+' HTTP '+r.status);return r.json()}
-function intervalStats(draws){
- const pos=Array.from({length:81},()=>[]);draws.forEach((d,i)=>(d.balls||[]).forEach(x=>{x=Number(x);if(x>=1&&x<=80)pos[x].push(i)}));
- const out=[];for(let n=1;n<=80;n++){
-  const p=pos[n], gaps=[];for(let i=1;i<p.length;i++)gaps.push(p[i]-p[i-1]-1);
-  const cur=p.length?draws.length-1-p[p.length-1]:draws.length;
-  const counts={};gaps.forEach(g=>counts[g]=(counts[g]||0)+1);
-  const exact=counts[cur]||0, near=(counts[cur-1]||0)+(counts[cur+1]||0), denom=Math.max(1,gaps.length);
-  const exactRate=exact/denom, softRate=(exact+0.5*near)/denom;
-  const last=p.length?draws[p[p.length-1]]:null;
-  out.push({n,cur,gaps,counts,exact,near,exactRate,softRate,last,occ:p.length,score:0});
+async function fetchJSON(name){const r=await fetch(name+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(name+' HTTP '+r.status);return r.json()}
+
+function buildNumberStats(draws){
+ const pos=Array.from({length:81},()=>[]);
+ draws.forEach((d,i)=>(d.balls||[]).forEach(v=>{const n=Number(v);if(n>=1&&n<=80)pos[n].push(i)}));
+ const out=[];
+ for(let n=1;n<=80;n++){
+   const p=pos[n],strict=[],soft=[];
+   for(let i=1;i<p.length;i++)strict.push(p[i]-p[i-1]-1);
+   for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++)soft.push(p[j]-p[i]-1);
+   const sc=countsOf(strict),mc=countsOf(soft),cur=p.length?draws.length-1-p[p.length-1]:draws.length;
+   const last=p.length?draws[p[p.length-1]]:null;
+   out.push({
+     n,cur,last,occ:p.length,freq:draws.length?p.length/draws.length:0,
+     strict,soft,strictCounts:sc,softCounts:mc,
+     strictHits:sc[cur]||0,softHits:mc[cur]||0,
+     strictRate:(sc[cur]||0)/Math.max(1,strict.length),
+     softRate:(mc[cur]||0)/Math.max(1,soft.length),
+     repeat0:sc[0]||0,score:0
+   });
  }
  return out;
 }
-function pairMatrix(draws){const m=Array.from({length:81},()=>new Uint16Array(81));for(const d of draws){const b=uniq((d.balls||[]).map(Number).filter(n=>n>=1&&n<=80));for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){m[b[i]][b[j]]++;m[b[j]][b[i]]++;}}return m}
+
 function scoreStats(stats,mode){
- const maxSoft=Math.max(...stats.map(s=>s.softRate),.001),maxExact=Math.max(...stats.map(s=>s.exactRate),.001);
- stats.forEach(s=>{let v=mode==='exact'?s.exactRate/maxExact:s.softRate/maxSoft;const support=clamp(s.gaps.length/70,0.55,1);s.score=100*v*support;});
- stats.sort((a,b)=>b.score-a.score||b.exact-a.exact||a.n-b.n);return stats;
-}
-function comboScore(nums,byNum,pair,drawCount,mode){let base=nums.reduce((a,n)=>a+byNum[n].score,0)/nums.length;let pairSum=0,pairs=0;for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){pairSum+=pair[nums[i]][nums[j]]/Math.max(1,drawCount);pairs++;}let pairPct=pairs?pairSum/pairs:0;let cols=new Set(nums.map(colOf)).size;let balance=cols/7;if(mode==='balance')base=base*.72+pairPct*100*.18+balance*100*.10;return{score:base,pairPct,cols}}
-function generateCombos(stats,draws,mode,poolN,count){
- const pool=stats.slice(0,poolN).map(x=>x.n), byNum=Object.fromEntries(stats.map(x=>[x.n,x])), pair=pairMatrix(draws), used=new Map(), result=[];
- function usage(n){return used.get(n)||0}
- for(let k=0;k<count;k++){
-  const chosen=[];const start=pool[(k*3)%pool.length];chosen.push(start);
-  while(chosen.length<7){let best=null,bv=-1e9;for(const n of pool){if(chosen.includes(n))continue;let compat=0;for(const x of chosen)compat+=pair[n][x]/Math.max(1,draws.length);compat/=chosen.length;let newCol=chosen.some(x=>colOf(x)===colOf(n))?0:1;let v=byNum[n].score*.72+compat*100*.18+newCol*10-usage(n)*2.2;v+=((n*17+k*11)%13)/1000;if(v>bv){bv=v;best=n}}if(best==null)break;chosen.push(best)}
-  const nums=[...chosen].sort((a,b)=>a-b), key=nums.join('-');if(result.some(x=>x.key===key)){k--;pool.push(pool.shift());if(k>count*3)break;continue}const q=comboScore(nums,byNum,pair,draws.length,mode);result.push({key,nums,...q});nums.forEach(n=>used.set(n,usage(n)+1));
+ const ms=Math.max(.000001,...stats.map(s=>s.strictRate));
+ const mm=Math.max(.000001,...stats.map(s=>s.softRate));
+ const mf=Math.max(.000001,...stats.map(s=>s.freq));
+ for(const s of stats){
+   const ns=s.strictRate/ms,nm=s.softRate/mm,nf=s.freq/mf;
+   let v=0;
+   if(mode==='strict')v=.80*ns+.20*nf;
+   else if(mode==='soft')v=.75*nm+.25*nf;
+   else v=.50*ns+.25*nm+.25*nf;
+   const support=clamp(s.occ/80,.65,1);
+   s.score=100*v*support;
  }
- return result;
+ stats.sort((a,b)=>b.score-a.score||b.strictHits-a.strictHits||b.softHits-a.softHits||b.freq-a.freq||a.n-b.n);
+ return stats;
 }
-function sigClass(score){return score>=70?['СИЛЬНО','h']:score>=40?['СРЕДНЕ','m']:['СЛАБО','l']}
-function renderRank(stats){const box=$('rank');box.innerHTML=stats.slice(0,20).map((s,i)=>{const [lab,cl]=sigClass(s.score),l=s.last;return `<div class="rrow"><div>#${i+1}</div><div class="rnum">${fmt(s.n)}</div><div class="rscore">${s.score.toFixed(0)}</div><div class="sig ${cl}">${lab}</div><div class="meta">инт <b>${s.cur}</b> · точно ${s.exact} · ±1 ${s.near}<br>${l?`посл. №${l.draw} · ${l.date} ${l.time} · ст${drawCol(l)}`:'не было'}</div></div>`}).join('')}
-function saveCombo(nums){try{let a=JSON.parse(localStorage.getItem(SAVED_ANY_KEY)||'[]');if(!Array.isArray(a))a=[];const key=[...nums].sort((a,b)=>a-b).join('-');const exists=a.some(x=>Array.isArray(x?.nums)&&[...x.nums].map(Number).sort((a,b)=>a-b).join('-')===key);if(!exists)a.unshift({nums:[...nums].sort((a,b)=>a-b),createdAt:Date.now()});localStorage.setItem(SAVED_ANY_KEY,JSON.stringify(a));return exists?'Уже была сохранена':'Сохранено в COMBO'}catch(e){return 'Ошибка сохранения'}}
-function renderCombos(items,byNum){$('combos').innerHTML=items.map((c,i)=>`<div class="combo"><div class="comboTop"><div class="nums">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="badge">#${i+1}<br>балл ${c.score.toFixed(1)}</div></div><div class="detail">${c.nums.map(n=>`${fmt(n)}: инт ${byNum[n].cur}/точно ${byNum[n].exact}`).join(' · ')}<br>Столбов чисел: ${c.cols}/7 · совместимость пар ${(c.pairPct*100).toFixed(1)}%</div><div class="comboBtns"><button data-save="${i}" class="primary">✅ Запомнить в COMBO</button><button data-check="${i}" class="ghost">🧪 Проверить 7/7</button></div></div>`).join('');
- document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const c=items[+b.dataset.save];b.textContent=saveCombo(c.nums)});document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{const c=items[+b.dataset.check];$('k7').value=c.nums.map(fmt).join(' ');checkK7(c.nums);$('k7').scrollIntoView({behavior:'smooth',block:'center'})});
+
+function pairMatrix(draws){
+ const m=Array.from({length:81},()=>new Uint16Array(81));
+ for(const d of draws){
+   const b=uniq((d.balls||[]).map(Number).filter(n=>n>=1&&n<=80));
+   for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){m[b[i]][b[j]]++;m[b[j]][b[i]]++}
+ }
+ return m;
 }
-function renderMatrix(stats){const top=stats.slice(0,20),maxI=19;let h='<table class="matrix"><thead><tr><th>Инт.</th>'+top.map(s=>`<th>${fmt(s.n)}</th>`).join('')+'</tr></thead><tbody>';for(let g=0;g<=maxI;g++){h+=`<tr><th>${g}</th>`+top.map(s=>{const v=s.counts[g]||0,cl=v>=5?'hot':v>=3?'warm':'';return `<td class="${cl}">${v||''}</td>`}).join('')+'</tr>'}h+='</tbody></table>';$('matrix').innerHTML=h}
-function parseK7(v){const a=uniq(String(v||'').split(/[^0-9]+/).filter(Boolean).map(Number).filter(n=>n>=1&&n<=80));return a.length===7?a.sort((a,b)=>a-b):null}
-function checkK7(nums){if(!nums)nums=parseK7($('k7').value);const box=$('occ');if(!nums){box.innerHTML='<div class="err">Нужно ровно 7 разных чисел от 1 до 80.</div>';return}const occ=[];for(let i=0;i<DRAWS.length;i++){const d=DRAWS[i],set=new Set(d.balls||[]);if(nums.every(n=>set.has(n)))occ.push({i,d})}if(!occ.length){box.innerHTML='<div class="muted">В загруженном архиве полного 7/7 не найдено.</div>';return}box.innerHTML=occ.map((o,j)=>{let gap='первый';let extra='';if(j){const prev=occ[j-1],common=(o.d.balls||[]).filter(n=>(prev.d.balls||[]).includes(n));gap='+'+(o.i-prev.i)+' тир';extra=` · расширение +${Math.max(0,common.length-7)} (${common.length} общих)`}return `<div class="occRow"><div class="occDraw">№${o.d.draw}</div><div class="occMeta">${o.d.date} · <b>${o.d.time}</b> · <b>ст${drawCol(o.d)}</b>${extra}</div><div class="occGap">${gap}</div></div>`}).join('')}
-function build(){const w=Number($('window').value),mode=$('mode').value,poolN=Number($('pool').value),count=Number($('count').value),draws=DRAWS.slice(-Math.min(w,DRAWS.length));STATS=scoreStats(intervalStats(draws),mode);const byNum=Object.fromEntries(STATS.map(x=>[x.n,x]));const combos=generateCombos(STATS,draws,mode,poolN,count);renderRank(STATS);renderCombos(combos,byNum);renderMatrix(STATS);const last=DRAWS[DRAWS.length-1],strong=STATS.filter(x=>x.score>=70).length;$('summary').innerHTML=`<div class="stat"><b>${draws.length}</b><span>тиражей</span></div><div class="stat"><b>${strong}</b><span>сильных чисел</span></div><div class="stat"><b>${fmt(STATS[0].n)}</b><span>лидер сейчас</span></div>`;$('db').textContent=`Архив до №${last.draw} · ${last.date} ${last.time} · ст${drawCol(last)}`}
-async function load(){try{DRAWS=await fetchJSON('combo-history-v1.json');DRAWS=(Array.isArray(DRAWS)?DRAWS:[]).filter(d=>Number(d?.draw)&&Array.isArray(d?.balls)).sort((a,b)=>Number(a.draw)-Number(b.draw));if(!DRAWS.length)throw new Error('архив пуст');build()}catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}}
-$('build').onclick=build;$('checkK7').onclick=()=>checkK7();$('back').onclick=()=>location.href='index.html';$('refresh').onclick=()=>{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u)};load();
+
+function generateCombos(stats,draws,mode,poolN,count){
+ const pool=stats.slice(0,poolN).map(s=>s.n),by=Object.fromEntries(stats.map(s=>[s.n,s])),pair=pairMatrix(draws),used=new Map(),out=[];
+ const use=n=>used.get(n)||0;
+ for(let k=0;k<count;k++){
+   const chosen=[pool[(k*3)%pool.length]];
+   while(chosen.length<7){
+     let best=null,bv=-1e9;
+     for(const n of pool){
+       if(chosen.includes(n))continue;
+       let compat=0;for(const x of chosen)compat+=pair[n][x]/Math.max(1,draws.length);compat/=chosen.length;
+       const newCol=chosen.some(x=>colOf(x)===colOf(n))?0:1;
+       let v=by[n].score*.78+compat*100*.12+newCol*6-use(n)*2.2;
+       if(mode==='balance')v=by[n].score*.66+compat*100*.20+newCol*12-use(n)*2.2;
+       v+=((n*17+k*11)%13)/1000;
+       if(v>bv){bv=v;best=n}
+     }
+     if(best==null)break;chosen.push(best);
+   }
+   const nums=[...chosen].sort((a,b)=>a-b),key=nums.join('-');
+   if(out.some(x=>x.key===key)){pool.push(pool.shift());k--;continue}
+   let pairSum=0,pairs=0;for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){pairSum+=pair[nums[i]][nums[j]]/Math.max(1,draws.length);pairs++}
+   const avgScore=nums.reduce((a,n)=>a+by[n].score,0)/nums.length;
+   out.push({key,nums,avgScore,pairPct:pairs?pairSum/pairs:0,cols:new Set(nums.map(colOf)).size});
+   nums.forEach(n=>used.set(n,use(n)+1));
+ }
+ return out;
+}
+
+function signal(score){return score>=70?['СИЛЬНО','h']:score>=40?['СРЕДНЕ','m']:['СЛАБО','l']}
+
+function renderRank(){
+ $('rank').innerHTML=STATS.slice(0,20).map((s,i)=>{
+   const [lab,cl]=signal(s.score),l=s.last;
+   return `<div class="rrow"><div>#${i+1}</div><div class="rnum">${fmt(s.n)}</div><div class="rscore">${s.score.toFixed(0)}</div><div class="meta"><span class="signal ${cl}">${lab}</span> · инт <b>${s.cur}</b> · Стр. <b>${s.strictHits}</b> · Мяг. <b>${s.softHits}</b> · част. ${(s.freq*100).toFixed(1)}% · 0:${s.repeat0}<br>${l?`посл. №${l.draw} · ${l.date} ${l.time} · ст${drawCol(l)}`:'не было'}</div></div>`
+ }).join('');
+}
+
+function copyText(t){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(t);const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove();return Promise.resolve()}
+
+function renderCombos(combos){
+ const by=Object.fromEntries(STATS.map(s=>[s.n,s]));
+ $('combos').innerHTML=combos.map((c,i)=>{
+   const details=c.nums.map(n=>`${fmt(n)}: инт${by[n].cur}/С${by[n].strictHits}/М${by[n].softHits}/F${(by[n].freq*100).toFixed(0)}%`).join(' · ');
+   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1}</b><div class="badge">ср. рейтинг ${c.avgScore.toFixed(1)} · пары ${(c.pairPct*100).toFixed(1)}% · столбов ${c.cols}/7</div></div></div><div class="nums" style="margin-top:7px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="detail">${details}</div><div class="comboBtns"><button data-copy="${c.key}" class="ghost">📋 КОПИРОВАТЬ K7</button><button data-check="${c.key}" class="gold">🧪 ПРОВЕРИТЬ 7/7</button></div></div>`
+ }).join('');
+ document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await copyText(b.dataset.copy.split('-').map(x=>fmt(+x)).join(' '));b.textContent='✅ СКОПИРОВАНО';setTimeout(()=>b.textContent='📋 КОПИРОВАТЬ K7',1200)});
+ document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{const nums=b.dataset.check.split('-').map(Number);$('k7').value=nums.map(fmt).join(' ');checkK7(nums);$('occ').scrollIntoView({behavior:'smooth',block:'center'})});
+}
+
+function build(){
+ const w=+$('window').value,pool=+$('pool').value,count=+$('count').value,mode=$('mode').value;
+ CURRENT_DRAWS=DRAWS.slice(-Math.min(w,DRAWS.length));
+ STATS=scoreStats(buildNumberStats(CURRENT_DRAWS),mode);
+ const combos=generateCombos(STATS,CURRENT_DRAWS,mode,pool,count);
+ renderRank();renderCombos(combos);renderMatrix();
+ const topStrong=STATS.filter(s=>s.score>=70).length,topMatch=STATS.filter(s=>s.strictHits>0&&s.softHits>0).length,zero=STATS.filter(s=>s.cur===0).length;
+ $('summary').innerHTML=`<div class="stat"><b>${CURRENT_DRAWS.length}</b><span>ТИРАЖЕЙ</span></div><div class="stat"><b>${topStrong}</b><span>СИЛЬНЫХ</span></div><div class="stat"><b>${topMatch}</b><span>СТР.+МЯГ. СОВПАЛИ</span></div><div class="stat"><b>${zero}</b><span>ТЕК. ИНТЕРВАЛ 0</span></div>`;
+}
+
+function matrixCountsFor(s){return MATRIX_MODE==='strict'?s.strictCounts:s.softCounts}
+function renderMatrix(){
+ const top=STATS.slice(0,20),maxInt=25;
+ $('mStrict').classList.toggle('active',MATRIX_MODE==='strict');$('mSoft').classList.toggle('active',MATRIX_MODE==='soft');
+ $('matrixInfo').textContent=MATRIX_MODE==='strict'?'Строгая: только интервалы между соседними появлениями.':'Мягкая: все пары появлений, включая 1→3, 1→4, 2→4 и т.д.';
+ let h='<table class="matrix"><thead><tr><th>Инт.</th>'+top.map(s=>`<th>${fmt(s.n)}</th>`).join('')+'</tr></thead><tbody>';
+ for(let g=0;g<=maxInt;g++){
+   h+=`<tr><th>${g}</th>`+top.map(s=>{const v=matrixCountsFor(s)[g]||0,cl=v>=5?'hot':v>=2?'warm':'';return `<td class="${cl}">${v}</td>`}).join('')+'</tr>';
+ }
+ h+='</tbody></table>';$('matrix').innerHTML=h;
+}
+
+function parseK7(){
+ const a=uniq(($('k7').value.match(/\d+/g)||[]).map(Number).filter(n=>n>=1&&n<=80));
+ if(a.length!==7){$('occ').innerHTML='<div class="notice err">Нужно ровно 7 разных чисел.</div>';return null}return a.sort((a,b)=>a-b);
+}
+
+function checkK7(nums){
+ const draws=CURRENT_DRAWS.length?CURRENT_DRAWS:DRAWS;
+ const hits=draws.filter(d=>nums.every(n=>(d.balls||[]).map(Number).includes(n)));
+ if(!hits.length){$('occ').innerHTML='<div class="notice">В выбранном окне полного 7/7 нет.</div>';return}
+ $('occ').innerHTML=hits.map((d,i)=>{
+   let gap='первый',extra='—';
+   if(i>0){
+     const prev=hits[i-1],idxA=draws.findIndex(x=>Number(x.draw)===Number(prev.draw)),idxB=draws.findIndex(x=>Number(x.draw)===Number(d.draw));
+     gap='+'+(idxB-idxA);
+     const common=uniq((prev.balls||[]).map(Number)).filter(n=>(d.balls||[]).map(Number).includes(n));
+     const ex=Math.max(0,common.length-7);
+     extra=ex?`K7 +${ex} (${common.filter(n=>!nums.includes(n)).map(fmt).join(' ')||'доп.'})`:'просто 7/7';
+   }
+   return `<div class="occRow"><div class="occDraw">№${d.draw}</div><div class="occMeta">${d.date} · <b>${d.time}</b> · <b>ст${drawCol(d)}</b><br>${extra}</div><div class="occGap">${gap}</div></div>`
+ }).join('');
+}
+
+async function load(){
+ try{
+   DRAWS=await fetchJSON('combo-history-v1.json');
+   if(!Array.isArray(DRAWS)||!DRAWS.length)throw new Error('Архив пуст');
+   DRAWS.sort((a,b)=>Number(a.draw)-Number(b.draw));
+   const last=DRAWS[DRAWS.length-1];
+   $('db').textContent=`База: ${DRAWS.length} тиров · последний №${last.draw} · ${last.date} ${last.time} · ст${drawCol(last)}`;
+   build();
+ }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
+}
+$('build').onclick=build;$('checkK7').onclick=()=>{const n=parseK7();if(n)checkK7(n)};
+$('mStrict').onclick=()=>{MATRIX_MODE='strict';renderMatrix()};$('mSoft').onclick=()=>{MATRIX_MODE='soft';renderMatrix()};
+$('refresh').onclick=()=>location.replace(location.pathname+'?v='+Date.now());$('back').onclick=()=>location.href='./';
+load();
 </script>
 </body>
 </html>
