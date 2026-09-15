@@ -1,0 +1,42 @@
+name: Apply Intervals nav button
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-intervals-nav-v1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Insert Intervals button only
+        run: python .github/scripts/apply-intervals-nav-v1.py
+
+      - name: Refresh app build and cache-bust
+        run: node refresh-combo-build.mjs
+
+      - name: Safety checks
+        run: |
+          node self-test-combo-v415.cjs
+          node self-test-xray-ui-pwa.mjs
+          grep -q 'id="intervalsBtn"' index.html
+          grep -q "k7-interval-builder.html" index.html
+
+      - name: Commit app files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html manifest.webmanifest sw.js app-version.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "COMBO: add Intervals button to bottom menu"
+          git push
