@@ -33,6 +33,19 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 .card.collapsed .sectionToggle{margin-bottom:0}
 .sectionTitleKeep{display:inline-block;max-width:70%}
 @media(max-width:520px){.sectionToggle{font-size:9px;padding:7px 8px}.sectionTitleKeep{max-width:64%}}
+
+.matrixWrap{max-height:480px;overflow:auto;overscroll-behavior:contain;position:relative;-webkit-overflow-scrolling:touch}
+.matrix{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;min-width:0;font-size:14px}
+.matrix th,.matrix td{min-width:56px;width:56px;height:44px;padding:8px;border-width:0 1px 1px 0}
+.matrix thead th{position:sticky;top:0;z-index:3;background:#123752}
+.matrix tbody th{position:sticky;left:0;top:auto;z-index:2;background:#102a43}
+.matrix th:first-child{min-width:104px;width:104px}
+.matrix thead th:first-child{left:0;z-index:4}
+.matrix td.hot{background:#236936;box-shadow:inset 0 0 0 2px #74cf61;color:#fff}
+.matrix td.warm{background:#443813;color:#ffe59a}
+.matrix td.current{outline:2px solid #57bfff;outline-offset:-3px}
+.exitState{font-size:14px;line-height:1.65;padding:10px;margin-top:8px;background:#071827;border:1px solid #315775;border-radius:10px}
+.exitState strong{color:#ffe08a}.exitState .muted{margin-top:7px}.backtestWrap{overflow:auto;margin-top:8px}.backtestTable{border-collapse:collapse;white-space:nowrap;font-size:13px}.backtestTable th,.backtestTable td{padding:8px;border:1px solid #315775;text-align:right}
 </style>
 </head>
 <body>
@@ -66,6 +79,9 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
   <b>🔥 Рейтинг чисел сейчас</b>
   <div class="muted">Тек. инт. — сколько тиражей пропущено после последнего появления. «Стр.» — сколько раз этот интервал закрывался между соседними появлениями. «Мяг.» — сколько раз он встречался среди всех пар.</div>
   <div id="rank" class="rank"></div>
+  <h3>Состояние числа → следующий выход</h3>
+  <label>Число для анализа<select id="exitNumber" aria-label="Число для анализа интервального выхода"></select></label>
+  <div id="exitState" class="exitState"></div>
  </div>
 
  <div class="card">
@@ -94,9 +110,12 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
   <b>📊 Матрица интервалов</b>
   <div class="matrixBtns"><button id="mStrict" class="active">СТРОГАЯ</button><button id="mSoft">МЯГКАЯ</button></div>
   <div class="muted" id="matrixInfo" style="margin-top:7px">Строгая: только соседние появления.</div>
-  <div id="matrix" class="matrixWrap"></div>
+  <div class="muted">Листайте по горизонтали →. Зелёный — максимум в столбце, жёлтый — не менее половины максимума (от 2 случаев), синяя рамка — текущий пропуск. Яркость показывает число случаев, а не вероятность выигрыша.</div>
+  <div id="matrix" class="matrixWrap" tabindex="0" role="region" aria-label="Матрица интервалов, горизонтальная и вертикальная прокрутка"></div>
  </div>
 </div>
+<div class="app"><div class="card" id="intervalBacktest"><b>Проверка интервального выхода на истории</b><div class="notice">Интервальный вариант не внедрён в генератор: выплаты ниже у R3 и R4. Анализ состояния числа доступен выше; формирование K7 осталось прежним.</div><div class="muted">Фиксированный срез №327414–327613: 200 следующих тиражей, перед каждым — только 400 предыдущих. Пул 18, по 10 K7, стоимость 100 ₽. Одинаковый сборщик комбинаций и действующая таблица выплат. Настройки не подбирались по результату.</div><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты</th><th>После затрат</th></tr></thead><tbody><tr><th>R3</th><td>262</td><td>607</td><td>666</td><td>342</td><td>100</td><td>20</td><td>3</td><td>0</td><td>147 500 ₽</td><td>-52 500 ₽</td></tr><tr><th>R3 + выход</th><td>241</td><td>619</td><td>657</td><td>361</td><td>103</td><td>18</td><td>1</td><td>0</td><td>124 450 ₽</td><td>-75 550 ₽</td></tr><tr><th>R4</th><td>246</td><td>642</td><td>652</td><td>330</td><td>110</td><td>16</td><td>4</td><td>0</td><td>151 100 ₽</td><td>-48 900 ₽</td></tr><tr><th>R4 + выход</th><td>227</td><td>616</td><td>672</td><td>378</td><td>95</td><td>10</td><td>2</td><td>0</td><td>122 850 ₽</td><td>-77 150 ₽</td></tr></tbody></table></div><details><summary>Контроль: последние 100 тиражей</summary><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты</th><th>После затрат</th></tr></thead><tbody><tr><th>R3</th><td>160</td><td>318</td><td>313</td><td>157</td><td>40</td><td>9</td><td>3</td><td>0</td><td>88 500 ₽</td><td>-11 500 ₽</td></tr><tr><th>R3 + выход</th><td>133</td><td>331</td><td>312</td><td>169</td><td>47</td><td>7</td><td>1</td><td>0</td><td>64 650 ₽</td><td>-35 350 ₽</td></tr><tr><th>R4</th><td>145</td><td>323</td><td>331</td><td>148</td><td>43</td><td>7</td><td>3</td><td>0</td><td>83 550 ₽</td><td>-16 450 ₽</td></tr><tr><th>R4 + выход</th><td>124</td><td>332</td><td>315</td><td>175</td><td>47</td><td>5</td><td>2</td><td>0</td><td>71 500 ₽</td><td>-28 500 ₽</td></tr></tbody></table></div></details><div class="muted">R3: выплаты 147 500 → 124 450 ₽ (−15,6%). R4: 151 100 → 122 850 ₽ (−18,7%). Небольшой рост средних попаданий не дал роста выплат. Это короткий исторический тест, не подтверждение будущей доходности.</div><div class="exitState"><b>Почему 5/20 может дать 0 ₽ у K7</b><br>По таблице выплат 1/7 и 2/7 не оплачиваются; 0/7 оплачивается 150 ₽. Среди 45 завершённых frozen с 5/20: у 59 из 90 K7A/K7B было 1/7 или 2/7. Это отдельная диагностика frozen, а не выдача генератора Интервалов.<br>У исходного R3 1/7–2/7: 1273 из 2000 K7; среднее пересечение двух билетов — 3,34 числа. Сборщик учитывает рейтинг, сырую частоту пар, столбы и разнообразие пропусков; напрямую распределение выплат не оптимизирует. Проверенный слой повысил попадания пула 18 чисел с 4,56 до 4,69, но проиграл по выплатам K7.</div></div></div>
+<div class="app"><div class="card" id="layoutBacktest"><b>Компоновка того же frozen-пула: 3 варианта</b><div class="notice">Устойчивого улучшения над текущими R3/R4 нет. Сборщик не заменён.</div><div class="muted">161 прогноз; один заранее сохранённый пул из 20 чисел и две K7 для каждой схемы. Связи — только по 400 предыдущим тиражам. Выбор на первых 111, контроль — последние 50.</div><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты ₽</th><th>Контроль ₽</th></tr></thead><tbody><tr><th>Сохранённые frozen A/B</th><td>43</td><td>101</td><td>96</td><td>65</td><td>16</td><td>1</td><td>0</td><td>0</td><td>17 350</td><td>5 850</td></tr><tr><th>Текущий R3</th><td>45</td><td>96</td><td>106</td><td>39</td><td>33</td><td>3</td><td>0</td><td>0</td><td>20 850</td><td>6 900</td></tr><tr><th>Текущий R4</th><td>45</td><td>98</td><td>106</td><td>41</td><td>27</td><td>5</td><td>0</td><td>0</td><td>22 250</td><td>7 200</td></tr><tr><th>Концентрация связей</th><td>45</td><td>102</td><td>107</td><td>48</td><td>16</td><td>4</td><td>0</td><td>0</td><td>19 550</td><td>5 050</td></tr><tr><th>Два отдельных кластера</th><td>38</td><td>111</td><td>104</td><td>51</td><td>15</td><td>3</td><td>0</td><td>0</td><td>17 400</td><td>5 150</td></tr><tr><th>Общее ядро из 3 чисел</th><td>45</td><td>100</td><td>104</td><td>54</td><td>15</td><td>4</td><td>0</td><td>0</td><td>19 950</td><td>6 000</td></tr></tbody></table></div><div class="muted">Выбрана по первым 111 «концентрация»: контроль 5 050 ₽ против 7 200 ₽ у R4 (−29,9%). Общее ядро не заменяет её после просмотра контроля. В frozen ограничение пересечения семёрок — 2 числа; 87 из 225 попаданий пула в случаях ровно 5/20 вообще не вошли в семёрки.</div><p><a href="./K7_LAYOUT_BACKTEST_RU.md">Полный диагноз и разбивка 5/20, 6/20, 7/20+</a></p></div></div>
 <div class="footer"><div class="footerIn"><button id="back" class="ghost">← COMBO</button><button id="refresh" class="primary">↻ ОБНОВИТЬ</button></div></div>
 
 <script>
@@ -129,6 +148,26 @@ function countsOf(a){const o={};for(const x of a)o[x]=(o[x]||0)+1;return o}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 async function fetchJSON(name){const r=await fetch(name+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(name+' HTTP '+r.status);return r.json()}
 
+// Only observed next-draw outcomes; the final (unknown) next draw is excluded.
+function intervalExitState(positions,length,freq){
+ const cur=positions.length?length-1-positions.at(-1):length;
+ const gaps=positions.slice(1).map((p,i)=>p-positions[i]-1);
+ const previous=gaps.at(-1)??null;
+ let trials=0,hits=0,stateTrials=0,stateHits=0;
+ const nextGaps={};
+ for(let i=0;i<positions.length;i++){
+   const next=positions[i+1]??Infinity,t=positions[i]+cur;
+   const same=previous!==null&&i>0&&gaps[i-1]===previous;
+   if(same&&Number.isFinite(next)){const gap=next-positions[i]-1;nextGaps[gap]=(nextGaps[gap]||0)+1}
+   if(t>=length-1||t>=next)continue;
+   const hit=Number(t+1===next);trials++;hits+=hit;
+   if(same){stateTrials++;stateHits+=hit}
+ }
+ const ageRate=(hits+12*freq)/(trials+12);
+ const exitRate=(stateHits+12*ageRate)/(stateTrials+12);
+ return {cur,previous,trials,hits,stateTrials,stateHits,ageRate,exitRate,nextGaps};
+}
+
 function buildNumberStats(draws){
  const pos=Array.from({length:81},()=>[]);
  draws.forEach((d,i)=>(d.balls||[]).forEach(v=>{const n=Number(v);if(n>=1&&n<=80)pos[n].push(i)}));
@@ -144,7 +183,7 @@ function buildNumberStats(draws){
    const expectedStrict=freq>0?freq*Math.pow(1-freq,cur):0;
    const strictLift=expectedStrict>0?strictRate/expectedStrict:0;
    out.push({
-     n,cur,last,occ:p.length,freq,
+     n,cur,last,occ:p.length,freq,exit:intervalExitState(p,draws.length,freq),
      strict,soft,strictCounts:sc,softCounts:mc,
      strictHits:sc[cur]||0,softHits:mc[cur]||0,
      strictRate,strictLift,expectedStrict,
@@ -319,21 +358,31 @@ function build(){
  CURRENT_DRAWS=DRAWS.slice(-w);
  STATS=scoreStats(buildNumberStats(CURRENT_DRAWS),mode);
  const combos=generateCombos(STATS,CURRENT_DRAWS,mode,pool,count);
- renderRank();renderCombos(combos);renderSavedArchive();renderMatrix();
+ renderRank();renderExitAnalysis();renderCombos(combos);renderSavedArchive();renderMatrix();
  const topStrong=STATS.filter(s=>s.score>=70).length,topMatch=STATS.filter(s=>s.strictHits>0&&s.softHits>0).length,zero=STATS.filter(s=>s.cur===0).length;
  $('summary').innerHTML=`<div class="stat"><b>${CURRENT_DRAWS.length}</b><span>ТИРАЖЕЙ</span></div><div class="stat"><b>${topStrong}</b><span>СИЛЬНЫХ</span></div><div class="stat"><b>${topMatch}</b><span>СТР.+МЯГ. СОВПАЛИ</span></div><div class="stat"><b>${zero}</b><span>ТЕК. ИНТЕРВАЛ 0</span></div>`;
 }
 
+function renderExitAnalysis(){
+ const select=$('exitNumber'),old=Number(select.value);
+ select.innerHTML=[...STATS].sort((a,b)=>a.n-b.n).map(s=>`<option value="${s.n}">${fmt(s.n)}</option>`).join('');
+ select.value=String(old||STATS[0]?.n||1);select.onchange=renderExitState;renderExitState();
+}
+function renderExitState(){
+ const s=STATS.find(s=>s.n===Number($('exitNumber').value));if(!s)return;
+ const e=s.exit,pct=n=>(100*n).toFixed(1)+'%';
+ const typical=counts=>Object.entries(counts).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0])).slice(0,3).map(([gap,count])=>gap+' ('+count+' раз)').join(', ')||'нет завершённых наблюдений';
+ $('exitState').innerHTML=`<b>Число ${fmt(s.n)}</b><br>Последний завершённый интервал: <strong>${e.previous??'нет'}</strong> → текущий пропуск: <strong>${s.cur}</strong> → выход в следующем тираже после такого состояния: <strong>${e.stateHits} / ${e.stateTrials}</strong> наблюдений.<br>Оценка со сглаживанием: <strong>${pct(e.exitRate)}</strong>; частота самого числа: ${pct(s.freq)}.<br>Без условия предыдущего интервала, при пропуске ${s.cur}: ${e.hits} / ${e.trials}.<br>После интервала ${e.previous??'—'} следующие завершённые интервалы чаще были: ${typical(e.nextGaps)}.<br>Строгие интервалы: ${typical(s.strictCounts)}.<br>Мягкие, все пары: ${typical(s.softCounts)}.<div class="muted">Интервал 0 — два соседних тиража. Учитываются только случаи, где следующий тираж уже известен; текущий незавершённый исход не считается. При малой выборке оценка сглаживается к частоте выхода при этом пропуске, затем к частоте числа (вес 12). Мягкая матрица содержит зависимые пары и не является вероятностью следующего выхода. ${e.stateTrials<20?'Мало наблюдений этого состояния.':''} Это анализ, а не отдельный сигнал изменения K7.</div>`;
+}
 function matrixCountsFor(s){return MATRIX_MODE==='strict'?s.strictCounts:s.softCounts}
 function renderMatrix(){
- const top=STATS.slice(0,20),maxInt=25;
+ const top=[...STATS].sort((a,b)=>a.n-b.n),maxInt=Math.max(25,...top.map(s=>s.cur));
  $('mStrict').classList.toggle('active',MATRIX_MODE==='strict');$('mSoft').classList.toggle('active',MATRIX_MODE==='soft');
- $('matrixInfo').textContent=MATRIX_MODE==='strict'?'Строгая: только интервалы между соседними появлениями.':'Мягкая: все пары появлений, включая 1→3, 1→4, 2→4 и т.д.';
- let h='<table class="matrix"><thead><tr><th>Инт.</th>'+top.map(s=>`<th>${fmt(s.n)}</th>`).join('')+'</tr></thead><tbody>';
- for(let g=0;g<=maxInt;g++){
-   h+=`<tr><th>${g}</th>`+top.map(s=>{const v=matrixCountsFor(s)[g]||0,cl=v>=5?'hot':v>=2?'warm':'';return `<td class="${cl}">${v}</td>`}).join('')+'</tr>';
- }
- h+='</tbody></table>';$('matrix').innerHTML=h;
+ $('matrixInfo').textContent=MATRIX_MODE==='strict'?'Строгая: только соседние появления; число случаев по каждому интервалу.':'Мягкая: все пары появлений; число случаев, не вероятность следующего выхода.';
+ const peak=new Map(top.map(s=>[s.n,Math.max(0,...Object.values(matrixCountsFor(s)))]));
+ let h='<table class="matrix"><thead><tr><th scope="col">Интервал</th>'+top.map(s=>`<th scope="col">${fmt(s.n)}</th>`).join('')+'</tr></thead><tbody>';
+ for(let g=0;g<=maxInt;g++)h+=`<tr><th scope="row">${g}</th>`+top.map(s=>{const v=matrixCountsFor(s)[g]||0,p=peak.get(s.n),cl=v>0&&v===p?'hot':v>=2&&v>=p/2?'warm':'';return `<td class="${cl} ${g===s.cur?'current':''}" title="Число ${fmt(s.n)}, пропуск ${g}: ${v} случаев${g===s.cur?'; текущий пропуск':''}">${v||'·'}</td>`}).join('')+'</tr>';
+ $('matrix').innerHTML=h+'</tbody></table>';
 }
 
 function parseK7(){

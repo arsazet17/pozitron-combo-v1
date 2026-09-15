@@ -1,0 +1,240 @@
+{
+  "base": "016f3043",
+  "archiveSha256": "290793363aa4972d19e8138be58614e26a555451bf1c66865aca9a6bed847368",
+  "from": 327414,
+  "to": 327613,
+  "targets": 200,
+  "training": 400,
+  "pool": 18,
+  "ticketsPerTarget": 10,
+  "ticketCost": 100,
+  "payouts": {
+    "0": 150,
+    "3": 100,
+    "4": 200,
+    "5": 1200,
+    "6": 10000,
+    "7": 250000
+  },
+  "priorStrength": 12,
+  "blend": "75% normalized conditional exit + 25% existing rating",
+  "gate": "gross improves in all and last 100 for R3 and R4; mean hits and 4+ counts do not fall",
+  "eligible": false,
+  "results": {
+    "R3": {
+      "all": {
+        "hist": [
+          262,
+          607,
+          666,
+          342,
+          100,
+          20,
+          3,
+          0
+        ],
+        "gross": 147500,
+        "tickets": 2000,
+        "hits": 3483,
+        "winning": 727,
+        "poolHits": 911,
+        "uniqueNumbers": 3497,
+        "pairOverlap": 667.4888888888892,
+        "net": -52500,
+        "meanHits": 1.7415,
+        "meanPoolHits": 4.555,
+        "meanUniqueNumbers": 17.485,
+        "meanPairOverlap": 3.3374444444444458
+      },
+      "holdout": {
+        "hist": [
+          160,
+          318,
+          313,
+          157,
+          40,
+          9,
+          3,
+          0
+        ],
+        "gross": 88500,
+        "tickets": 1000,
+        "hits": 1638,
+        "winning": 369,
+        "poolHits": 442,
+        "uniqueNumbers": 1742,
+        "pairOverlap": 332.6666666666666,
+        "net": -11500,
+        "meanHits": 1.638,
+        "meanPoolHits": 4.42,
+        "meanUniqueNumbers": 17.42,
+        "meanPairOverlap": 3.3266666666666658
+      }
+    },
+    "R3+exit": {
+      "all": {
+        "hist": [
+          241,
+          619,
+          657,
+          361,
+          103,
+          18,
+          1,
+          0
+        ],
+        "gross": 124450,
+        "tickets": 2000,
+        "hits": 3524,
+        "winning": 724,
+        "poolHits": 938,
+        "uniqueNumbers": 3399,
+        "pairOverlap": 699.3333333333336,
+        "net": -75550,
+        "meanHits": 1.762,
+        "meanPoolHits": 4.69,
+        "meanUniqueNumbers": 16.995,
+        "meanPairOverlap": 3.496666666666668
+      },
+      "holdout": {
+        "hist": [
+          133,
+          331,
+          312,
+          169,
+          47,
+          7,
+          1,
+          0
+        ],
+        "gross": 64650,
+        "tickets": 1000,
+        "hits": 1691,
+        "winning": 357,
+        "poolHits": 472,
+        "uniqueNumbers": 1695,
+        "pairOverlap": 356.1555555555555,
+        "net": -35350,
+        "meanHits": 1.691,
+        "meanPoolHits": 4.72,
+        "meanUniqueNumbers": 16.95,
+        "meanPairOverlap": 3.561555555555555
+      }
+    },
+    "R4": {
+      "all": {
+        "hist": [
+          246,
+          642,
+          652,
+          330,
+          110,
+          16,
+          4,
+          0
+        ],
+        "gross": 151100,
+        "tickets": 2000,
+        "hits": 3480,
+        "winning": 706,
+        "poolHits": 911,
+        "uniqueNumbers": 3529,
+        "pairOverlap": 626.9999999999999,
+        "net": -48900,
+        "meanHits": 1.74,
+        "meanPoolHits": 4.555,
+        "meanUniqueNumbers": 17.645,
+        "meanPairOverlap": 3.1349999999999993
+      },
+      "holdout": {
+        "hist": [
+          145,
+          323,
+          331,
+          148,
+          43,
+          7,
+          3,
+          0
+        ],
+        "gross": 83550,
+        "tickets": 1000,
+        "hits": 1654,
+        "winning": 346,
+        "poolHits": 442,
+        "uniqueNumbers": 1761,
+        "pairOverlap": 313.6888888888888,
+        "net": -16450,
+        "meanHits": 1.654,
+        "meanPoolHits": 4.42,
+        "meanUniqueNumbers": 17.61,
+        "meanPairOverlap": 3.136888888888888
+      }
+    },
+    "R4+exit": {
+      "all": {
+        "hist": [
+          227,
+          616,
+          672,
+          378,
+          95,
+          10,
+          2,
+          0
+        ],
+        "gross": 122850,
+        "tickets": 2000,
+        "hits": 3536,
+        "winning": 712,
+        "poolHits": 938,
+        "uniqueNumbers": 3490,
+        "pairOverlap": 648.755555555556,
+        "net": -77150,
+        "meanHits": 1.768,
+        "meanPoolHits": 4.69,
+        "meanUniqueNumbers": 17.45,
+        "meanPairOverlap": 3.24377777777778
+      },
+      "holdout": {
+        "hist": [
+          124,
+          332,
+          315,
+          175,
+          47,
+          5,
+          2,
+          0
+        ],
+        "gross": 71500,
+        "tickets": 1000,
+        "hits": 1712,
+        "winning": 353,
+        "poolHits": 472,
+        "uniqueNumbers": 1734,
+        "pairOverlap": 326.9555555555557,
+        "net": -28500,
+        "meanHits": 1.712,
+        "meanPoolHits": 4.72,
+        "meanUniqueNumbers": 17.34,
+        "meanPairOverlap": 3.269555555555557
+      }
+    }
+  },
+  "frozenDiagnostic": {
+    "settledEntries": 161,
+    "predicted20HitFive": 45,
+    "k7Hist": [
+      11,
+      25,
+      34,
+      15,
+      5,
+      0,
+      0,
+      0
+    ],
+    "zeroPayTickets": 59
+  }
+}
