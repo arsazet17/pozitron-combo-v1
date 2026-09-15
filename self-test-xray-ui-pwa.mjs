@@ -6,7 +6,7 @@ const read=file=>fs.readFile(file,'utf8');
 const ui=await read('xray-ui-v1.js'),index=await read('index.html'),sw=await read('sw.js'),buildScript=await read('refresh-combo-build.mjs');
 const manifest=JSON.parse(await read('manifest.webmanifest')),version=JSON.parse(await read('app-version.json'));
 const sources=[...buildScript.matchAll(/'([^']+\.(?:js|mjs|css))'/g)].map(x=>x[1]);
-const names=[...new Set(['index.html','manifest.webmanifest','sw.js','app-version.json','icon-192.png','icon-512.png',...sources.filter(x=>x!=='sw.js')])];
+const names=[...new Set(['index.html','k7-interval-builder.html','manifest.webmanifest','sw.js','app-version.json','icon-192.png','icon-512.png',...sources.filter(x=>x!=='sw.js')])];
 const disk=Object.fromEntries(await Promise.all(names.map(async name=>[name,await fs.readFile(name,name.endsWith('.png')?'base64':'utf8')])));
 const tests=[];
 async function check(name,fn){await fn();tests.push(name);console.log('PASS '+name)}
