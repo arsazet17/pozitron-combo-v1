@@ -10,6 +10,7 @@ console.log('PASS JavaScript/MJS/CJS syntax');
 node(['self-test-xray-v4.mjs']);
 node(['self-test-xray-ui-pwa.mjs']);
 node(['self-test-workflows.mjs']);
+node(['self-test-combo-auto-refresh.mjs']);
 node(['self-test-published-baseline.mjs']);
 node(['validate-xray-runtime.mjs']);
 console.log('PASS STAGE 1 checks');

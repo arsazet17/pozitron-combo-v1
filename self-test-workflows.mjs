@@ -11,7 +11,7 @@ for (const name of names) {
   const w = JSON.parse(await fs.readFile('.github/workflows/' + name, 'utf8'));
   assert(w.name && w.on && w.jobs, name + ': required workflow fields');
   workflows.set(name, w);
-  if (name.startsWith('install-')) {
+  if (name.startsWith('install-') || name === 'apply-intervals-nav-v1.yml') {
     assert.deepEqual(Object.keys(w.on), ['workflow_dispatch']);
     assert.equal(w.permissions.contents, 'read');
     assert(w.jobs.retired);
@@ -30,6 +30,7 @@ for (const name of names) {
 }
 assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 4);
 assert(workflows.get('update-combo-v1.yaml').on.workflow_dispatch);
+assert.deepEqual(workflows.get('update-combo-v1.yaml').on.schedule, [{cron:'6,16,26,36,46,56 * * * *'}], 'Data updates must run automatically, including retry opportunities between draws');
 const rebuild = workflows.get('xray-ai-train.yml');
 for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-runtime-core.mjs', 'xray-runtime-io.mjs', 'keno-payouts-v1.json', 'combo-history-v1.json']) {
   assert(rebuild.on.push.paths.includes(p), 'Missing runtime dependency: ' + p);
