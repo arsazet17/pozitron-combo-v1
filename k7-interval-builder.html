@@ -30,7 +30,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.4</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.5</div></div>
 
  <div class="card">
   <b>Правильная логика интервалов</b>
@@ -71,7 +71,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
  <div class="card" id="savedCard">
   <b>📚 Архив сохранённых K7</b>
   <div class="muted">Сюда попадают <b>только K7, которые вы сами сохранили</b>. Отсчёт начинается со следующего тиража после сохранения. При каждом обновлении архива карточка сама пересчитывает новые тиражи, выигрыши и повторные 7/7.</div>
-  <div class="notice">Архив пока лабораторный и хранится в браузере этого устройства. В основное COMBO ничего не встроено.</div>
+  <div class="notice">Архив хранится в IndexedDB браузера — не в localStorage. Старые сохранённые K7 при первом запуске автоматически переносятся в IndexedDB и удаляются из localStorage. В основное COMBO ничего не встроено.</div>
   <div id="savedArchive" class="savedArchive"></div>
  </div>
 
@@ -95,7 +95,8 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 <script>
 'use strict';
 const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
-const K7_SAVED_KEY='k7IntervalLabSavedV1';
+const K7_LEGACY_KEY='k7IntervalLabSavedV1',K7_DB_NAME='k7IntervalLabDB',K7_DB_STORE='savedK7';
+let SAVED_CACHE=[];
 let DRAWS=[],STATS=[],CURRENT_DRAWS=[],MATRIX_MODE='strict',PAYOUT7={0:150,3:100,4:200,5:1200,6:10000,7:250000};
 function uniq(a){return [...new Set(a)]}
 function colOf(n){return((Number(n)-1)%10)+1}
@@ -193,19 +194,48 @@ function copyText(t){if(navigator.clipboard?.writeText)return navigator.clipboar
 
 let LAST_COMBOS=[];
 
-function readSaved(){
- try{const v=JSON.parse(localStorage.getItem(K7_SAVED_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return []}
+function openSavedDB(){
+ return new Promise((resolve,reject)=>{
+   const req=indexedDB.open(K7_DB_NAME,1);
+   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(K7_DB_STORE))db.createObjectStore(K7_DB_STORE,{keyPath:'key'})};
+   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB open failed'));
+ });
 }
-function writeSaved(a){localStorage.setItem(K7_SAVED_KEY,JSON.stringify(a))}
+async function loadSavedDB(){
+ try{
+   const db=await openSavedDB();
+   const rows=await new Promise((resolve,reject)=>{const tx=db.transaction(K7_DB_STORE,'readonly'),r=tx.objectStore(K7_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)});
+   SAVED_CACHE=rows.sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
+   let legacy=[];
+   try{const v=JSON.parse(localStorage.getItem(K7_LEGACY_KEY)||'[]');if(Array.isArray(v))legacy=v}catch{}
+   if(legacy.length){
+     const by=new Map(SAVED_CACHE.map(x=>[x.key,x]));legacy.forEach(x=>{if(x&&x.key&&!by.has(x.key))by.set(x.key,x)});
+     SAVED_CACHE=[...by.values()].sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
+     await writeSaved(SAVED_CACHE);
+   }
+   try{localStorage.removeItem(K7_LEGACY_KEY)}catch{}
+   db.close();
+ }catch(e){console.error('IndexedDB load:',e);SAVED_CACHE=[]}
+}
+function readSaved(){return SAVED_CACHE}
+async function writeSaved(a){
+ SAVED_CACHE=[...(a||[])];
+ const db=await openSavedDB();
+ await new Promise((resolve,reject)=>{
+   const tx=db.transaction(K7_DB_STORE,'readwrite'),st=tx.objectStore(K7_DB_STORE);st.clear();SAVED_CACHE.forEach(x=>st.put(x));
+   tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('IndexedDB write failed'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB write aborted'));
+ });
+ db.close();
+}
 function savedKey(nums){return [...nums].sort((a,b)=>a-b).join('-')}
 function isSaved(nums){const k=savedKey(nums);return readSaved().some(x=>x.key===k)}
-function saveK7(nums){
+async function saveK7(nums){
  const a=readSaved(),key=savedKey(nums);if(a.some(x=>x.key===key))return false;
  const last=DRAWS[DRAWS.length-1];if(!last)return false;
  a.unshift({key,nums:[...nums].sort((a,b)=>a-b),savedDraw:Number(last.draw),savedDate:last.date||'',savedTime:last.time||'',savedColumn:drawCol(last),savedAt:Date.now()});
- writeSaved(a);renderSavedArchive();renderCombos(LAST_COMBOS);return true;
+ await writeSaved(a);renderSavedArchive();renderCombos(LAST_COMBOS);return true;
 }
-function removeSaved(key){writeSaved(readSaved().filter(x=>x.key!==key));renderSavedArchive();renderCombos(LAST_COMBOS)}
+async function removeSaved(key){await writeSaved(readSaved().filter(x=>x.key!==key));renderSavedArchive();renderCombos(LAST_COMBOS)}
 function hitCount(nums,d){const set=new Set((d.balls||[]).map(Number));return nums.reduce((a,n)=>a+(set.has(n)?1:0),0)}
 function rub(n){return Number(n||0).toLocaleString('ru-RU')+' ₽'}
 function renderSavedArchive(){
@@ -325,6 +355,7 @@ async function load(){
    $('window').max=String(DRAWS.length);
    if($('windowHint'))$('windowHint').textContent=`Любая глубина от 1 до ${DRAWS.length} тиражей`;
    if(Number($('window').value)>DRAWS.length)$('window').value=String(DRAWS.length);
+   await loadSavedDB();
    build();
  }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
 }
