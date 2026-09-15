@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="f5c81707f408">
-<link rel="manifest" href="manifest.webmanifest?v=f5c81707f408">
+<meta name="app-build" content="276b43bd946e">
+<link rel="manifest" href="manifest.webmanifest?v=276b43bd946e">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=f5c81707f408">
+<link rel="stylesheet" href="xray-v1.css?v=276b43bd946e">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -31,7 +31,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.14</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.3.15</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -70,13 +70,13 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <button class="nav" data-sec="history"><b>◷</b>История</button>
 </div><div class="footrow2">
 <button id="tableDrawerBtn" class="nav" type="button"><b>📊</b>Таблица</button>
-<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=f5c81707f408'"><b>🔁</b>Интервалы</button>
+<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=276b43bd946e'"><b>🔁</b>Интервалы</button>
 <div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=f5c81707f408"></script>
-<script src="xray-ui-v1.js?v=f5c81707f408"></script>
-<script src="xray-analog-columns-v1.js?v=f5c81707f408"></script>
+<script src="xray-engine-v1.js?v=276b43bd946e"></script>
+<script src="xray-ui-v1.js?v=276b43bd946e"></script>
+<script src="xray-analog-columns-v1.js?v=276b43bd946e"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>String(n).padStart(2,'0');
@@ -153,7 +153,7 @@ function renderPick(){$('pickgrid').innerHTML=Array.from({length:80},(_,i)=>i+1)
 function hitCell(h,selectedCount){const prize=prizeForHits(selectedCount,h);if(prize){return `<div class="hitbox"><div class="hits fire"><span class="flame">🔥</span><span>${h}</span></div><div class="prize">Сумма<br>${money(prize)}</div></div>`}const cl=h===0?'z':h>=2?'h':'o';return `<div class="hitbox"><div class="hits ${cl}">${h}</div></div>`}
 function historyBalls(d){return historyOrder==='asc'?[...d.balls].sort((a,b)=>a-b):d.balls}
 function histRow(d,nums){const balls=historyBalls(d);const transitions=historyTransitions&&window.ComboHistoryTransitions?window.ComboHistoryTransitions(d):new Set();return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${drawColumn(d)??'—'}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${hitCell(hitsFor(nums,d),nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${historyMarks.has(n)?'mark':''} ${transitions.has(Number(n))?'transition':''}" data-hn="${n}" role="button" tabindex="0" aria-pressed="${historyMarks.has(n)?'true':'false'}">${fmt(n)}</span>`).join('')}</div></div>`}
-function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=f5c81707f408">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
+function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=276b43bd946e">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
 function bindHistoryOrder(){const transitions=$('historyTransitionsBtn');if(transitions)transitions.onclick=()=>{historyTransitions=!historyTransitions;renderHistory()};document.querySelectorAll('#historyBox [data-history-order]').forEach(b=>b.onclick=()=>{historyOrder=b.dataset.historyOrder;renderHistory()})}
 function markBarHTML(){const a=[...historyMarks].sort((x,y)=>x-y);return `<div class="markHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Можно отметить несколько.</div>${a.length?`<div class="markBar"><span class="muted">Подсвечено:</span>${a.map(n=>`<span class="markChip">${fmt(n)}</span>`).join('')}<button id="markClear" class="markClear" type="button">Снять всё</button></div>`:''}`}
 function toggleHistoryMark(n){n=Number(n);if(!Number.isInteger(n)||n<1||n>80)return;if(historyMarks.has(n)){historyMarks.delete(n);selected=selected.filter(x=>x!==n);}else{if(!selected.includes(n) && selected.length>=10){alert('Максимум 10 чисел в комбинации');return}historyMarks.add(n);if(!selected.includes(n))selected=[...selected,n];}renderPick();renderHistory();}
@@ -200,10 +200,10 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=f5c81707f408',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=276b43bd946e',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-search-v1.js?v=f5c81707f408"></script>
-<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.3.14'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
+<script src="combo-search-v1.js?v=276b43bd946e"></script>
+<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.3.15'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
 <script id="comboAutoUpdate">
 (()=>{
  const current=document.querySelector('meta[name="app-build"]')?.content;
