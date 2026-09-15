@@ -26,7 +26,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.1</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.2</div></div>
 
  <div class="card">
   <b>Правильная логика интервалов</b>
@@ -42,7 +42,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
   <b>Формирование K7</b>
   <div class="muted">Расчёт делается только по известным тиражам до следующего тиража. Основной параметр — текущий пропуск числа и его исторические совпадения в строгой/мягкой матрице.</div>
   <div class="controls">
-   <label>Глубина архива<select id="window"><option>100</option><option>200</option><option selected>400</option><option>800</option></select></label>
+   <label>Глубина архива<input id="window" type="number" inputmode="numeric" min="1" step="1" value="400" placeholder="Например 137"><span id="windowHint" class="muted" style="display:block;margin-top:4px">Можно указать любое число тиражей</span></label>
    <label>Пул кандидатов<select id="pool"><option>12</option><option selected>18</option><option>24</option><option>30</option></select></label>
    <label>Режим генератора<select id="mode"><option value="strict">Строгий + частота</option><option value="soft">Мягкий + частота</option><option value="combo" selected>Строгий + мягкий + частота</option><option value="balance">Комбо + пары + столбы</option></select></label>
    <label>Сколько K7<select id="count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
@@ -188,8 +188,11 @@ function renderCombos(combos){
 }
 
 function build(){
- const w=+$('window').value,pool=+$('pool').value,count=+$('count').value,mode=$('mode').value;
- CURRENT_DRAWS=DRAWS.slice(-Math.min(w,DRAWS.length));
+ let w=Math.floor(Number($('window').value));const pool=+$('pool').value,count=+$('count').value,mode=$('mode').value;
+ if(!Number.isFinite(w)||w<1)w=1;
+ w=Math.min(w,DRAWS.length);
+ $('window').value=String(w);
+ CURRENT_DRAWS=DRAWS.slice(-w);
  STATS=scoreStats(buildNumberStats(CURRENT_DRAWS),mode);
  const combos=generateCombos(STATS,CURRENT_DRAWS,mode,pool,count);
  renderRank();renderCombos(combos);renderMatrix();
@@ -238,6 +241,9 @@ async function load(){
    DRAWS.sort((a,b)=>Number(a.draw)-Number(b.draw));
    const last=DRAWS[DRAWS.length-1];
    $('db').textContent=`База: ${DRAWS.length} тиров · последний №${last.draw} · ${last.date} ${last.time} · ст${drawCol(last)}`;
+   $('window').max=String(DRAWS.length);
+   if($('windowHint'))$('windowHint').textContent=`Любая глубина от 1 до ${DRAWS.length} тиражей`;
+   if(Number($('window').value)>DRAWS.length)$('window').value=String(DRAWS.length);
    build();
  }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
 }
