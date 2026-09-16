@@ -248,20 +248,37 @@
     if(!Number.isInteger(count)||count<DETAIL_MIN_DRAWS)count=DETAIL_MIN_DRAWS;
     detailDrawCounts.set(key,count);
     let showTransitions=false;
-    const render=()=>{
+    const render=(preserveInput=false)=>{
       const archive=(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)?DRAWS:state.draws;
       const visible=[...archive].sort((a,b)=>b.draw-a.draw).slice(0,count);
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      const html=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      if(preserveInput){
+        const next=document.createElement('div');next.innerHTML=html;
+        for(const selector of ['.csWinStats','.hist'])box.querySelector(selector).replaceChildren(...next.querySelector(selector).childNodes);
+        return;
+      }
+      box.innerHTML=html;
       q('csDetailClose').onclick=()=>{try{document.activeElement?.blur()}catch(e){}box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
       const input=q('csDrawCount');
-      const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};
-      input.onchange=apply;
-      input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply()}};
+      const apply=(commit=false)=>{
+        const text=input.value.trim();let v=Number(text);
+        if(!/^\d+$/.test(text)||!Number.isSafeInteger(v)||v<DETAIL_MIN_DRAWS){
+          if(!commit)return;
+          v=DETAIL_MIN_DRAWS;
+        }
+        if(commit)input.value=String(v);
+        if(v===count)return;
+        count=v;detailDrawCounts.set(key,v);render(true);
+      };
+      input.oninput=e=>{if(!e.isComposing)apply()};
+      input.oncompositionend=()=>apply();
+      input.onblur=()=>apply(true);
+      input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();apply(true);input.blur()}};
     };
     render();
     box.scrollIntoView({behavior:'smooth',block:'start'});
