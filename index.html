@@ -144,7 +144,23 @@ function financeStats(nums,a){const selectedCount=nums.length;let gross=0,winnin
 function signedMoney(v){if(v>0)return '+'+money(v);if(v<0)return '−'+money(Math.abs(v));return money(0);}
 function modeLabel(){if(filter.mode==='one')return 'Тираж №'+filter.one;if(filter.mode==='date')return 'Дата '+(filter.date||'—');if(filter.mode==='dates')return 'Диапазон дат';if(filter.mode==='last')return 'Последние '+filter.count+' тиражей';if(filter.mode==='range')return 'Диапазон тиражей';return 'Вся база'}
 function paramsHTML(prefix){return `<div class="card acc" id="${prefix}Acc"><div class="accHead" data-acc="${prefix}"><div><b>🎯 Параметры проверки</b><div class="muted" id="${prefix}ModeLabel">${modeLabel()}</div></div><div>▶</div></div><div class="accBody hidden" id="${prefix}Body"><div class="modegrid">${[['one','1 тираж'],['date','Дата'],['dates','Диапазон дат'],['last','Кол-во тиражей'],['range','Диапазон тир.'],['all','Вся база']].map(([m,t])=>`<button data-mode="${m}" data-prefix="${prefix}" class="${filter.mode===m?'active':''}">${t}</button>`).join('')}</div><div id="${prefix}Fields" class="fields"></div></div></div>`}
-function renderFields(prefix){const box=$(prefix+'Fields');if(!box)return;let h='';if(filter.mode==='one')h=`<label class="wide">Номер тиража<input data-f="one" type="number" value="${filter.one}"></label>`;if(filter.mode==='date')h=`<label class="wide">Дата<input data-f="date" type="date" value="${filter.date}"></label>`;if(filter.mode==='dates')h=`<label>От<input data-f="fromDate" type="date" value="${filter.fromDate}"></label><label>До<input data-f="toDate" type="date" value="${filter.toDate}"></label>`;if(filter.mode==='last')h=`<label class="wide">Количество тиражей<input data-f="count" type="number" min="1" max="${DRAWS.length||31027}" value="${filter.count}"></label>`;if(filter.mode==='range')h=`<label>С №<input data-f="fromDraw" type="number" value="${filter.fromDraw}"></label><label>По №<input data-f="toDraw" type="number" value="${filter.toDraw}"></label>`;box.innerHTML=h;box.querySelectorAll('[data-f]').forEach(el=>el.oninput=()=>{filter[el.dataset.f]=el.value;document.querySelectorAll('[id$="ModeLabel"]').forEach(x=>x.textContent=modeLabel())})}
+function renderFields(prefix){
+  const box=$(prefix+'Fields');
+  if(!box)return;
+  const active=document.activeElement;
+  if(active && box.contains(active) && active.matches('input[data-f]')) return;
+  let h='';
+  if(filter.mode==='one')h=`<label class="wide">Номер тиража<input data-f="one" type="number" value="${filter.one}"></label>`;
+  if(filter.mode==='date')h=`<label class="wide">Дата<input data-f="date" type="date" value="${filter.date}"></label>`;
+  if(filter.mode==='dates')h=`<label>От<input data-f="fromDate" type="date" value="${filter.fromDate}"></label><label>До<input data-f="toDate" type="date" value="${filter.toDate}"></label>`;
+  if(filter.mode==='last')h=`<label class="wide">Количество тиражей<input data-f="count" type="number" min="1" max="${DRAWS.length||31027}" value="${filter.count}"></label>`;
+  if(filter.mode==='range')h=`<label>С №<input data-f="fromDraw" type="number" value="${filter.fromDraw}"></label><label>По №<input data-f="toDraw" type="number" value="${filter.toDraw}"></label>`;
+  box.innerHTML=h;
+  box.querySelectorAll('[data-f]').forEach(el=>el.oninput=()=>{
+    filter[el.dataset.f]=el.value;
+    document.querySelectorAll('[id$="ModeLabel"]').forEach(x=>x.textContent=modeLabel());
+  });
+}
 function bindParams(root=document){root.querySelectorAll('[data-acc]').forEach(h=>h.onclick=()=>{const p=h.dataset.acc,b=$(p+'Body');b.classList.toggle('hidden');h.lastElementChild.textContent=b.classList.contains('hidden')?'▶':'▼'});root.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{filter.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x.dataset.mode===filter.mode));document.querySelectorAll('[id$="ModeLabel"]').forEach(x=>x.textContent=modeLabel());renderFields(b.dataset.prefix)})}
 function renderGroups(){$('groups').innerHTML=PRESETS.groups.map(g=>`<button data-group="${g}" class="${g===group?'active':''}">${g}</button>`).join('');$('groups').querySelectorAll('[data-group]').forEach(b=>b.onclick=()=>{group=b.dataset.group;renderGroups();renderCombos()})}
 function renderCombos(){const a=PRESETS.combos.filter(c=>c.group===group);$('comboList').innerHTML=a.map((c,i)=>`<button class="comboBtn" data-i="${i}"><span class="cid">${c.id}</span><span class="nums">${c.numbers.map(fmt).join(' ')}</span><span class="ncount">${c.numbers.length} ч.</span></button>`).join('');$('comboList').querySelectorAll('[data-i]').forEach((b)=>b.onclick=()=>chooseOur(a[+b.dataset.i]))}
