@@ -1,1448 +1,8 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-09-18T17:23:06.068Z",
-  "latestDraw": 327808,
+  "updatedAt": "2026-09-18T17:37:25.328Z",
+  "latestDraw": 327809,
   "snapshots": [
-    {
-      "createdAt": "2026-09-17T05:24:08.654Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 5,
-      "size": 3,
-      "drawsCount": 5,
-      "poolSize": 146,
-      "combos": [
-        {
-          "nums": [
-            3,
-            11,
-            72
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 9,
-          "withHit": 3,
-          "maxRun": 3,
-          "score": 31698
-        },
-        {
-          "nums": [
-            11,
-            34,
-            79
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 9,
-          "withHit": 4,
-          "maxRun": 3,
-          "score": 21703
-        },
-        {
-          "nums": [
-            17,
-            34,
-            72
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 9,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21210
-        },
-        {
-          "nums": [
-            3,
-            17,
-            79
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 9,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21210
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.656Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 5,
-      "size": 4,
-      "drawsCount": 5,
-      "poolSize": 329,
-      "combos": [
-        {
-          "nums": [
-            3,
-            11,
-            17,
-            72
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 12,
-          "withHit": 4,
-          "maxRun": 4,
-          "score": 21764
-        },
-        {
-          "nums": [
-            11,
-            17,
-            34,
-            79
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 12,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21270
-        },
-        {
-          "nums": [
-            3,
-            34,
-            72,
-            79
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 12,
-          "withHit": 4,
-          "maxRun": 3,
-          "score": 21263
-        },
-        {
-          "nums": [
-            17,
-            34,
-            72,
-            16
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 11,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21250
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.663Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 5,
-      "size": 5,
-      "drawsCount": 5,
-      "poolSize": 618,
-      "combos": [
-        {
-          "nums": [
-            11,
-            17,
-            34,
-            72,
-            79
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 15,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21330
-        },
-        {
-          "nums": [
-            3,
-            11,
-            32,
-            72,
-            12
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 14,
-          "withHit": 4,
-          "maxRun": 4,
-          "score": 21304
-        },
-        {
-          "nums": [
-            65,
-            68,
-            1,
-            27,
-            47
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 12,
-          "withHit": 4,
-          "maxRun": 3,
-          "score": 21263
-        },
-        {
-          "nums": [
-            34,
-            65,
-            68,
-            79,
-            21
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 14,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 11310
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.669Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 5,
-      "size": 6,
-      "drawsCount": 5,
-      "poolSize": 1042,
-      "combos": [
-        {
-          "nums": [
-            3,
-            11,
-            17,
-            34,
-            72,
-            79
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 18,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21390
-        },
-        {
-          "nums": [
-            3,
-            11,
-            32,
-            72,
-            8,
-            12
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 16,
-          "withHit": 4,
-          "maxRun": 4,
-          "score": 21344
-        },
-        {
-          "nums": [
-            65,
-            68,
-            1,
-            27,
-            47,
-            53
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 14,
-          "withHit": 4,
-          "maxRun": 3,
-          "score": 21303
-        },
-        {
-          "nums": [
-            17,
-            32,
-            65,
-            68,
-            1,
-            23
-          ],
-          "full": 1,
-          "near": 1,
-          "sum": 16,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 10850
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.681Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 5,
-      "size": 7,
-      "drawsCount": 5,
-      "poolSize": 1649,
-      "combos": [
-        {
-          "nums": [
-            3,
-            11,
-            17,
-            34,
-            72,
-            79,
-            16
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 20,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 21430
-        },
-        {
-          "nums": [
-            3,
-            11,
-            32,
-            65,
-            72,
-            8,
-            12
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 19,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 11410
-        },
-        {
-          "nums": [
-            17,
-            65,
-            68,
-            1,
-            27,
-            47,
-            53
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 17,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 11370
-        },
-        {
-          "nums": [
-            34,
-            65,
-            68,
-            79,
-            1,
-            21,
-            52
-          ],
-          "full": 1,
-          "near": 1,
-          "sum": 18,
-          "withHit": 5,
-          "maxRun": 5,
-          "score": 10890
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.682Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 10,
-      "size": 3,
-      "drawsCount": 10,
-      "poolSize": 295,
-      "combos": [
-        {
-          "nums": [
-            1,
-            68,
-            53
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 14,
-          "withHit": 7,
-          "maxRun": 5,
-          "score": 32320
-        },
-        {
-          "nums": [
-            52,
-            22,
-            62
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 13,
-          "withHit": 6,
-          "maxRun": 3,
-          "score": 32293
-        },
-        {
-          "nums": [
-            8,
-            66,
-            71
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 15,
-          "withHit": 9,
-          "maxRun": 9,
-          "score": 31854
-        },
-        {
-          "nums": [
-            68,
-            34,
-            21
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 12,
-          "withHit": 6,
-          "maxRun": 3,
-          "score": 31773
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.683Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 10,
-      "size": 4,
-      "drawsCount": 10,
-      "poolSize": 675,
-      "combos": [
-        {
-          "nums": [
-            1,
-            68,
-            71,
-            53
-          ],
-          "full": 2,
-          "near": 4,
-          "sum": 19,
-          "withHit": 8,
-          "maxRun": 6,
-          "score": 22426
-        },
-        {
-          "nums": [
-            52,
-            22,
-            62,
-            13
-          ],
-          "full": 2,
-          "near": 4,
-          "sum": 16,
-          "withHit": 6,
-          "maxRun": 3,
-          "score": 22353
-        },
-        {
-          "nums": [
-            8,
-            66,
-            68,
-            71
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 20,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21960
-        },
-        {
-          "nums": [
-            1,
-            68,
-            34,
-            21
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 17,
-          "withHit": 8,
-          "maxRun": 6,
-          "score": 21886
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.688Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 10,
-      "size": 5,
-      "drawsCount": 10,
-      "poolSize": 1247,
-      "combos": [
-        {
-          "nums": [
-            8,
-            66,
-            71,
-            79,
-            40
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 24,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21540
-        },
-        {
-          "nums": [
-            1,
-            52,
-            79,
-            53,
-            47
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 22,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21500
-        },
-        {
-          "nums": [
-            8,
-            52,
-            22,
-            62,
-            72
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 22,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21500
-        },
-        {
-          "nums": [
-            66,
-            79,
-            16,
-            34,
-            72
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 22,
-          "withHit": 9,
-          "maxRun": 8,
-          "score": 21493
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.698Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 10,
-      "size": 6,
-      "drawsCount": 10,
-      "poolSize": 2092,
-      "combos": [
-        {
-          "nums": [
-            1,
-            52,
-            79,
-            53,
-            47,
-            60
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 25,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21560
-        },
-        {
-          "nums": [
-            8,
-            52,
-            22,
-            62,
-            72,
-            13
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 25,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21560
-        },
-        {
-          "nums": [
-            66,
-            79,
-            16,
-            34,
-            72,
-            11
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 25,
-          "withHit": 9,
-          "maxRun": 8,
-          "score": 21553
-        },
-        {
-          "nums": [
-            1,
-            68,
-            34,
-            53,
-            21,
-            33
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 24,
-          "withHit": 8,
-          "maxRun": 6,
-          "score": 21526
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.716Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 10,
-      "size": 7,
-      "drawsCount": 10,
-      "poolSize": 3292,
-      "combos": [
-        {
-          "nums": [
-            66,
-            79,
-            16,
-            34,
-            72,
-            11,
-            17
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 28,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 21620
-        },
-        {
-          "nums": [
-            8,
-            66,
-            68,
-            71,
-            79,
-            40,
-            74
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 32,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 11700
-        },
-        {
-          "nums": [
-            1,
-            52,
-            68,
-            79,
-            53,
-            47,
-            60
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 30,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 11660
-        },
-        {
-          "nums": [
-            1,
-            8,
-            52,
-            22,
-            62,
-            72,
-            13
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 30,
-          "withHit": 10,
-          "maxRun": 10,
-          "score": 11660
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.717Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 20,
-      "size": 3,
-      "drawsCount": 20,
-      "poolSize": 553,
-      "combos": [
-        {
-          "nums": [
-            8,
-            49,
-            35
-          ],
-          "full": 4,
-          "near": 7,
-          "sum": 25,
-          "withHit": 14,
-          "maxRun": 5,
-          "score": 44075
-        },
-        {
-          "nums": [
-            1,
-            62,
-            70
-          ],
-          "full": 4,
-          "near": 5,
-          "sum": 25,
-          "withHit": 16,
-          "maxRun": 9,
-          "score": 43089
-        },
-        {
-          "nums": [
-            8,
-            37,
-            70
-          ],
-          "full": 3,
-          "near": 9,
-          "sum": 28,
-          "withHit": 16,
-          "maxRun": 10,
-          "score": 35150
-        },
-        {
-          "nums": [
-            8,
-            17,
-            32
-          ],
-          "full": 3,
-          "near": 8,
-          "sum": 26,
-          "withHit": 15,
-          "maxRun": 7,
-          "score": 34602
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.721Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 20,
-      "size": 4,
-      "drawsCount": 20,
-      "poolSize": 1313,
-      "combos": [
-        {
-          "nums": [
-            8,
-            68,
-            49,
-            35
-          ],
-          "full": 3,
-          "near": 5,
-          "sum": 34,
-          "withHit": 18,
-          "maxRun": 9,
-          "score": 33279
-        },
-        {
-          "nums": [
-            1,
-            68,
-            62,
-            70
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 34,
-          "withHit": 18,
-          "maxRun": 14,
-          "score": 32784
-        },
-        {
-          "nums": [
-            8,
-            37,
-            13,
-            64
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 34,
-          "withHit": 17,
-          "maxRun": 15,
-          "score": 32280
-        },
-        {
-          "nums": [
-            8,
-            37,
-            34,
-            76
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 33,
-          "withHit": 16,
-          "maxRun": 7,
-          "score": 32247
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.729Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 20,
-      "size": 5,
-      "drawsCount": 20,
-      "poolSize": 2491,
-      "combos": [
-        {
-          "nums": [
-            8,
-            68,
-            32,
-            49,
-            35
-          ],
-          "full": 2,
-          "near": 4,
-          "sum": 41,
-          "withHit": 19,
-          "maxRun": 12,
-          "score": 22927
-        },
-        {
-          "nums": [
-            1,
-            68,
-            37,
-            62,
-            70
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 42,
-          "withHit": 19,
-          "maxRun": 16,
-          "score": 22451
-        },
-        {
-          "nums": [
-            8,
-            37,
-            13,
-            34,
-            64
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 41,
-          "withHit": 19,
-          "maxRun": 18,
-          "score": 22433
-        },
-        {
-          "nums": [
-            8,
-            1,
-            21,
-            33,
-            53
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 40,
-          "withHit": 19,
-          "maxRun": 10,
-          "score": 22405
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.750Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 20,
-      "size": 6,
-      "drawsCount": 20,
-      "poolSize": 4195,
-      "combos": [
-        {
-          "nums": [
-            8,
-            37,
-            70,
-            17,
-            18,
-            34
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 49,
-          "withHit": 18,
-          "maxRun": 10,
-          "score": 22080
-        },
-        {
-          "nums": [
-            8,
-            68,
-            17,
-            32,
-            49,
-            35
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 48,
-          "withHit": 19,
-          "maxRun": 12,
-          "score": 22067
-        },
-        {
-          "nums": [
-            8,
-            37,
-            13,
-            34,
-            64,
-            56
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 47,
-          "withHit": 19,
-          "maxRun": 18,
-          "score": 22053
-        },
-        {
-          "nums": [
-            8,
-            62,
-            13,
-            52,
-            22,
-            72
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 46,
-          "withHit": 20,
-          "maxRun": 20,
-          "score": 22040
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.793Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 20,
-      "size": 7,
-      "drawsCount": 20,
-      "poolSize": 6598,
-      "combos": [
-        {
-          "nums": [
-            8,
-            37,
-            70,
-            17,
-            18,
-            34,
-            76
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 55,
-          "withHit": 19,
-          "maxRun": 10,
-          "score": 22205
-        },
-        {
-          "nums": [
-            1,
-            21,
-            52,
-            79,
-            33,
-            53,
-            73
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 48,
-          "withHit": 18,
-          "maxRun": 10,
-          "score": 22060
-        },
-        {
-          "nums": [
-            17,
-            34,
-            79,
-            16,
-            72,
-            3,
-            41
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 43,
-          "withHit": 20,
-          "maxRun": 20,
-          "score": 21980
-        },
-        {
-          "nums": [
-            8,
-            68,
-            59,
-            17,
-            32,
-            49,
-            35
-          ],
-          "full": 1,
-          "near": 2,
-          "sum": 56,
-          "withHit": 20,
-          "maxRun": 20,
-          "score": 12240
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.803Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 60,
-      "size": 3,
-      "drawsCount": 60,
-      "poolSize": 1440,
-      "combos": [
-        {
-          "nums": [
-            73,
-            59,
-            46
-          ],
-          "full": 6,
-          "near": 17,
-          "sum": 65,
-          "withHit": 42,
-          "maxRun": 11,
-          "score": 70021
-        },
-        {
-          "nums": [
-            73,
-            60,
-            65
-          ],
-          "full": 6,
-          "near": 16,
-          "sum": 59,
-          "withHit": 37,
-          "maxRun": 9,
-          "score": 69374
-        },
-        {
-          "nums": [
-            27,
-            61,
-            68
-          ],
-          "full": 6,
-          "near": 14,
-          "sum": 61,
-          "withHit": 41,
-          "maxRun": 5,
-          "score": 68430
-        },
-        {
-          "nums": [
-            8,
-            61,
-            46
-          ],
-          "full": 6,
-          "near": 14,
-          "sum": 60,
-          "withHit": 40,
-          "maxRun": 7,
-          "score": 68407
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.824Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 60,
-      "size": 4,
-      "drawsCount": 60,
-      "poolSize": 3780,
-      "combos": [
-        {
-          "nums": [
-            59,
-            8,
-            61,
-            46
-          ],
-          "full": 4,
-          "near": 10,
-          "sum": 82,
-          "withHit": 47,
-          "maxRun": 10,
-          "score": 46885
-        },
-        {
-          "nums": [
-            59,
-            27,
-            61,
-            68
-          ],
-          "full": 4,
-          "near": 8,
-          "sum": 83,
-          "withHit": 48,
-          "maxRun": 11,
-          "score": 45911
-        },
-        {
-          "nums": [
-            73,
-            60,
-            35,
-            65
-          ],
-          "full": 4,
-          "near": 8,
-          "sum": 76,
-          "withHit": 42,
-          "maxRun": 9,
-          "score": 45739
-        },
-        {
-          "nums": [
-            59,
-            27,
-            57,
-            60
-          ],
-          "full": 4,
-          "near": 7,
-          "sum": 80,
-          "withHit": 46,
-          "maxRun": 11,
-          "score": 45341
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:08.878Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 60,
-      "size": 5,
-      "drawsCount": 60,
-      "poolSize": 7371,
-      "combos": [
-        {
-          "nums": [
-            59,
-            8,
-            27,
-            61,
-            46
-          ],
-          "full": 3,
-          "near": 7,
-          "sum": 103,
-          "withHit": 54,
-          "maxRun": 20,
-          "score": 35850
-        },
-        {
-          "nums": [
-            59,
-            27,
-            57,
-            33,
-            60
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 98,
-          "withHit": 53,
-          "maxRun": 15,
-          "score": 34240
-        },
-        {
-          "nums": [
-            73,
-            61,
-            79,
-            60,
-            65
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 98,
-          "withHit": 47,
-          "maxRun": 13,
-          "score": 34208
-        },
-        {
-          "nums": [
-            57,
-            16,
-            3,
-            34,
-            11
-          ],
-          "full": 3,
-          "near": 4,
-          "sum": 83,
-          "withHit": 44,
-          "maxRun": 9,
-          "score": 33889
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:09.005Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 60,
-      "size": 6,
-      "drawsCount": 60,
-      "poolSize": 12523,
-      "combos": [
-        {
-          "nums": [
-            73,
-            60,
-            35,
-            49,
-            65,
-            55
-          ],
-          "full": 3,
-          "near": 3,
-          "sum": 109,
-          "withHit": 51,
-          "maxRun": 13,
-          "score": 33948
-        },
-        {
-          "nums": [
-            73,
-            59,
-            8,
-            27,
-            61,
-            46
-          ],
-          "full": 2,
-          "near": 5,
-          "sum": 127,
-          "withHit": 56,
-          "maxRun": 26,
-          "score": 25346
-        },
-        {
-          "nums": [
-            59,
-            8,
-            27,
-            57,
-            33,
-            60
-          ],
-          "full": 2,
-          "near": 4,
-          "sum": 119,
-          "withHit": 56,
-          "maxRun": 15,
-          "score": 24675
-        },
-        {
-          "nums": [
-            73,
-            79,
-            33,
-            35,
-            49,
-            24
-          ],
-          "full": 2,
-          "near": 4,
-          "sum": 110,
-          "withHit": 55,
-          "maxRun": 20,
-          "score": 24495
-        }
-      ]
-    },
-    {
-      "createdAt": "2026-09-17T05:24:09.219Z",
-      "anchorDraw": 327709,
-      "anchorDate": "17.09.26",
-      "anchorTime": "08:17",
-      "window": 60,
-      "size": 7,
-      "drawsCount": 60,
-      "poolSize": 19776,
-      "combos": [
-        {
-          "nums": [
-            73,
-            46,
-            60,
-            35,
-            49,
-            65,
-            55
-          ],
-          "full": 2,
-          "near": 3,
-          "sum": 128,
-          "withHit": 54,
-          "maxRun": 21,
-          "score": 24351
-        },
-        {
-          "nums": [
-            73,
-            59,
-            27,
-            61,
-            37,
-            46,
-            62
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 144,
-          "withHit": 56,
-          "maxRun": 26,
-          "score": 24186
-        },
-        {
-          "nums": [
-            59,
-            8,
-            27,
-            61,
-            68,
-            57,
-            60
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 141,
-          "withHit": 57,
-          "maxRun": 34,
-          "score": 24139
-        },
-        {
-          "nums": [
-            59,
-            8,
-            26,
-            68,
-            37,
-            46,
-            7
-          ],
-          "full": 2,
-          "near": 2,
-          "sum": 139,
-          "withHit": 59,
-          "maxRun": 37,
-          "score": 24112
-        }
-      ]
-    },
     {
       "createdAt": "2026-09-17T05:37:16.236Z",
       "anchorDraw": 327710,
@@ -144002,9 +142562,1449 @@
           "score": 24000
         }
       ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.574Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 5,
+      "size": 3,
+      "drawsCount": 5,
+      "poolSize": 136,
+      "combos": [
+        {
+          "nums": [
+            34,
+            73,
+            74
+          ],
+          "full": 3,
+          "near": 4,
+          "sum": 12,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 32270
+        },
+        {
+          "nums": [
+            34,
+            55,
+            15
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 11,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31750
+        },
+        {
+          "nums": [
+            55,
+            73,
+            45
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 11,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31750
+        },
+        {
+          "nums": [
+            55,
+            74,
+            75
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 11,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31750
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.576Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 5,
+      "size": 4,
+      "drawsCount": 5,
+      "poolSize": 304,
+      "combos": [
+        {
+          "nums": [
+            34,
+            73,
+            74,
+            63
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 15,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31830
+        },
+        {
+          "nums": [
+            55,
+            73,
+            74,
+            45
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 15,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31830
+        },
+        {
+          "nums": [
+            34,
+            55,
+            15,
+            60
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 14,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31810
+        },
+        {
+          "nums": [
+            73,
+            74,
+            71,
+            75
+          ],
+          "full": 2,
+          "near": 4,
+          "sum": 14,
+          "withHit": 4,
+          "maxRun": 4,
+          "score": 22304
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.584Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 5,
+      "size": 5,
+      "drawsCount": 5,
+      "poolSize": 570,
+      "combos": [
+        {
+          "nums": [
+            55,
+            73,
+            74,
+            45,
+            75
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 18,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 31890
+        },
+        {
+          "nums": [
+            34,
+            55,
+            73,
+            15,
+            60
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 18,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21890
+        },
+        {
+          "nums": [
+            34,
+            73,
+            74,
+            63,
+            71
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 18,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21890
+        },
+        {
+          "nums": [
+            74,
+            15,
+            45,
+            60,
+            63
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 16,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21350
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.593Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 5,
+      "size": 6,
+      "drawsCount": 5,
+      "poolSize": 964,
+      "combos": [
+        {
+          "nums": [
+            34,
+            55,
+            73,
+            74,
+            45,
+            75
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 22,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21970
+        },
+        {
+          "nums": [
+            34,
+            55,
+            73,
+            15,
+            60,
+            63
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 21,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21450
+        },
+        {
+          "nums": [
+            34,
+            73,
+            74,
+            63,
+            71,
+            12
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 20,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21430
+        },
+        {
+          "nums": [
+            74,
+            15,
+            45,
+            60,
+            63,
+            75
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 19,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21410
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.607Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 5,
+      "size": 7,
+      "drawsCount": 5,
+      "poolSize": 1613,
+      "combos": [
+        {
+          "nums": [
+            34,
+            55,
+            73,
+            74,
+            15,
+            45,
+            60
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 25,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21530
+        },
+        {
+          "nums": [
+            55,
+            73,
+            74,
+            71,
+            75,
+            19,
+            25
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 22,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 21470
+        },
+        {
+          "nums": [
+            73,
+            74,
+            71,
+            13,
+            50,
+            57,
+            68
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 19,
+          "withHit": 4,
+          "maxRun": 4,
+          "score": 21404
+        },
+        {
+          "nums": [
+            55,
+            73,
+            45,
+            46,
+            63,
+            75,
+            5
+          ],
+          "full": 1,
+          "near": 2,
+          "sum": 22,
+          "withHit": 5,
+          "maxRun": 5,
+          "score": 11470
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.608Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 10,
+      "size": 3,
+      "drawsCount": 10,
+      "poolSize": 274,
+      "combos": [
+        {
+          "nums": [
+            15,
+            34,
+            60
+          ],
+          "full": 3,
+          "near": 6,
+          "sum": 18,
+          "withHit": 9,
+          "maxRun": 7,
+          "score": 33412
+        },
+        {
+          "nums": [
+            15,
+            46,
+            30
+          ],
+          "full": 3,
+          "near": 6,
+          "sum": 17,
+          "withHit": 8,
+          "maxRun": 4,
+          "score": 33384
+        },
+        {
+          "nums": [
+            34,
+            73,
+            74
+          ],
+          "full": 3,
+          "near": 5,
+          "sum": 16,
+          "withHit": 8,
+          "maxRun": 6,
+          "score": 32866
+        },
+        {
+          "nums": [
+            46,
+            71,
+            68
+          ],
+          "full": 3,
+          "near": 5,
+          "sum": 16,
+          "withHit": 8,
+          "maxRun": 5,
+          "score": 32865
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.610Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 10,
+      "size": 4,
+      "drawsCount": 10,
+      "poolSize": 639,
+      "combos": [
+        {
+          "nums": [
+            15,
+            34,
+            60,
+            55
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 23,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 32020
+        },
+        {
+          "nums": [
+            15,
+            46,
+            55,
+            8
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 21,
+          "withHit": 9,
+          "maxRun": 6,
+          "score": 31971
+        },
+        {
+          "nums": [
+            34,
+            73,
+            74,
+            63
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 20,
+          "withHit": 9,
+          "maxRun": 6,
+          "score": 31951
+        },
+        {
+          "nums": [
+            55,
+            73,
+            74,
+            45
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 19,
+          "withHit": 8,
+          "maxRun": 6,
+          "score": 31926
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.616Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 10,
+      "size": 5,
+      "drawsCount": 10,
+      "poolSize": 1224,
+      "combos": [
+        {
+          "nums": [
+            15,
+            34,
+            46,
+            60,
+            55
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 29,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 22140
+        },
+        {
+          "nums": [
+            34,
+            71,
+            73,
+            74,
+            63
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 26,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 22080
+        },
+        {
+          "nums": [
+            46,
+            55,
+            73,
+            74,
+            45
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 25,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 22060
+        },
+        {
+          "nums": [
+            15,
+            71,
+            55,
+            45,
+            63
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 25,
+          "withHit": 9,
+          "maxRun": 8,
+          "score": 22053
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.629Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 10,
+      "size": 6,
+      "drawsCount": 10,
+      "poolSize": 2068,
+      "combos": [
+        {
+          "nums": [
+            15,
+            34,
+            60,
+            55,
+            73,
+            74
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 33,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21720
+        },
+        {
+          "nums": [
+            34,
+            71,
+            73,
+            74,
+            12,
+            63
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 30,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21660
+        },
+        {
+          "nums": [
+            15,
+            46,
+            55,
+            8,
+            45,
+            63
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 29,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21640
+        },
+        {
+          "nums": [
+            71,
+            55,
+            73,
+            74,
+            45,
+            19
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 28,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21620
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.655Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 10,
+      "size": 7,
+      "drawsCount": 10,
+      "poolSize": 3292,
+      "combos": [
+        {
+          "nums": [
+            15,
+            34,
+            60,
+            55,
+            73,
+            74,
+            45
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 37,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21800
+        },
+        {
+          "nums": [
+            34,
+            60,
+            73,
+            25,
+            33,
+            42,
+            65
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 29,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 21640
+        },
+        {
+          "nums": [
+            15,
+            34,
+            46,
+            30,
+            55,
+            8,
+            27
+          ],
+          "full": 1,
+          "near": 2,
+          "sum": 35,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 11760
+        },
+        {
+          "nums": [
+            34,
+            71,
+            73,
+            74,
+            12,
+            63,
+            68
+          ],
+          "full": 1,
+          "near": 2,
+          "sum": 34,
+          "withHit": 10,
+          "maxRun": 10,
+          "score": 11740
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.657Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 20,
+      "size": 3,
+      "drawsCount": 20,
+      "poolSize": 587,
+      "combos": [
+        {
+          "nums": [
+            57,
+            54,
+            9
+          ],
+          "full": 4,
+          "near": 6,
+          "sum": 25,
+          "withHit": 15,
+          "maxRun": 8,
+          "score": 43583
+        },
+        {
+          "nums": [
+            57,
+            68,
+            69
+          ],
+          "full": 3,
+          "near": 10,
+          "sum": 26,
+          "withHit": 13,
+          "maxRun": 6,
+          "score": 35591
+        },
+        {
+          "nums": [
+            57,
+            78,
+            65
+          ],
+          "full": 3,
+          "near": 7,
+          "sum": 25,
+          "withHit": 15,
+          "maxRun": 6,
+          "score": 34081
+        },
+        {
+          "nums": [
+            12,
+            54,
+            70
+          ],
+          "full": 3,
+          "near": 7,
+          "sum": 24,
+          "withHit": 14,
+          "maxRun": 5,
+          "score": 34055
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.661Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 20,
+      "size": 4,
+      "drawsCount": 20,
+      "poolSize": 1340,
+      "combos": [
+        {
+          "nums": [
+            57,
+            54,
+            69,
+            9
+          ],
+          "full": 3,
+          "near": 5,
+          "sum": 33,
+          "withHit": 17,
+          "maxRun": 12,
+          "score": 33257
+        },
+        {
+          "nums": [
+            57,
+            34,
+            70,
+            9
+          ],
+          "full": 2,
+          "near": 5,
+          "sum": 33,
+          "withHit": 18,
+          "maxRun": 12,
+          "score": 23262
+        },
+        {
+          "nums": [
+            46,
+            68,
+            69,
+            71
+          ],
+          "full": 2,
+          "near": 5,
+          "sum": 31,
+          "withHit": 16,
+          "maxRun": 6,
+          "score": 23206
+        },
+        {
+          "nums": [
+            57,
+            68,
+            71,
+            13
+          ],
+          "full": 2,
+          "near": 5,
+          "sum": 31,
+          "withHit": 15,
+          "maxRun": 6,
+          "score": 23201
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.674Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 20,
+      "size": 5,
+      "drawsCount": 20,
+      "poolSize": 2499,
+      "combos": [
+        {
+          "nums": [
+            57,
+            34,
+            54,
+            9,
+            13
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 39,
+          "withHit": 18,
+          "maxRun": 8,
+          "score": 32378
+        },
+        {
+          "nums": [
+            57,
+            68,
+            71,
+            13,
+            73
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 37,
+          "withHit": 16,
+          "maxRun": 6,
+          "score": 22326
+        },
+        {
+          "nums": [
+            54,
+            68,
+            69,
+            2,
+            13
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 36,
+          "withHit": 17,
+          "maxRun": 15,
+          "score": 22320
+        },
+        {
+          "nums": [
+            57,
+            69,
+            70,
+            78,
+            9
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 41,
+          "withHit": 17,
+          "maxRun": 12,
+          "score": 21917
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.703Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 20,
+      "size": 6,
+      "drawsCount": 20,
+      "poolSize": 4197,
+      "combos": [
+        {
+          "nums": [
+            57,
+            34,
+            54,
+            69,
+            9,
+            13
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 47,
+          "withHit": 19,
+          "maxRun": 12,
+          "score": 22547
+        },
+        {
+          "nums": [
+            15,
+            68,
+            69,
+            78,
+            65,
+            71
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 46,
+          "withHit": 19,
+          "maxRun": 13,
+          "score": 22028
+        },
+        {
+          "nums": [
+            15,
+            34,
+            46,
+            60,
+            8,
+            55
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 42,
+          "withHit": 18,
+          "maxRun": 13,
+          "score": 21943
+        },
+        {
+          "nums": [
+            70,
+            6,
+            9,
+            1,
+            13,
+            36
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 40,
+          "withHit": 16,
+          "maxRun": 7,
+          "score": 21887
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.759Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 20,
+      "size": 7,
+      "drawsCount": 20,
+      "poolSize": 6599,
+      "combos": [
+        {
+          "nums": [
+            57,
+            34,
+            54,
+            69,
+            9,
+            2,
+            13
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 53,
+          "withHit": 20,
+          "maxRun": 20,
+          "score": 22180
+        },
+        {
+          "nums": [
+            15,
+            34,
+            60,
+            45,
+            73,
+            55,
+            63
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 46,
+          "withHit": 17,
+          "maxRun": 13,
+          "score": 22018
+        },
+        {
+          "nums": [
+            57,
+            15,
+            68,
+            69,
+            78,
+            65,
+            71
+          ],
+          "full": 1,
+          "near": 2,
+          "sum": 56,
+          "withHit": 19,
+          "maxRun": 13,
+          "score": 12228
+        },
+        {
+          "nums": [
+            12,
+            15,
+            60,
+            70,
+            78,
+            30,
+            27
+          ],
+          "full": 1,
+          "near": 2,
+          "sum": 52,
+          "withHit": 20,
+          "maxRun": 20,
+          "score": 12160
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.773Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 60,
+      "size": 3,
+      "drawsCount": 60,
+      "poolSize": 1381,
+      "combos": [
+        {
+          "nums": [
+            36,
+            17,
+            65
+          ],
+          "full": 7,
+          "near": 14,
+          "sum": 59,
+          "withHit": 38,
+          "maxRun": 11,
+          "score": 78381
+        },
+        {
+          "nums": [
+            54,
+            9,
+            43
+          ],
+          "full": 6,
+          "near": 16,
+          "sum": 61,
+          "withHit": 39,
+          "maxRun": 6,
+          "score": 69421
+        },
+        {
+          "nums": [
+            69,
+            43,
+            64
+          ],
+          "full": 6,
+          "near": 15,
+          "sum": 60,
+          "withHit": 39,
+          "maxRun": 9,
+          "score": 68904
+        },
+        {
+          "nums": [
+            8,
+            60,
+            34
+          ],
+          "full": 6,
+          "near": 15,
+          "sum": 59,
+          "withHit": 38,
+          "maxRun": 9,
+          "score": 68879
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.801Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 60,
+      "size": 4,
+      "drawsCount": 60,
+      "poolSize": 3813,
+      "combos": [
+        {
+          "nums": [
+            36,
+            17,
+            19,
+            65
+          ],
+          "full": 4,
+          "near": 10,
+          "sum": 77,
+          "withHit": 43,
+          "maxRun": 11,
+          "score": 46766
+        },
+        {
+          "nums": [
+            8,
+            60,
+            9,
+            15
+          ],
+          "full": 4,
+          "near": 9,
+          "sum": 81,
+          "withHit": 46,
+          "maxRun": 10,
+          "score": 46360
+        },
+        {
+          "nums": [
+            69,
+            43,
+            64,
+            18
+          ],
+          "full": 4,
+          "near": 9,
+          "sum": 77,
+          "withHit": 44,
+          "maxRun": 12,
+          "score": 46272
+        },
+        {
+          "nums": [
+            46,
+            9,
+            6,
+            39
+          ],
+          "full": 4,
+          "near": 9,
+          "sum": 74,
+          "withHit": 44,
+          "maxRun": 7,
+          "score": 46207
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:24.873Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 60,
+      "size": 5,
+      "drawsCount": 60,
+      "poolSize": 7412,
+      "combos": [
+        {
+          "nums": [
+            36,
+            77,
+            65,
+            39,
+            63
+          ],
+          "full": 4,
+          "near": 4,
+          "sum": 89,
+          "withHit": 50,
+          "maxRun": 17,
+          "score": 44047
+        },
+        {
+          "nums": [
+            69,
+            43,
+            64,
+            77,
+            18
+          ],
+          "full": 3,
+          "near": 6,
+          "sum": 95,
+          "withHit": 49,
+          "maxRun": 13,
+          "score": 35158
+        },
+        {
+          "nums": [
+            36,
+            69,
+            46,
+            17,
+            48
+          ],
+          "full": 3,
+          "near": 5,
+          "sum": 105,
+          "withHit": 56,
+          "maxRun": 33,
+          "score": 34913
+        },
+        {
+          "nums": [
+            8,
+            60,
+            9,
+            15,
+            30
+          ],
+          "full": 3,
+          "near": 5,
+          "sum": 99,
+          "withHit": 52,
+          "maxRun": 18,
+          "score": 34758
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:25.035Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 60,
+      "size": 6,
+      "drawsCount": 60,
+      "poolSize": 12556,
+      "combos": [
+        {
+          "nums": [
+            69,
+            46,
+            68,
+            9,
+            6,
+            39
+          ],
+          "full": 3,
+          "near": 3,
+          "sum": 117,
+          "withHit": 53,
+          "maxRun": 20,
+          "score": 34125
+        },
+        {
+          "nums": [
+            36,
+            69,
+            46,
+            17,
+            48,
+            29
+          ],
+          "full": 2,
+          "near": 4,
+          "sum": 123,
+          "withHit": 59,
+          "maxRun": 56,
+          "score": 24811
+        },
+        {
+          "nums": [
+            8,
+            60,
+            9,
+            15,
+            30,
+            76
+          ],
+          "full": 2,
+          "near": 4,
+          "sum": 117,
+          "withHit": 56,
+          "maxRun": 18,
+          "score": 24638
+        },
+        {
+          "nums": [
+            60,
+            68,
+            17,
+            15,
+            51,
+            21
+          ],
+          "full": 2,
+          "near": 4,
+          "sum": 114,
+          "withHit": 52,
+          "maxRun": 24,
+          "score": 24564
+        }
+      ]
+    },
+    {
+      "createdAt": "2026-09-18T17:37:25.328Z",
+      "anchorDraw": 327809,
+      "anchorDate": "18.09.26",
+      "anchorTime": "20:32",
+      "window": 60,
+      "size": 7,
+      "drawsCount": 60,
+      "poolSize": 19780,
+      "combos": [
+        {
+          "nums": [
+            69,
+            46,
+            68,
+            9,
+            48,
+            6,
+            39
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 137,
+          "withHit": 55,
+          "maxRun": 30,
+          "score": 24545
+        },
+        {
+          "nums": [
+            8,
+            60,
+            9,
+            17,
+            15,
+            30,
+            70
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 135,
+          "withHit": 55,
+          "maxRun": 23,
+          "score": 24498
+        },
+        {
+          "nums": [
+            36,
+            17,
+            77,
+            65,
+            39,
+            63,
+            58
+          ],
+          "full": 2,
+          "near": 3,
+          "sum": 124,
+          "withHit": 55,
+          "maxRun": 28,
+          "score": 24283
+        },
+        {
+          "nums": [
+            36,
+            69,
+            46,
+            54,
+            17,
+            48,
+            29
+          ],
+          "full": 2,
+          "near": 2,
+          "sum": 144,
+          "withHit": 60,
+          "maxRun": 60,
+          "score": 24240
+        }
+      ]
     }
   ],
   "latestDate": "18.09.26",
-  "latestTime": "20:17",
+  "latestTime": "20:32",
   "added": 20
 }
