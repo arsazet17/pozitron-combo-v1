@@ -51,7 +51,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.9</div></div>
+ <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.9.1</div></div>
 
  <div class="card">
   <b>Правильная логика интервалов</b>
@@ -95,8 +95,8 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
  <div class="card" id="savedCard">
   <b>📚 Архив сохранённых K7</b>
   <div class="muted">Сюда попадают <b>только K7, которые вы сами сохранили</b>. Отсчёт начинается со следующего тиража после сохранения. При каждом обновлении архива карточка сама пересчитывает новые тиражи, выигрыши и повторные 7/7.</div>
-  <div class="notice">Основная копия сохранённых K7 хранится в Supabase. Телефон используется только как локальный кэш. После обновления или смены телефона архив восстанавливается после ввода PIN.</div>
-  <div class="cloudBar"><button id="cloudSetup" class="ghost">🔑 Архив K7: подключить</button><span id="cloudStatus" class="cloudStatus">Supabase: подготовка архива…</span></div>
+  <div class="notice">Основная копия сохранённых K7 хранится в Supabase. Телефон используется только как локальный кэш. После обновления или смены телефона архив восстанавливается автоматически.</div>
+  <div class="cloudBar"><button id="cloudSetup" class="ghost">☁ Supabase: подключён</button><span id="cloudStatus" class="cloudStatus">Supabase: подготовка архива…</span></div>
   <div id="savedArchive" class="savedArchive"></div>
  </div>
 
@@ -541,6 +541,6 @@ $('refresh').onclick=()=>location.replace(location.pathname+'?v='+Date.now());$(
 $('cloudSetup').onclick=setupCloud;
 load();
 </script>
-<script src="./k7-supabase-cloud-v19.js?v=1"></script>
+<script src="./k7-supabase-cloud-v19.js?v=2"></script>
 </body>
 </html>
