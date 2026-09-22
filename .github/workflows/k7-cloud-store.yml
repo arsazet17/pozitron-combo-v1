@@ -1,0 +1,81 @@
+name: K7 Cloud Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: save | delete | merge
+        required: true
+        type: string
+      record:
+        description: JSON record or JSON array
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: k7-cloud-store
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply cloud archive operation
+        env:
+          K7_OP: ${{ inputs.op }}
+          K7_RECORD: ${{ inputs.record }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'data/k7-saved-cloud.json';
+          const now = new Date().toISOString();
+          let db = {version:1,updatedAt:now,items:[],deleted:[]};
+          try { db = {...db, ...JSON.parse(fs.readFileSync(path,'utf8'))}; } catch {}
+          db.items = Array.isArray(db.items) ? db.items : [];
+          db.deleted = Array.isArray(db.deleted) ? db.deleted : [];
+          const op = process.env.K7_OP;
+          const payload = JSON.parse(process.env.K7_RECORD || 'null');
+          const keyOf = x => x && typeof x.key === 'string' ? x.key : '';
+          const saveOne = item => {
+            const key = keyOf(item); if (!key) throw new Error('Missing key');
+            db.items = db.items.filter(x => keyOf(x) !== key);
+            db.items.push(item);
+            db.deleted = db.deleted.filter(x => keyOf(x) !== key);
+          };
+          if (op === 'save') saveOne(payload);
+          else if (op === 'delete') {
+            const key = keyOf(payload); if (!key) throw new Error('Missing key');
+            db.items = db.items.filter(x => keyOf(x) !== key);
+            db.deleted = db.deleted.filter(x => keyOf(x) !== key);
+            db.deleted.push({key,deletedAt:Date.now()});
+          } else if (op === 'merge') {
+            if (!Array.isArray(payload)) throw new Error('Merge payload must be array');
+            payload.forEach(saveOne);
+          } else throw new Error('Unknown op: '+op);
+          db.items.sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
+          db.updatedAt = now;
+          fs.writeFileSync(path, JSON.stringify(db,null,2)+'\n');
+          NODE
+      - name: Commit cloud archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/k7-saved-cloud.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "K7 cloud: ${{ inputs.op }} saved archive"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((i*2))
+          done
+          exit 1
