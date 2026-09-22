@@ -1,6 +1,7 @@
 'use strict';
 (() => {
   const ENDPOINT='https://oviqrkdkahammpuyreil.supabase.co/functions/v1/k7-archive';
+  const API_KEY='sb_publishable_1m9JJLimTkluI2uS0r5VXA_EF3trjvU';
   const mapRow=r=>({
     key:r.k7_key, nums:Array.isArray(r.nums)?r.nums.map(Number):[],
     savedDraw:Number(r.saved_draw), savedDate:r.saved_date||'', savedTime:r.saved_time||'',
@@ -12,7 +13,7 @@
     const b=document.getElementById('cloudSetup');if(b){b.textContent='☁ Supabase: подключён';b.disabled=true;}
   };
   async function request(method,path='',body=null){
-    const r=await fetch(ENDPOINT+path,{method,headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+    const r=await fetch(ENDPOINT+path,{method,headers:{'content-type':'application/json','apikey':API_KEY},body:body?JSON.stringify(body):undefined,cache:'no-store'});
     let data={};try{data=await r.json()}catch{}
     if(!r.ok)throw new Error((data&&data.detail)||data?.error||('HTTP '+r.status));
     return data;
@@ -54,16 +55,26 @@
   window.setupCloud=async function(){await loadRemote()};
   window.loadCloudArchive=loadRemote;
   window.cloudSave=async function(item){
-    try{setStatus('Сохраняю K7…','warn');await request('POST','',item);setStatus('K7 сохранена в Supabase','ok');return true}
-    catch(e){console.error('Supabase save:',e);setStatus('Не удалось сохранить K7','err');alert('K7 не сохранена в постоянный архив.');return false}
+    try{
+      setStatus('Сохраняю K7…','warn');
+      const d=await request('POST','',item);
+      setStatus('K7 сохранена в Supabase'+(d?.server?' · '+d.server:''),'ok');
+      return true;
+    }catch(e){
+      console.error('Supabase save:',e);
+      const msg=String(e?.message||e);
+      setStatus('Не удалось сохранить K7 · '+msg,'err');
+      alert('K7 не сохранена в постоянный архив.\n'+msg);
+      return false;
+    }
   };
   window.cloudDelete=async function(key){
     try{setStatus('Удаляю K7…','warn');await request('DELETE','?key='+encodeURIComponent(key));setStatus('K7 удалена из Supabase','ok');return true}
-    catch(e){console.error('Supabase delete:',e);setStatus('Не удалось удалить K7','err');alert('Удаление K7 не выполнено.');return false}
+    catch(e){console.error('Supabase delete:',e);const msg=String(e?.message||e);setStatus('Не удалось удалить K7 · '+msg,'err');alert('Удаление K7 не выполнено.\n'+msg);return false}
   };
   const notice=document.querySelector('#savedCard .notice');
   if(notice)notice.textContent='Основная копия сохранённых K7 хранится в Supabase. Телефон используется только как локальный кэш. После обновления или смены телефона архив восстанавливается автоматически.';
-  const ver=document.querySelector('.ver');if(ver)ver.textContent='LAB v1.9.2';
+  const ver=document.querySelector('.ver');if(ver)ver.textContent='LAB v1.9.3';
   const b=document.getElementById('cloudSetup');if(b){b.onclick=window.setupCloud;b.textContent='☁ Supabase: подключён';b.disabled=true;}
   setStatus('Supabase: подключаю архив…','warn');
   setTimeout(loadRemote,0);
