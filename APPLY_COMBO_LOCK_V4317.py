@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parent
 INDEX = ROOT / "index.html"
 LOCK = ROOT / "combo-table-lock-v1.js"
 BUILD = ROOT / "refresh-combo-build.mjs"
-AUTO = ROOT / ".github/workflows/combo-auto-app-build.yml"
 
 LOCK_JS = r"""/* COMBO KENO · TABLE LOCK v1
    🔒 фиксирует текущее цветное состояние чисел в Таблице.
@@ -250,7 +249,7 @@ def require(path: Path):
     if not path.exists():
         raise SystemExit(f"Не найден {path.relative_to(ROOT)}")
 
-for p in (INDEX, BUILD, AUTO):
+for p in (INDEX, BUILD):
     require(p)
 
 # 1. Отдельный модуль функции.
@@ -336,14 +335,5 @@ if shell_new not in build:
     build = build.replace(shell_old, shell_new, 1)
 
 BUILD.write_text(build, encoding="utf-8")
-
-# 4. Любое будущее изменение lock-модуля должно запускать штатный app publisher.
-auto = AUTO.read_text(encoding="utf-8")
-if '"combo-table-lock-v1.js"' not in auto:
-    anchor = '"combo-search-v1.js",'
-    if anchor not in auto:
-        raise SystemExit("Не найден paths-якорь в combo-auto-app-build.yml")
-    auto = auto.replace(anchor, anchor + '\n        "combo-table-lock-v1.js",', 1)
-AUTO.write_text(auto, encoding="utf-8")
 
 print("COMBO TABLE LOCK PATCH PASS")
