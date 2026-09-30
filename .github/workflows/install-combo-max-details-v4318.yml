@@ -1,0 +1,74 @@
+name: COMBO · install max details v4.3.18
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-combo-max-details-v4318.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install max-details UI
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const version='4.3.18';
+          const build='4318maxd7a01';
+
+          let html=fs.readFileSync('index.html','utf8');
+          const oldBuild=(html.match(/<meta name="app-build" content="([^"]+)"/)||[])[1];
+          if(!oldBuild)throw new Error('app-build not found in index.html');
+          if(!html.includes('combo-max-details-v1.js')){
+            const re=/(<script src="combo-search-v1\.js\?v=[^"]+"><\/script>)/;
+            if(!re.test(html))throw new Error('combo-search-v1.js script tag not found');
+            html=html.replace(re,`$1\n<script src="combo-max-details-v1.js?v=${build}"></script>`);
+          }
+          html=html.split(oldBuild).join(build);
+          html=html.replace(/Версия v4\.3\.17/g,`Версия v${version}`);
+          fs.writeFileSync('index.html',html);
+
+          let sw=fs.readFileSync('sw.js','utf8');
+          sw=sw.replace(/const BUILD='[^']+';/,`const BUILD='${build}';`);
+          if(!sw.includes("'./combo-max-details-v1.js?v='+BUILD")){
+            sw=sw.replace("'./combo-search-v1.js?v='+BUILD,","'./combo-search-v1.js?v='+BUILD,'./combo-max-details-v1.js?v='+BUILD,");
+          }
+          fs.writeFileSync('sw.js',sw);
+
+          const av=JSON.parse(fs.readFileSync('app-version.json','utf8'));
+          av.version=version;av.build=build;
+          fs.writeFileSync('app-version.json',JSON.stringify(av,null,2)+'\n');
+          NODE
+
+      - name: Syntax check
+        run: node --check combo-max-details-v1.js
+
+      - name: Verify install
+        shell: bash
+        run: |
+          grep -q 'combo-max-details-v1.js' index.html
+          grep -q 'Версия v4.3.18' index.html
+          grep -q '4318maxd7a01' sw.js
+          grep -q 'combo-max-details-v1.js' sw.js
+
+      - name: Commit installed files
+        shell: bash
+        run: |
+          git config user.name 'COMBO KENO updater'
+          git config user.email 'actions@users.noreply.github.com'
+          git add index.html sw.js app-version.json
+          if git diff --cached --quiet; then
+            echo 'Already installed'
+            exit 0
+          fi
+          git commit -m 'COMBO v4.3.18 · раскрытие максимума с выплатами'
+          git push
