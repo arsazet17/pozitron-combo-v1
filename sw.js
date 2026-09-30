@@ -1,14 +1,11 @@
 'use strict';
-const BUILD='4d8a1f2c7e39';
+const BUILD='d09091d92c8a';
 const CACHE_PREFIX='combo-keno-shell-';
 const CACHE=CACHE_PREFIX+BUILD;
-const FIX_SCRIPT='./combo-mark-click-fix-v1.js?v='+BUILD;
-const SHELL=['./','./index.html','./?v='+BUILD,'./manifest.webmanifest?v='+BUILD,'./icon-192.png','./icon-512.png','./combo-search-v1.js?v='+BUILD,'./combo-max-details-v1.js?v='+BUILD,'./combo-table-lock-v1.js?v='+BUILD,FIX_SCRIPT,'./xray-engine-v1.js?v='+BUILD,'./xray-ui-v1.js?v='+BUILD,'./xray-analog-columns-v1.js?v='+BUILD,'./xray-v1.css?v='+BUILD];
+const SHELL=['./','./index.html','./?v='+BUILD,'./manifest.webmanifest?v='+BUILD,'./icon-192.png','./icon-512.png','./combo-search-v1.js?v='+BUILD,'./combo-max-details-v1.js?v='+BUILD,'./combo-table-lock-v1.js?v='+BUILD,'./xray-engine-v1.js?v='+BUILD,'./xray-ui-v1.js?v='+BUILD,'./xray-analog-columns-v1.js?v='+BUILD,'./xray-v1.css?v='+BUILD];
 const SCOPE=new URL(self.registration.scope);
 const SHELL_URLS=new Set(SHELL.map(path=>new URL(path,SCOPE).href));
 function liveData(url){return /\/(?:combo-history-v1|combo-search-log-v1|combo-status-v1|combo-presets-v1|keno-payouts-v1|app-version)\.json$/.test(url.pathname)||url.pathname.startsWith(new URL('./data/',SCOPE).pathname)||url.pathname.includes('/xray-ai-model/')}
-function injectFix(html){if(html.includes('combo-mark-click-fix-v1.js'))return html;const tag='<script src="'+FIX_SCRIPT+'"></script>';return html.includes('</body>')?html.replace('</body>',tag+'</body>'):html+tag}
-async function htmlWithFix(response){if(!response||!response.ok)return response;const html=await response.text();const headers=new Headers(response.headers);headers.delete('content-length');return new Response(injectFix(html),{status:response.status,statusText:response.statusText,headers})}
 async function migrateClients(){if(!self.clients||typeof self.clients.matchAll!=='function')return;const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});await Promise.all(clients.map(client=>{const target=new URL(client.url||'./',SCOPE);if(target.origin!==SCOPE.origin||!target.pathname.startsWith(SCOPE.pathname))return null;target.searchParams.set('v',BUILD);target.searchParams.set('_sw_migrate',String(Date.now()));return client.navigate?client.navigate(target.href).catch(()=>null):null}))}
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL.map(path=>new Request(new URL(path,SCOPE),{cache:'no-store'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()).then(()=>migrateClients())));
@@ -18,10 +15,7 @@ self.addEventListener('fetch',event=>{
  if(url.origin!==SCOPE.origin||!url.pathname.startsWith(SCOPE.pathname))return;
  const network=()=>fetch(new Request(event.request,{cache:'no-store'}));
  if(liveData(url)){event.respondWith(network());return}
- if(event.request.mode==='navigate'){
-  event.respondWith((async()=>{try{return await htmlWithFix(await network())}catch(e){const cache=await caches.open(CACHE),shell=await cache.match(new URL('./index.html',SCOPE).href);return shell?htmlWithFix(shell):Response.error()}})());
-  return;
- }
+ if(event.request.mode==='navigate'){event.respondWith(network().catch(async()=>{const cache=await caches.open(CACHE),shell=await cache.match(new URL('./index.html',SCOPE).href);return shell||Response.error()}));return}
  if(SHELL_URLS.has(url.href)){event.respondWith(caches.open(CACHE).then(async cache=>(await cache.match(event.request))||network()));return}
  event.respondWith(network());
 });
