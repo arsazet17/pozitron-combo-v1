@@ -254,7 +254,11 @@
     let wrap=p.box.querySelector('.csSearchMarkWrap');
     if(!wrap){wrap=document.createElement('div');wrap.className='csSearchMarkWrap';hist.insertAdjacentElement('beforebegin',wrap)}
     const marked=[...marks].sort((a,b)=>a-b);
-    wrap.innerHTML=`<div class="csSearchMarkHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Без ограничения: можно отметить хоть все 20 чисел тиража.</div>${marked.length?`<div class="csSearchMarkBar"><span class="muted">Подсвечено (${marked.length}):</span>${marked.map(n=>`<span class="csSearchMarkChip">${fmt(n)}</span>`).join('')}<button class="csSearchMarkClear" type="button">Снять всё</button></div>`:''}`;
+    const markSignature=p.key+'|'+marked.join('-');
+    if(wrap.dataset.signature!==markSignature){
+      wrap.dataset.signature=markSignature;
+      wrap.innerHTML=`<div class="csSearchMarkHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Без ограничения: можно отметить хоть все 20 чисел тиража.</div>${marked.length?`<div class="csSearchMarkBar"><span class="muted">Подсвечено (${marked.length}):</span>${marked.map(n=>`<span class="csSearchMarkChip">${fmt(n)}</span>`).join('')}<button class="csSearchMarkClear" type="button">Снять всё</button></div>`:''}`;
+    }
     const clear=wrap.querySelector('.csSearchMarkClear');if(clear)clear.onclick=()=>{marks.clear();applySearchMarks(p)};
     p.box.querySelectorAll('.hist .dn').forEach(el=>{
       const n=Number(String(el.textContent||'').trim());
