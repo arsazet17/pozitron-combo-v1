@@ -298,3 +298,122 @@
     try{ renderHistory(); }catch(e){}
   }
 })();
+
+/* COMBO KENO · Карточка «Комбы»: гарантируем 3 клавиши даже после перерисовки
+   ➡️ Возрастание · 🔸 Переходы · 🎲 Выпадение
+*/
+(() => {
+  'use strict';
+  if(window.__comboDetailThreeButtonsFix)return;
+  window.__comboDetailThreeButtonsFix=true;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    #csDetail .csDetailTools .historyTools{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;flex:1 1 390px!important}
+    #csDetail .csDetailTools .historyTools button{min-width:0!important;padding:9px 4px!important;font-size:10.5px!important;white-space:nowrap!important}
+    #csDetail .csDetailTools .historyTools button.active{background:linear-gradient(180deg,#58c62b,#319020)!important;border-color:#70e342!important;color:#fff!important}
+    @media(max-width:380px){#csDetail .csDetailTools .historyTools button{font-size:9.5px!important;padding:8px 2px!important}}
+  `;
+  document.head.appendChild(style);
+
+  const archive=()=>{
+    try{
+      if(typeof window.getComboDraws==='function')return window.getComboDraws()||[];
+      if(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS))return DRAWS;
+    }catch(e){}
+    return [];
+  };
+
+  function drawById(id){
+    return archive().find(d=>Number(d.draw)===Number(id));
+  }
+
+  function transitionSet(d){
+    const a=archive();
+    const i=a.findIndex(x=>Number(x.draw)===Number(d?.draw));
+    if(i<=0)return new Set();
+    const prev=new Set((a[i-1]?.balls||[]).map(Number));
+    return new Set((d?.balls||[]).map(Number).filter(n=>prev.has(Number(n))));
+  }
+
+  function install(){
+    const box=document.getElementById('csDetail');
+    if(!box||box.classList.contains('hidden'))return;
+    const tools=box.querySelector('.csDetailTools .historyTools');
+    if(!tools)return;
+
+    let asc=tools.querySelector('[data-combo-order="asc"]')||tools.querySelector('button:not(#csTransitionsBtn):not(#comboDetailTransitionsBtn):not([data-combo-order="draw"])');
+    if(!asc)return;
+    asc.dataset.comboOrder='asc';
+    asc.textContent='➡️ Возрастание';
+
+    let trans=tools.querySelector('#csTransitionsBtn')||tools.querySelector('#comboDetailTransitionsBtn');
+    if(!trans){
+      trans=document.createElement('button');
+      trans.type='button';
+      trans.id='comboDetailTransitionsBtn';
+      trans.textContent='🔸 Переходы';
+      tools.appendChild(trans);
+    }else{
+      trans.textContent='🔸 Переходы';
+    }
+
+    let draw=tools.querySelector('[data-combo-order="draw"]');
+    if(!draw){
+      draw=document.createElement('button');
+      draw.type='button';
+      draw.dataset.comboOrder='draw';
+      draw.textContent='🎲 Выпадение';
+      tools.appendChild(draw);
+    }
+
+    const getOrder=()=>box.dataset.comboDetailOrder==='draw'?'draw':'asc';
+    const getTransitions=()=>box.dataset.comboDetailTransitions==='1';
+
+    const apply=()=>{
+      const order=getOrder();
+      const showTransitions=getTransitions();
+      asc.classList.toggle('active',order==='asc');
+      draw.classList.toggle('active',order==='draw');
+      trans.classList.toggle('active',showTransitions);
+      trans.setAttribute('aria-pressed',showTransitions?'true':'false');
+
+      box.querySelectorAll('.hist .hrow:not(.head)').forEach(row=>{
+        const id=Number(row.querySelector('.hdraw')?.textContent);
+        const d=drawById(id);
+        const wrap=row.querySelector('.drawnums');
+        if(!d||!wrap)return;
+        const spans=[...wrap.querySelectorAll('.dn')];
+        const byNum=new Map(spans.map(el=>[Number(String(el.textContent).trim()),el]));
+        const wanted=order==='draw'
+          ? (d.balls||[]).map(Number)
+          : [...(d.balls||[])].map(Number).sort((a,b)=>a-b);
+        const tr=showTransitions?transitionSet(d):new Set();
+        for(const n of wanted){
+          const el=byNum.get(Number(n));
+          if(!el)continue;
+          el.classList.toggle('transition',tr.has(Number(n)));
+          wrap.appendChild(el);
+        }
+      });
+
+      const head=box.querySelector('.hist .hrow.head .hcell:last-child');
+      if(head)head.textContent=`Числа тиража · ${order==='draw'?'🎲':'⬆️'} · 2×10`;
+    };
+
+    asc.onclick=()=>{box.dataset.comboDetailOrder='asc';apply()};
+    draw.onclick=()=>{box.dataset.comboDetailOrder='draw';apply()};
+    trans.onclick=()=>{box.dataset.comboDetailTransitions=getTransitions()?'0':'1';apply()};
+    apply();
+  }
+
+  let timer=0;
+  const schedule=()=>{clearTimeout(timer);timer=setTimeout(install,0)};
+  const observer=new MutationObserver(schedule);
+  const start=()=>{
+    if(document.body)observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+    schedule();
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
