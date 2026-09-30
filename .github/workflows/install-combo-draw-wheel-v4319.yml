@@ -1,34 +1,20 @@
-name: COMBO · install draw wheel v4.3.19
-
-on:
-  push:
-    paths:
-      - '.github/workflows/install-combo-draw-wheel-v4319.yml'
-
-permissions:
-  contents: write
-
-jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Patch COMBO draw selectors
-        run: |
-          python3 .github/scripts/install_combo_draw_wheel_v4319.py
-          node --check combo-search-v1.js
-          grep -q 'csWindowRange' combo-search-v1.js
-          grep -q 'csDrawRange' combo-search-v1.js
-          grep -q '4319drawwheel' index.html
-          grep -q '4319drawwheel' sw.js
-          grep -q 'v4.3.19' index.html
-      - name: Commit installed version
-        run: |
-          git config user.name 'COMBO KENO updater'
-          git config user.email 'actions@users.noreply.github.com'
-          git add combo-search-v1.js index.html sw.js manifest.webmanifest app-version.json
-          git commit -m 'COMBO v4.3.19 · активный счётчик тиражей ± / ползунок / MAX'
-          git pull --rebase origin main
-          git push origin HEAD:main
+{
+  "name": "INSTALL · COMBO v4.3.19 DRAW WHEEL · RETIRED",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "retired": {
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "name": "Historical installer is intentionally disabled",
+          "run": "echo 'The draw-wheel installer has already been applied. Current COMBO app changes are published only by the authoritative app publisher.'"
+        }
+      ]
+    }
+  }
+}
