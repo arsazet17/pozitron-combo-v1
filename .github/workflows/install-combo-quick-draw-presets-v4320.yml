@@ -1,53 +1,20 @@
-name: COMBO · direct draw count
-
-on:
-  push:
-    paths:
-      - '.github/workflows/install-combo-quick-draw-presets-v4320.yml'
-
-permissions:
-  contents: write
-
-jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Remove presets and make draw count directly editable
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p=Path('combo-search-v1.js')
-          s=p.read_text(encoding='utf-8')
-
-          def rep(old,new,label):
-              global s
-              if old not in s:
-                  raise SystemExit(f'PATCH NOT FOUND: {label}')
-              s=s.replace(old,new,1)
-
-          old_css='.csDetailCounter .csWheelMax{font-size:9px}.csQuickPresets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;flex:1 1 100%;width:100%;margin-top:1px}.csQuickPresets button{padding:7px 2px;border-radius:8px;font-size:10px;background:#0a1c2d}.csQuickPresets button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876;color:#fff}.csDetailRange{flex:1 1 100%;width:100%}'
-          new_css='.csDetailCounter .csWheelMax{font-size:9px}.csDetailCounter input.csWheelValue{width:54px;padding:0 4px;text-align:center;appearance:textfield;-moz-appearance:textfield}.csDetailCounter input.csWheelValue::-webkit-outer-spin-button,.csDetailCounter input.csWheelValue::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.csDetailRange{flex:1 1 100%;width:100%}'
-          rep(old_css,new_css,'remove quick presets css')
-
-          old_html='<div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><div id="csDrawValue" class="csWheelValue">${count}</div><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div><div class="csQuickPresets" aria-label="Быстрый выбор тиражей"><button type="button" data-csdq="5" class="${count===5?\'active\':\'\'}">5</button><button type="button" data-csdq="10" class="${count===10?\'active\':\'\'}">10</button><button type="button" data-csdq="20" class="${count===20?\'active\':\'\'}">20</button><button type="button" data-csdq="50" class="${count===50?\'active\':\'\'}">50</button><button type="button" data-csdq="100" class="${count===100?\'active\':\'\'}">100</button><button type="button" data-csdq="MAX" class="${count===Math.max(1,archive.length)?\'active\':\'\'}">MAX</button></div><input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей">'
-          new_html='<div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><input id="csDrawValue" class="csWheelValue" type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Введите любое количество тиражей"><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div><input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей">'
-          rep(old_html,new_html,'direct count input html')
-
-          old_bind="const minus=q('csDrawMinus'),plus=q('csDrawPlus'),maxBtn=q('csDrawMax'),range=q('csDrawRange');\n      if(minus){minus.disabled=count<=DETAIL_MIN_DRAWS;minus.onclick=()=>setCount(count-1)}\n      if(plus){plus.disabled=count>=maxCount;plus.onclick=()=>setCount(count+1)}\n      if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);\n      box.querySelectorAll('[data-csdq]').forEach(btn=>btn.onclick=()=>setCount(btn.dataset.csdq==='MAX'?maxCount:Number(btn.dataset.csdq)));\n      if(range){\n        range.oninput=e=>{const v=Math.max(DETAIL_MIN_DRAWS,Math.min(maxCount,Math.floor(Number(e.target.value)||DETAIL_MIN_DRAWS)));const out=q('csDrawValue');if(out)out.textContent=String(v)};\n        range.onchange=e=>setCount(e.target.value);\n      }"
-          new_bind="const minus=q('csDrawMinus'),plus=q('csDrawPlus'),maxBtn=q('csDrawMax'),range=q('csDrawRange'),valueInput=q('csDrawValue');\n      if(minus){minus.disabled=count<=DETAIL_MIN_DRAWS;minus.onclick=()=>setCount(count-1)}\n      if(plus){plus.disabled=count>=maxCount;plus.onclick=()=>setCount(count+1)}\n      if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);\n      if(valueInput){\n        valueInput.onfocus=()=>valueInput.select();\n        valueInput.onchange=()=>setCount(valueInput.value);\n        valueInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setCount(valueInput.value)}};\n      }\n      if(range){\n        range.oninput=e=>{const v=Math.max(DETAIL_MIN_DRAWS,Math.min(maxCount,Math.floor(Number(e.target.value)||DETAIL_MIN_DRAWS)));const out=q('csDrawValue');if(out)out.value=String(v)};\n        range.onchange=e=>setCount(e.target.value);\n      }"
-          rep(old_bind,new_bind,'direct input handlers')
-
-          p.write_text(s,encoding='utf-8')
-          PY
-          node --check combo-search-v1.js
-          git config user.name 'COMBO KENO updater'
-          git config user.email 'actions@users.noreply.github.com'
-          git add combo-search-v1.js
-          git commit -m 'COMBO: произвольное число тиражей без быстрых пресетов'
-          git pull --rebase origin main
-          git push origin HEAD:main
+{
+  "name": "INSTALL · COMBO DIRECT DRAW COUNT · RETIRED",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "retired": {
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "name": "Historical installer is intentionally disabled",
+          "run": "echo 'The direct draw-count change has already been applied. Current COMBO app changes are published only by the authoritative app publisher.'"
+        }
+      ]
+    }
+  }
+}
