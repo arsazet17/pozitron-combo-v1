@@ -233,3 +233,20 @@
   installWrappers();
   syncLockButton();
 })();
+
+/* Loader: COMBO · Разные + Свежие */
+(() => {
+  'use strict';
+  if(window.__comboFreshSplitLoader)return;
+  window.__comboFreshSplitLoader=true;
+  const load=()=>{
+    if(document.querySelector('script[data-combo-fresh-split]'))return;
+    const s=document.createElement('script');
+    const build=document.querySelector('meta[name="app-build"]')?.content||String(Date.now());
+    s.src='combo-fresh-split-v1.js?v='+encodeURIComponent(build);
+    s.dataset.comboFreshSplit='1';
+    document.head.appendChild(s);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(load,0),{once:true});
+  else setTimeout(load,0);
+})();
