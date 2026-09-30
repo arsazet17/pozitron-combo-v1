@@ -1,5 +1,5 @@
 'use strict';
-const BUILD='5b41d90e6f27';
+const BUILD='f16e6e0440cb';
 const CACHE_PREFIX='combo-keno-shell-';
 const CACHE=CACHE_PREFIX+BUILD;
 const SHELL=['./','./index.html','./?v='+BUILD,'./manifest.webmanifest?v='+BUILD,'./icon-192.png','./icon-512.png','./combo-search-v1.js?v='+BUILD,'./combo-max-details-v1.js?v='+BUILD,'./combo-table-lock-v1.js?v='+BUILD,'./xray-engine-v1.js?v='+BUILD,'./xray-ui-v1.js?v='+BUILD,'./xray-analog-columns-v1.js?v='+BUILD,'./xray-v1.css?v='+BUILD];
