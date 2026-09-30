@@ -134,7 +134,7 @@
 
   function schedule(){clearTimeout(timer);timer=setTimeout(enhance,40)}
   function watch(){
-    const status=q('csStatus');if(!status||observer)return;observer=new MutationObserver(()=>{const t=String(status.textContent||'');if(t.startsWith('Готово:'))schedule()});observer.observe(status,{childList:true,subtree:true,characterData:true});
+    const status=q('csStatus');if(!status||observer)return;observer=new MutationObserver(()=>{const t=String(status.textContent||'');if(t.startsWith('Готово:')&&!t.includes('свежие —'))schedule()});observer.observe(status,{childList:true,subtree:true,characterData:true});
   }
   function init(){installCss();if(!installControls()){setTimeout(init,120);return}watch();const go=q('csGo');if(go)go.addEventListener('click',()=>{const r=q('csResults');if(r)r.dataset.cfsPending='1'},{capture:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
