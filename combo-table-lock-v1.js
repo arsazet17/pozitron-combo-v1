@@ -250,3 +250,51 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(load,0),{once:true});
   else setTimeout(load,0);
 })();
+
+/* COMBO KENO · История: Возрастание / Переходы / Выпадение */
+(() => {
+  'use strict';
+  if(window.__comboHistoryOrderButtonsV1)return;
+  window.__comboHistoryOrderButtonsV1=true;
+
+  const css=document.createElement('style');
+  css.textContent=`
+    #historyBox .historyTools{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+    #historyBox .historyTools button{min-width:0!important;padding:10px 4px!important;font-size:11px!important;white-space:nowrap!important}
+    #historyBox .historyTools button.active{background:linear-gradient(180deg,#58c62b,#319020)!important;border-color:#70e342!important;color:#fff!important;box-shadow:0 0 0 1px rgba(126,236,151,.18) inset!important}
+    @media(max-width:380px){#historyBox .historyTools button{font-size:10px!important;padding:9px 2px!important}}
+  `;
+  document.head.appendChild(css);
+
+  function patchedOrderSwitchHTML(){
+    const back=new URLSearchParams(location.search).has('intervalK7')
+      ? '<a href="./k7-interval-builder.html">← Сохранённые K7 · Интервалы</a>'
+      : '';
+    return `${back}<div class="historyTools historyToolsThree">
+      <button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}" aria-pressed="${historyOrder==='asc'}">➡️ Возрастание</button>
+      <button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button>
+      <button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}" aria-pressed="${historyOrder==='draw'}">🎲 Выпадение</button>
+    </div>`;
+  }
+
+  function patchedBindHistoryOrder(){
+    const transitions=document.getElementById('historyTransitionsBtn');
+    if(transitions) transitions.onclick=()=>{
+      historyTransitions=!historyTransitions;
+      renderHistory();
+    };
+    document.querySelectorAll('#historyBox [data-history-order]').forEach(b=>{
+      b.onclick=()=>{
+        historyOrder=b.dataset.historyOrder==='asc'?'asc':'draw';
+        renderHistory();
+      };
+    });
+  }
+
+  try{ orderSwitchHTML=patchedOrderSwitchHTML; }catch(e){ window.orderSwitchHTML=patchedOrderSwitchHTML; }
+  try{ bindHistoryOrder=patchedBindHistoryOrder; }catch(e){ window.bindHistoryOrder=patchedBindHistoryOrder; }
+
+  if(typeof renderHistory==='function' && window.lastResult){
+    try{ renderHistory(); }catch(e){}
+  }
+})();
