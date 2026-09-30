@@ -1,0 +1,53 @@
+name: COMBO · quick draw presets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-combo-quick-draw-presets-v4320.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add quick draw-count buttons
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('combo-search-v1.js')
+          s=p.read_text(encoding='utf-8')
+
+          def rep(old,new,label):
+              global s
+              if old not in s:
+                  raise SystemExit(f'PATCH NOT FOUND: {label}')
+              s=s.replace(old,new,1)
+
+          old_css='.csDetailCounter .csWheelMax{font-size:9px}.csDetailRange{flex:1 1 100%;width:100%}'
+          new_css='.csDetailCounter .csWheelMax{font-size:9px}.csQuickPresets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;flex:1 1 100%;width:100%;margin-top:1px}.csQuickPresets button{padding:7px 2px;border-radius:8px;font-size:10px;background:#0a1c2d}.csQuickPresets button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876;color:#fff}.csDetailRange{flex:1 1 100%;width:100%}'
+          rep(old_css,new_css,'quick preset css')
+
+          old_html='<div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><div id="csDrawValue" class="csWheelValue">${count}</div><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div><input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей">'
+          new_html='<div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><div id="csDrawValue" class="csWheelValue">${count}</div><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div><div class="csQuickPresets" aria-label="Быстрый выбор тиражей"><button type="button" data-csdq="5" class="${count===5?\'active\':\'\'}">5</button><button type="button" data-csdq="10" class="${count===10?\'active\':\'\'}">10</button><button type="button" data-csdq="20" class="${count===20?\'active\':\'\'}">20</button><button type="button" data-csdq="50" class="${count===50?\'active\':\'\'}">50</button><button type="button" data-csdq="100" class="${count===100?\'active\':\'\'}">100</button><button type="button" data-csdq="MAX" class="${count===Math.max(1,archive.length)?\'active\':\'\'}">MAX</button></div><input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей">'
+          rep(old_html,new_html,'detail quick presets html')
+
+          old_handler='if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);\n      if(range){'
+          new_handler='if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);\n      box.querySelectorAll(\'[data-csdq]\').forEach(btn=>btn.onclick=()=>setCount(btn.dataset.csdq===\'MAX\'?maxCount:Number(btn.dataset.csdq)));\n      if(range){'
+          rep(old_handler,new_handler,'quick preset handlers')
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check combo-search-v1.js
+          git config user.name 'COMBO KENO updater'
+          git config user.email 'actions@users.noreply.github.com'
+          git add combo-search-v1.js
+          git commit -m 'COMBO: быстрый выбор 5/10/20/50/100/MAX тиражей'
+          git pull --rebase origin main
+          git push origin HEAD:main
