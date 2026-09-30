@@ -7,10 +7,10 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.1.31';
+  const EXT_VERSION='v4.3.19';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
-  const DETAIL_MIN_DRAWS=5;
+  const DETAIL_MIN_DRAWS=1;
 
   function q(id){return document.getElementById(id)}
   function f2(n){return String(n).padStart(2,'0')}
@@ -37,13 +37,14 @@
       .csLabel{font-size:11px;color:#c5d5e4;font-weight:900;margin:9px 0 5px}
       .csModes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.csModes.size{grid-template-columns:repeat(5,1fr)}
       .csModes button{padding:9px 3px;font-size:11px}.csDate{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:end;margin-top:7px}
+      .csWindowWheel{display:grid;grid-template-columns:44px minmax(72px,1fr) 44px 58px;gap:6px;align-items:center;margin-top:7px}.csWheelBtn{height:40px;padding:0;font-size:20px;line-height:1;background:#0a1c2d;border-color:#315b7d}.csWheelValue{height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #315b7d;border-radius:11px;background:#020912;color:#fff;font-size:18px;font-weight:950;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px rgba(53,169,255,.08)}.csWheelMax{height:40px;padding:0 5px;font-size:10px;background:#102a43;border-color:#315b7d}.csWheelHint{font-size:9px;color:var(--muted);margin-top:4px;line-height:1.25}.csRange{width:100%;accent-color:var(--green);margin:6px 0 2px;height:22px;touch-action:pan-x}
       .csDate input{width:100%;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px}
       .csGo{width:100%;margin-top:9px}.csStatus{margin-top:8px;padding:8px;border:1px solid #294b66;border-radius:9px;background:#081827;font-size:11px;color:#c7d7e6;line-height:1.4}
       .csStatus.busy{color:#ffe28a}.csStatus.err{color:#ffb6b6;border-color:#743c42}
       .csSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.csStat{padding:8px 5px;text-align:center;border:1px solid #294b66;background:#081827;border-radius:10px}.csStat b{display:block;font-size:16px;color:var(--green)}.csStat span{font-size:9px;color:var(--muted)}
       .csList{display:grid;gap:7px;margin-top:8px}.csItem{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;text-align:left;padding:10px;background:#0a1c2d;border:1px solid #315677;border-radius:11px}
       .csNums{font-weight:950;font-size:14px;letter-spacing:.4px}.csMeta{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}.csFire{font-weight:950;color:var(--gold);font-size:13px;white-space:nowrap}
-      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDrawCount input{width:72px;background:#061421;color:#fff;border:1px solid #315b7d;border-radius:9px;padding:8px 7px;text-align:center;font-weight:900}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}.csWinStats{width:100%;display:grid;gap:2px;margin-top:2px;font-size:11px;line-height:1.35;color:#c8d7e5}.csWinStats b{font-size:inherit;color:#fff}.csWinBreakdown{color:#9fb2c4;font-size:10px;white-space:normal}
+      .csDetail{margin-top:10px}.csDetailTools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.csDetailTools .historyTools{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1 1 260px}.csDetailTools .historyTools button{white-space:nowrap}.csDrawCount{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:11px;color:var(--muted);font-weight:850}.csDetailCounter{display:grid;grid-template-columns:34px 54px 34px 48px;gap:4px;align-items:center}.csDetailCounter button{height:34px;padding:0;font-size:18px;border-radius:9px;background:#0a1c2d}.csDetailCounter .csWheelValue{height:34px;font-size:15px;border-radius:9px}.csDetailCounter .csWheelMax{font-size:9px}.csDetailRange{flex:1 1 100%;width:100%}.csDetailHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}.csDetailHead b{font-size:15px}.csClose{margin-left:auto;padding:6px 9px;background:#281520;border-color:#6d3343;color:#ffd2d7;font-size:10px}.csWinStats{width:100%;display:grid;gap:2px;margin-top:2px;font-size:11px;line-height:1.35;color:#c8d7e5}.csWinStats b{font-size:inherit;color:#fff}.csWinBreakdown{color:#9fb2c4;font-size:10px;white-space:normal}
       .historyDismissBtn{padding:5px 8px!important;margin-left:3px;background:#281520!important;border-color:#6d3343!important;color:#ffd2d7!important;font-size:10px!important;border-radius:8px!important}
       .csDetail .drawnums{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px 4px;align-items:center}:is(.csDetail,#historyBox) .dn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:0;height:22px;padding:0 3px;border:1px solid transparent;border-radius:6px;box-sizing:border-box;line-height:1}:is(.csDetail,#historyBox) .dn.transition{padding-right:11px;background:#3a2a15;border-color:#d89a2b;color:#fff}:is(.csDetail,#historyBox) .dn.transition::after{content:'◆';position:absolute;right:2px;top:50%;transform:translateY(-50%);color:#ff9800;font-size:7px;line-height:1;text-shadow:none;z-index:2}:is(.csDetail,#historyBox) .dn.hit.transition{background:var(--green)!important;border-color:#d89a2b!important;color:#fff!important;box-shadow:0 0 0 1px rgba(216,154,43,.45) inset}
       @media(max-width:380px){.csModes button{font-size:10px;padding:8px 2px}.csNums{font-size:13px}}
@@ -66,6 +67,14 @@
           <button type="button" data-csw="20">20</button>
           <button type="button" data-csw="60">60</button>
         </div>
+        <div class="csWindowWheel" id="csWindowWheel">
+          <button id="csWindowMinus" class="csWheelBtn" type="button" aria-label="Минус один тираж">−</button>
+          <div id="csWindowValue" class="csWheelValue" aria-live="polite">10</div>
+          <button id="csWindowPlus" class="csWheelBtn" type="button" aria-label="Плюс один тираж">+</button>
+          <button id="csWindowMax" class="csWheelMax" type="button">MAX</button>
+        </div>
+        <input id="csWindowRange" class="csRange" type="range" min="1" max="100" value="10" aria-label="Количество тиражей">
+        <div class="csWheelHint">Можно выбрать любое число тиражей: − / +, ползунок или MAX = весь доступный архив.</div>
         <div class="csLabel">ИЛИ ДАТА</div>
         <div class="csDate"><input id="csDateInput" type="date"><button id="csToday" type="button">Сегодня</button></div>
         <div class="csLabel">РАЗМЕР КОМБЫ</div>
@@ -98,6 +107,7 @@
       try{closeSavedDrawer?.();closeTableDrawer?.()}catch(e){}
       document.querySelectorAll('.section').forEach(s=>s.classList.toggle('on',s.id==='comboSearch'));
       document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n===b));
+      syncWindowWheel();
       window.scrollTo({top:0,behavior:'smooth'});
     };
   }
@@ -106,6 +116,38 @@
 
   function setActive(box,attr,val){
     box?.querySelectorAll('button').forEach(b=>b.classList.toggle('active',Number(b.getAttribute(attr))===Number(val)));
+  }
+
+  function archiveDrawCount(){
+    if(typeof DRAWS!=='undefined'&&Array.isArray(DRAWS)&&DRAWS.length)return DRAWS.length;
+    if(Array.isArray(state.draws)&&state.draws.length)return state.draws.length;
+    return Math.max(1,Number(state.window)||10);
+  }
+
+  function clampDrawCount(v,max=archiveDrawCount()){
+    v=Math.floor(Number(v));
+    if(!Number.isFinite(v))v=1;
+    return Math.max(1,Math.min(Math.max(1,max),v));
+  }
+
+  function syncWindowWheel(){
+    const max=archiveDrawCount();
+    state.window=clampDrawCount(state.window,max);
+    if(q('csWindowValue'))q('csWindowValue').textContent=String(state.window);
+    const range=q('csWindowRange');
+    if(range){range.max=String(max);range.value=String(state.window)}
+    if(q('csWindowMinus'))q('csWindowMinus').disabled=state.window<=1;
+    if(q('csWindowPlus'))q('csWindowPlus').disabled=state.window>=max;
+    setActive(q('csWindowModes'),'data-csw',state.window);
+  }
+
+  function chooseWindow(v,auto=false){
+    state.window=clampDrawCount(v);
+    state.date='';
+    if(q('csDateInput'))q('csDateInput').value='';
+    syncWindowWheel();
+    if(auto)scheduleAutoRun();
+    else clearOldResult(`Выбрано ${state.window} тиражей — нажмите «НАЙТИ КОМБЫ».`);
   }
 
   function selectedDraws(){
@@ -147,27 +189,53 @@
     const freq=Array(81).fill(0);
     for(const d of draws)for(const n of d.balls)freq[n]++;
 
+    // Большие окна считаем в облегчённом режиме, но итоговые кандидаты
+    // проверяем по всему выбранному отрезку.
+    const n=draws.length;
+    const extra=n<=120?4:n<=500?3:n<=3000?2:1;
     const pool=new Map();
     for(let di=0;di<draws.length;di++){
       const d=draws[di];
-      // Берём наиболее "живые" числа конкретного тиража, но не один жёсткий набор.
-      // k+4 даёт разнообразный, но ещё компактный пул.
       const ranked=[...d.balls].sort((a,b)=>freq[b]-freq[a]||a-b);
-      const core=ranked.slice(0,Math.min(ranked.length,k+4));
-      combinations(core,k,nums=>pool.set(comboKey(nums),nums));
-      if(di%8===0)await new Promise(r=>setTimeout(r,0));
+      const core=ranked.slice(0,Math.min(ranked.length,k+extra));
+      combinations(core,k,nums=>{
+        const key=comboKey(nums),old=pool.get(key);
+        if(old)old.seedFull++;
+        else pool.set(key,{nums,seedFull:1});
+      });
+      if(di%24===0)await new Promise(r=>setTimeout(r,0));
     }
 
+    let seeds=[...pool.values()];
+    const evalLimit=n<=120?Infinity:n<=500?8000:n<=3000?2500:n<=12000?900:350;
+    if(Number.isFinite(evalLimit)&&seeds.length>evalLimit){
+      const fsum=x=>x.nums.reduce((z,a)=>z+freq[a],0);
+      seeds.sort((a,b)=>b.seedFull-a.seedFull||fsum(b)-fsum(a)||comboKey(a.nums).localeCompare(comboKey(b.nums)));
+      seeds=seeds.slice(0,evalLimit);
+    }
+
+    const sets=draws.map(d=>new Set(d.balls));
     const rows=[];
     let i=0;
-    for(const nums of pool.values()){
-      const tr=trajectory(nums,draws);
-      // Кандидат обязан хотя бы раз реально полностью выйти в этом окне.
-      if(tr.full>0)rows.push({nums,...tr});
-      if(++i%500===0)await new Promise(r=>setTimeout(r,0));
+    for(const seed of seeds){
+      const nums=seed.nums;
+      let full=0,sum=0,withHit=0,near=0,run=0,maxRun=0;
+      const hits=[];
+      for(const ds of sets){
+        let h=0;for(const x of nums)if(ds.has(x))h++;
+        hits.push(h);sum+=h;
+        if(h===k)full++;
+        if(h>0){withHit++;run++;if(run>maxRun)maxRun=run}else run=0;
+        if(h>=k-1)near++;
+      }
+      if(full>0){
+        const score=full*10000+near*500+sum*20+withHit*5+maxRun;
+        rows.push({nums,full,sum,withHit,near,maxRun,hits,score});
+      }
+      if(++i%120===0)await new Promise(r=>setTimeout(r,0));
     }
     rows.sort((a,b)=>b.score-a.score||b.full-a.full||b.sum-a.sum||comboKey(a.nums).localeCompare(comboKey(b.nums)));
-    return{rows,poolSize:pool.size};
+    return{rows,poolSize:pool.size,evaluated:seeds.length,scalable:seeds.length<pool.size};
   }
 
   function pickDiverse(rows,k,limit=RESULT_LIMIT){
@@ -254,14 +322,20 @@
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><label class="csDrawCount">Тиражей <input id="csDrawCount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${count}" aria-label="Количество тиражей"></label></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><div id="csDrawValue" class="csWheelValue">${count}</div><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div><input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей"></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{try{document.activeElement?.blur()}catch(e){}box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
-      const input=q('csDrawCount');
-      const apply=()=>{let v=Math.floor(Number(input.value));if(!Number.isFinite(v)||v<DETAIL_MIN_DRAWS)v=DETAIL_MIN_DRAWS;count=v;detailDrawCounts.set(key,v);render()};
-      input.onchange=apply;
-      input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply()}};
+      const maxCount=Math.max(1,archive.length);
+      const setCount=v=>{count=Math.max(DETAIL_MIN_DRAWS,Math.min(maxCount,Math.floor(Number(v)||DETAIL_MIN_DRAWS)));detailDrawCounts.set(key,count);render()};
+      const minus=q('csDrawMinus'),plus=q('csDrawPlus'),maxBtn=q('csDrawMax'),range=q('csDrawRange');
+      if(minus){minus.disabled=count<=DETAIL_MIN_DRAWS;minus.onclick=()=>setCount(count-1)}
+      if(plus){plus.disabled=count>=maxCount;plus.onclick=()=>setCount(count+1)}
+      if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);
+      if(range){
+        range.oninput=e=>{const v=Math.max(DETAIL_MIN_DRAWS,Math.min(maxCount,Math.floor(Number(e.target.value)||DETAIL_MIN_DRAWS)));const out=q('csDrawValue');if(out)out.textContent=String(v)};
+        range.onchange=e=>setCount(e.target.value);
+      }
     };
     render();
     box.scrollIntoView({behavior:'smooth',block:'start'});
@@ -297,7 +371,9 @@
       const picked=pickDiverse(built.rows,state.size,RESULT_LIMIT);
       state.rows=picked;
       q('csStatus').className='csStatus';
-      q('csStatus').textContent=`Готово: проверен пул ${built.poolSize.toLocaleString('ru-RU')} реально собиравшихся вариантов. Оставлено ${picked.length} разных комб; почти одинаковые отброшены.`;
+      q('csStatus').textContent=built.scalable
+        ?`Готово: собран пул ${built.poolSize.toLocaleString('ru-RU')} вариантов; подробно проверено ${built.evaluated.toLocaleString('ru-RU')} по всем ${draws.length} выбранным тиражам. Оставлено ${picked.length} разных комб.`
+        :`Готово: проверен пул ${built.poolSize.toLocaleString('ru-RU')} реально собиравшихся вариантов. Оставлено ${picked.length} разных комб; почти одинаковые отброшены.`;
       q('csSummary').innerHTML=`<div class="csSummary"><div class="csStat"><b>${draws.length}</b><span>тиражей</span></div><div class="csStat"><b>${state.size}К</b><span>размер</span></div><div class="csStat"><b>${picked.length}</b><span>разные комбы</span></div></div>`;
       renderResults();
     }catch(e){
@@ -328,13 +404,21 @@
   }
 
   function bind(){
-    q('csWindowModes')?.querySelectorAll('[data-csw]').forEach(b=>b.onclick=()=>{
-      state.window=Number(b.dataset.csw);
-      state.date='';
-      q('csDateInput').value='';
-      setActive(q('csWindowModes'),'data-csw',state.window);
-      scheduleAutoRun();
-    });
+    q('csWindowModes')?.querySelectorAll('[data-csw]').forEach(b=>b.onclick=()=>chooseWindow(Number(b.dataset.csw),true));
+    if(q('csWindowMinus'))q('csWindowMinus').onclick=()=>chooseWindow(state.window-1,false);
+    if(q('csWindowPlus'))q('csWindowPlus').onclick=()=>chooseWindow(state.window+1,false);
+    if(q('csWindowMax'))q('csWindowMax').onclick=()=>chooseWindow(archiveDrawCount(),false);
+    if(q('csWindowRange')){
+      q('csWindowRange').oninput=e=>{
+        state.window=clampDrawCount(e.target.value);
+        state.date='';
+        if(q('csDateInput'))q('csDateInput').value='';
+        if(q('csWindowValue'))q('csWindowValue').textContent=String(state.window);
+        setActive(q('csWindowModes'),'data-csw',state.window);
+        clearOldResult(`Выбрано ${state.window} тиражей — нажмите «НАЙТИ КОМБЫ».`);
+      };
+      q('csWindowRange').onchange=()=>syncWindowWheel();
+    }
     q('csSizeModes')?.querySelectorAll('[data-css]').forEach(b=>b.onclick=()=>{
       state.size=Number(b.dataset.css);
       setActive(q('csSizeModes'),'data-css',state.size);
@@ -378,7 +462,7 @@
   }
 
   function init(){
-    css();addSection();addNav();bind();patchHistoryDismiss();
+    css();addSection();addNav();bind();patchHistoryDismiss();syncWindowWheel();
     const v=document.querySelector('.version');if(v)v.textContent='Версия '+EXT_VERSION;
   }
 
