@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.3.30';
+  const EXT_VERSION='v4.3.31';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=1;
@@ -69,7 +69,7 @@
         </div>
         <div class="csWindowWheel" id="csWindowWheel">
           <button id="csWindowMinus" class="csWheelBtn" type="button" aria-label="Минус один тираж">−</button>
-          <input id="csWindowValue" class="csWheelValue" type="number" inputmode="numeric" pattern="[0-9]*" min="1" value="10" aria-label="Введите количество тиражей">
+          <input id="csWindowValue" class="csWheelValue" type="tel" inputmode="numeric" pattern="[0-9]*" value="10" aria-label="Введите количество тиражей">
           <button id="csWindowPlus" class="csWheelBtn" type="button" aria-label="Плюс один тираж">+</button>
           <button id="csWindowMax" class="csWheelMax" type="button">MAX</button>
         </div>
@@ -320,7 +320,7 @@
       const detailStats=trajectory(row.nums,[...visible].sort((a,b)=>a.draw-b.draw));
       const winStats=winningStats(row.nums,visible);
       box.classList.remove('hidden');
-      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><input id="csDrawValue" class="csWheelValue" type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Введите любое количество тиражей"><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
+      box.innerHTML=`<div class="csDetailHead"><b>${row.nums.map(f2).join(' ')}</b><button id="csDetailClose" class="csClose" type="button">✕ Закрыть</button><div class="csWinStats"><div>💰 Выигрышных: <b>${winStats.winning} / ${visible.length}</b></div><div>🔥 Сумма выигрышей: <b>${winStats.totalPrize.toLocaleString('ru-RU')} ₽</b></div><div class="csWinBreakdown">${winStats.levels.join(' · ')||'Выигрышных уровней нет'}</div></div></div><div class="csDetailTools"><div class="historyTools"><button type="button" class="active">⬆️ Возрастание</button><button id="csTransitionsBtn" type="button" class="${showTransitions?'active':''}" aria-pressed="${showTransitions?'true':'false'}">🔸 Переходы</button></div><div class="csDrawCount"><span>Тиражей</span><div class="csDetailCounter"><button id="csDrawMinus" type="button" aria-label="Минус один тираж">−</button><input id="csDrawValue" class="csWheelValue" type="tel" inputmode="numeric" pattern="[0-9]*" value="${count}" aria-label="Введите любое количество тиражей"><button id="csDrawPlus" type="button" aria-label="Плюс один тираж">+</button><button id="csDrawMax" class="csWheelMax" type="button">MAX</button></div></div></div><div class="hist"><div class="hrow head"><div class="hcell">Тираж / Столб / Дата</div><div class="hcell">Попад.</div><div class="hcell">Числа тиража · ⬆️ · 2×10</div></div>${visible.map(d=>detailRow(d,row.nums,showTransitions)).join('')}</div>`;
       q('csDetailClose').onclick=()=>{try{document.activeElement?.blur()}catch(e){}box.classList.add('hidden');box.innerHTML=''};
       const transitionsBtn=q('csTransitionsBtn');
       if(transitionsBtn)transitionsBtn.onclick=()=>{showTransitions=!showTransitions;render()};
@@ -331,9 +331,10 @@
       if(plus){plus.disabled=count>=maxCount;plus.onclick=()=>setCount(count+1)}
       if(maxBtn)maxBtn.onclick=()=>setCount(maxCount);
       if(valueInput){
-        valueInput.onfocus=()=>valueInput.select();
-        valueInput.onchange=()=>setCount(valueInput.value);
-        valueInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setCount(valueInput.value)}};
+        valueInput.onfocus=()=>{valueInput.dataset.prev=valueInput.value;valueInput.value=''};
+        valueInput.oninput=()=>{valueInput.value=String(valueInput.value||'').replace(/\D/g,'').slice(0,6)};
+        valueInput.onblur=()=>{if(!valueInput.value)valueInput.value=valueInput.dataset.prev||String(count);else setCount(valueInput.value)};
+        valueInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();valueInput.blur()}};
       }
     };
     render();
@@ -409,9 +410,10 @@
     if(q('csWindowMax'))q('csWindowMax').onclick=()=>chooseWindow(archiveDrawCount(),false);
     const windowInput=q('csWindowValue');
     if(windowInput){
-      windowInput.onfocus=()=>windowInput.select();
-      windowInput.onchange=()=>chooseWindow(windowInput.value,false);
-      windowInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();chooseWindow(windowInput.value,false);windowInput.blur()}};
+      windowInput.onfocus=()=>{windowInput.dataset.prev=windowInput.value;windowInput.value=''};
+      windowInput.oninput=()=>{windowInput.value=String(windowInput.value||'').replace(/\D/g,'').slice(0,6)};
+      windowInput.onblur=()=>{if(!windowInput.value)windowInput.value=windowInput.dataset.prev||String(state.window);else chooseWindow(windowInput.value,false)};
+      windowInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();windowInput.blur()}};
     }
     q('csSizeModes')?.querySelectorAll('[data-css]').forEach(b=>b.onclick=()=>{
       state.size=Number(b.dataset.css);
