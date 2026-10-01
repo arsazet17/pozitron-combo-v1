@@ -1,0 +1,113 @@
+name: COMBO · REMOVE DRAW SLIDERS v4.3.30
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remove-combo-draw-sliders-v4330.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove draw sliders and enable manual count input
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('combo-search-v1.js')
+          s = p.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global s
+              if old not in s:
+                  raise SystemExit(f'PATCH FAILED: {label} pattern not found')
+              s = s.replace(old, new, 1)
+
+          # Keep the displayed extension version aligned with this fix.
+          replace_once("const EXT_VERSION='v4.3.19';", "const EXT_VERSION='v4.3.30';", 'extension version')
+
+          # Main draw-count control: make the number itself editable and remove the slider.
+          replace_once(
+              '<div id="csWindowValue" class="csWheelValue" aria-live="polite">10</div>',
+              '<input id="csWindowValue" class="csWheelValue" type="number" inputmode="numeric" pattern="[0-9]*" min="1" value="10" aria-label="Введите количество тиражей">',
+              'main count value'
+          )
+          replace_once(
+              '        <input id="csWindowRange" class="csRange" type="range" min="1" max="100" value="10" aria-label="Количество тиражей">\n        <div class="csWheelHint">Можно выбрать любое число тиражей: − / +, ползунок или MAX = весь доступный архив.</div>',
+              '        <div class="csWheelHint">Введите количество тиражей вручную или используйте − / + / MAX.</div>',
+              'main slider markup'
+          )
+
+          # Input styling without browser spinner arrows; no range/slider styling remains.
+          replace_once(
+              '.csWindowWheel{display:grid;grid-template-columns:44px minmax(72px,1fr) 44px 58px;gap:6px;align-items:center;margin-top:7px}.csWheelBtn{height:40px;padding:0;font-size:20px;line-height:1;background:#0a1c2d;border-color:#315b7d}.csWheelValue{height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #315b7d;border-radius:11px;background:#020912;color:#fff;font-size:18px;font-weight:950;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px rgba(53,169,255,.08)}.csWheelMax{height:40px;padding:0 5px;font-size:10px;background:#102a43;border-color:#315b7d}.csWheelHint{font-size:9px;color:var(--muted);margin-top:4px;line-height:1.25}.csRange{width:100%;accent-color:var(--green);margin:6px 0 2px;height:22px;touch-action:pan-x}',
+              '.csWindowWheel{display:grid;grid-template-columns:44px minmax(72px,1fr) 44px 58px;gap:6px;align-items:center;margin-top:7px}.csWheelBtn{height:40px;padding:0;font-size:20px;line-height:1;background:#0a1c2d;border-color:#315b7d}.csWheelValue{height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #315b7d;border-radius:11px;background:#020912;color:#fff;font-size:18px;font-weight:950;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px rgba(53,169,255,.08)}input.csWheelValue{width:100%;padding:0 8px;text-align:center;appearance:textfield;-moz-appearance:textfield}input.csWheelValue::-webkit-outer-spin-button,input.csWheelValue::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.csWheelMax{height:40px;padding:0 5px;font-size:10px;background:#102a43;border-color:#315b7d}.csWheelHint{font-size:9px;color:var(--muted);margin-top:4px;line-height:1.25}',
+              'slider css'
+          )
+          s = s.replace('.csDetailRange{flex:1 1 100%;width:100%}', '')
+
+          # Main count synchronisation now updates the input only; there is no range element.
+          replace_once(
+              "    if(q('csWindowValue'))q('csWindowValue').textContent=String(state.window);\n    const range=q('csWindowRange');\n    if(range){range.max=String(max);range.value=String(state.window)}",
+              "    const valueInput=q('csWindowValue');\n    if(valueInput){valueInput.value=String(state.window);valueInput.max=String(max)}",
+              'main sync'
+          )
+
+          # Main manual input applies only on change or Enter, not on every keystroke.
+          replace_once(
+              "    if(q('csWindowMax'))q('csWindowMax').onclick=()=>chooseWindow(archiveDrawCount(),false);\n    if(q('csWindowRange')){\n      q('csWindowRange').oninput=e=>{\n        state.window=clampDrawCount(e.target.value);\n        state.date='';\n        if(q('csDateInput'))q('csDateInput').value='';\n        if(q('csWindowValue'))q('csWindowValue').textContent=String(state.window);\n        setActive(q('csWindowModes'),'data-csw',state.window);\n        clearOldResult(`Выбрано ${state.window} тиражей — нажмите «НАЙТИ КОМБЫ».`);\n      };\n      q('csWindowRange').onchange=()=>syncWindowWheel();\n    }",
+              "    if(q('csWindowMax'))q('csWindowMax').onclick=()=>chooseWindow(archiveDrawCount(),false);\n    const windowInput=q('csWindowValue');\n    if(windowInput){\n      windowInput.onfocus=()=>windowInput.select();\n      windowInput.onchange=()=>chooseWindow(windowInput.value,false);\n      windowInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();chooseWindow(windowInput.value,false);windowInput.blur()}};\n    }",
+              'main slider handlers'
+          )
+
+          # Detail/history draw-count control: keep number input and buttons, remove its slider.
+          replace_once(
+              '<input id="csDrawRange" class="csRange csDetailRange" type="range" min="1" max="${Math.max(1,archive.length)}" value="${count}" aria-label="Количество показанных тиражей">',
+              '',
+              'detail slider markup'
+          )
+          replace_once(
+              "      const minus=q('csDrawMinus'),plus=q('csDrawPlus'),maxBtn=q('csDrawMax'),range=q('csDrawRange'),valueInput=q('csDrawValue');",
+              "      const minus=q('csDrawMinus'),plus=q('csDrawPlus'),maxBtn=q('csDrawMax'),valueInput=q('csDrawValue');",
+              'detail slider variable'
+          )
+          replace_once(
+              "      if(range){\n        range.oninput=e=>{const v=Math.max(DETAIL_MIN_DRAWS,Math.min(maxCount,Math.floor(Number(e.target.value)||DETAIL_MIN_DRAWS)));const out=q('csDrawValue');if(out)out.value=String(v)};\n        range.onchange=e=>setCount(e.target.value);\n      }\n",
+              '',
+              'detail slider handlers'
+          )
+
+          # Safety: these two problematic sliders must be gone from the shipped module.
+          if 'csWindowRange' in s or 'csDrawRange' in s or 'type="range"' in s:
+              raise SystemExit('PATCH FAILED: draw slider code still present')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check combo-search-v1.js
+          grep -q 'id="csWindowValue".*type="number"' combo-search-v1.js
+          grep -q 'id="csDrawValue".*type="number"' combo-search-v1.js
+          ! grep -q 'type="range"' combo-search-v1.js
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          if git diff --quiet -- combo-search-v1.js; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add combo-search-v1.js
+          git commit -m 'COMBO: remove draw sliders that freeze the app'
+          git push origin HEAD:main
