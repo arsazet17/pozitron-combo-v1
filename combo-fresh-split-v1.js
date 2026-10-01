@@ -1,9 +1,10 @@
-/* COMBO KENO · Разные + Свежие + отслеживание v2 · 01.10.2026
+/* COMBO KENO · Разные + Свежие + отслеживание v3 · 01.10.2026
    — «Разные»: свободное количество результатов.
-   — «Свежие»: точный K-набор встретился ровно один раз за весь архив,
-     и этот единственный выход находится в последних N тиражах.
-   — «Отслеживание»: только вручную выбранные свежие комбы. После FIRST
-     показываем ход по следующим тиражам, выигрыши и первый повтор 6/6.
+   — «Свежие»: FIRST-комба — точный K-набор, который до этого тиража
+     ни разу не собирался полностью. Будущие повторы FIRST не отменяют.
+   — При выбранной дате свежие ищутся внутри последних N тиражей этой даты.
+   — «Отслеживание»: только вручную выбранные FIRST-комбы. После FIRST
+     показываем ход по следующим тиражам, выигрыши и первый полный повтор.
 */
 (() => {
   'use strict';
@@ -82,7 +83,7 @@
     const sizeBox=q('csSizeModes');if(!sizeBox||q('cfsControls'))return false;
     const wrap=document.createElement('div');wrap.id='cfsControls';wrap.className='cfsControls';wrap.innerHTML=`
       <label class="cfsCard"><span class="cfsTitle">РАЗНЫЕ КОМБЫ</span><span class="cfsSub">сколько вариантов показать</span><input id="cfsLimit" class="cfsInput" type="tel" inputmode="numeric" pattern="[0-9]*" value="${DEFAULT_LIMIT}"></label>
-      <label class="cfsCard fresh"><span class="cfsTitle">🆕 СВЕЖИЕ</span><span class="cfsSub">за последние N тиражей</span><input id="cfsFresh" class="cfsInput" type="tel" inputmode="numeric" pattern="[0-9]*" value="${DEFAULT_FRESH}"></label>
+      <label class="cfsCard fresh"><span class="cfsTitle">🆕 СВЕЖИЕ</span><span class="cfsSub">FIRST за последние N тиражей</span><input id="cfsFresh" class="cfsInput" type="tel" inputmode="numeric" pattern="[0-9]*" value="${DEFAULT_FRESH}"></label>
       <label class="cfsCard track"><span class="cfsTitle">🔁 ОТСЛ. ТИРАЖЕЙ</span><span class="cfsSub">сколько тиражей смотреть после FIRST</span><input id="cfsTrackN" class="cfsInput" type="tel" inputmode="numeric" pattern="[0-9]*" value="${DEFAULT_TRACK}"></label>`;
     sizeBox.insertAdjacentElement('afterend',wrap);
     bindNumberInput('cfsLimit',DEFAULT_LIMIT);bindNumberInput('cfsFresh',DEFAULT_FRESH);bindNumberInput('cfsTrackN',DEFAULT_TRACK);
@@ -104,22 +105,45 @@
     rows.sort((a,b)=>b.score-a.score||b.full-a.full||b.sum-a.sum||keyOf(a.nums).localeCompare(keyOf(b.nums)));return rows;
   }
   function pickDiverse(rows,k,limit){const strict=Math.floor(k/2),picked=[];for(const r of rows){if(picked.every(p=>overlap(r.nums,p.nums)<=strict)){picked.push(r);if(picked.length>=limit)return picked}}for(let allowed=strict+1;allowed<=Math.max(strict,k-2)&&picked.length<limit;allowed++)for(const r of rows){if(picked.includes(r))continue;if(picked.every(p=>overlap(r.nums,p.nums)<=allowed)){picked.push(r);if(picked.length>=limit)break}}return picked}
-  function pickFresh(rows,k,limit){const picked=pickDiverse(rows,k,limit);if(picked.length>=limit)return picked;for(const r of rows){if(!picked.includes(r)){picked.push(r);if(picked.length>=limit)break}}return picked}
+  function pickFresh(rows,k,limit){
+    const strict=Math.floor(k/2),relaxed=Math.max(strict,k-2),picked=[],used=new Set(),byDraw=new Map();
+    for(const r of rows){const d=Number(r.draw);if(!byDraw.has(d))byDraw.set(d,[]);byDraw.get(d).push(r)}
+    const take=(group,allowed)=>group.find(r=>!used.has(keyOf(r.nums)+'@'+r.draw)&&picked.every(p=>overlap(r.nums,p.nums)<=allowed));
+    for(const group of byDraw.values()){
+      let r=take(group,strict)||take(group,relaxed);if(!r)continue;
+      picked.push(r);used.add(keyOf(r.nums)+'@'+r.draw);if(picked.length>=limit)return picked;
+    }
+    for(const r of rows){const id=keyOf(r.nums)+'@'+r.draw;if(used.has(id))continue;if(picked.every(p=>overlap(r.nums,p.nums)<=relaxed)){picked.push(r);used.add(id);if(picked.length>=limit)break}}
+    return picked;
+  }
+
+  function freshSourceDraws(allDesc,windowCount){
+    const date=q('csDateInput')?.value||'';
+    let source=date?allDesc.filter(d=>ruDateToISO(d.date)===date):allDesc;
+    if(!source.length)return[];
+    windowCount=positive(windowCount,DEFAULT_FRESH,source.length);
+    return source.slice(0,windowCount);
+  }
 
   async function freshRows(k,windowCount,limit){
-    const a=[...archive()].sort((x,y)=>Number(y.draw)-Number(x.draw));if(!a.length)return[];windowCount=positive(windowCount,DEFAULT_FRESH,a.length);limit=positive(limit,DEFAULT_LIMIT);
-    const ck=[a[0]?.draw||'',a.length,k,windowCount,limit].join('|');if(cache.has(ck))return cache.get(ck);
-    const recent=a.slice(0,windowCount),rows=[],totalTarget=nCk(20,k);
-    for(let age=0;age<recent.length;age++){
-      const target=recent[age],targetNums=[...new Set((target.balls||[]).map(Number))].filter(n=>n>=1&&n<=80).sort((x,y)=>x-y);if(targetNums.length<k)continue;
-      const targetSet=new Set(targetNums),repeated=new Set();
+    const a=[...archive()].sort((x,y)=>Number(y.draw)-Number(x.draw));if(!a.length)return[];limit=positive(limit,DEFAULT_LIMIT);
+    const recent=freshSourceDraws(a,windowCount);if(!recent.length)return[];
+    const date=q('csDateInput')?.value||'',ck=[a[0]?.draw||'',a.length,k,windowCount,limit,date,recent[0]?.draw||'',recent.at(-1)?.draw||''].join('|');if(cache.has(ck))return cache.get(ck);
+    const rows=[],totalTarget=nCk(20,k),ageByDraw=new Map(a.map((d,i)=>[Number(d.draw),i]));
+    for(let sourceOrder=0;sourceOrder<recent.length;sourceOrder++){
+      const target=recent[sourceOrder],targetDraw=Number(target.draw),targetNums=[...new Set((target.balls||[]).map(Number))].filter(n=>n>=1&&n<=80).sort((x,y)=>x-y);if(targetNums.length<k)continue;
+      const targetSet=new Set(targetNums),seenBefore=new Set();
       for(let oi=0;oi<a.length;oi++){
-        const other=a[oi];if(Number(other.draw)===Number(target.draw))continue;const inter=[];for(const raw of(other.balls||[])){const n=Number(raw);if(targetSet.has(n))inter.push(n)}
-        if(inter.length>=k){inter.sort((x,y)=>x-y);combinations(inter,k,nums=>repeated.add(keyOf(nums)))}if(repeated.size>=totalTarget)break;if(oi%500===0)await tick();
+        const other=a[oi],otherDraw=Number(other.draw);if(otherDraw>=targetDraw)continue;
+        const inter=[];for(const raw of(other.balls||[])){const n=Number(raw);if(targetSet.has(n))inter.push(n)}
+        if(inter.length>=k){inter.sort((x,y)=>x-y);combinations(inter,k,nums=>seenBefore.add(keyOf(nums)))}
+        if(seenBefore.size>=totalTarget)break;if(oi%500===0)await tick();
       }
-      combinations(targetNums,k,nums=>{if(!repeated.has(keyOf(nums)))rows.push({nums,fresh:true,age,draw:Number(target.draw),date:target.date,time:target.time,column:target.column})});
-      rows.sort((x,y)=>x.age-y.age||y.draw-x.draw||keyOf(x.nums).localeCompare(keyOf(y.nums)));if(pickFresh(rows,k,limit).length>=limit)break;await tick();
+      const age=ageByDraw.get(targetDraw)??sourceOrder;
+      combinations(targetNums,k,nums=>{if(!seenBefore.has(keyOf(nums)))rows.push({nums,fresh:true,age,sourceOrder,draw:targetDraw,date:target.date,time:target.time,column:target.column})});
+      await tick();
     }
+    rows.sort((x,y)=>x.sourceOrder-y.sourceOrder||x.age-y.age||y.draw-x.draw||keyOf(x.nums).localeCompare(keyOf(y.nums)));
     const out=pickFresh(rows,k,limit);cache.set(ck,out);return out;
   }
 
@@ -136,7 +160,7 @@
   }
 
   function makeItem(r,i,fresh=false){
-    if(fresh){const w=document.createElement('div');w.className='cfsItem fresh';const on=isTracked(r);w.innerHTML=`<button type="button" class="cfsOpen"><span class="cfsNums">${r.nums.map(f2).join(' ')}</span><span class="cfsMeta cfsFreshMeta">🆕 впервые · ${ageText(r.age)} · №${r.draw} · раньше 0</span><span class="cfsMeta">${r.date||''} ${r.time||''}${Number.isInteger(Number(r.column))?` · столб ${r.column}`:''}</span></button><div><div class="cfsBadge">NEW ${i+1} ›</div><button type="button" class="cfsTrackBtn ${on?'on':''}" ${on?'disabled':''}>${on?'✓ ОТСЛ.':'🔁 ОТСЛ.'}</button></div>`;w.querySelector('.cfsOpen').onclick=()=>openDetail(r.nums,r.age);const tb=w.querySelector('.cfsTrackBtn');if(!on)tb.onclick=e=>{e.stopPropagation();addTrack(r);tb.textContent='✓ ОТСЛ.';tb.classList.add('on');tb.disabled=true};return w}
+    if(fresh){const w=document.createElement('div');w.className='cfsItem fresh';const on=isTracked(r);w.innerHTML=`<button type="button" class="cfsOpen"><span class="cfsNums">${r.nums.map(f2).join(' ')}</span><span class="cfsMeta cfsFreshMeta">🆕 FIRST · ${ageText(r.age)} · №${r.draw} · до этого 0</span><span class="cfsMeta">${r.date||''} ${r.time||''}${Number.isInteger(Number(r.column))?` · столб ${r.column}`:''}</span></button><div><div class="cfsBadge">NEW ${i+1} ›</div><button type="button" class="cfsTrackBtn ${on?'on':''}" ${on?'disabled':''}>${on?'✓ ОТСЛ.':'🔁 ОТСЛ.'}</button></div>`;w.querySelector('.cfsOpen').onclick=()=>openDetail(r.nums,r.age);const tb=w.querySelector('.cfsTrackBtn');if(!on)tb.onclick=e=>{e.stopPropagation();addTrack(r);tb.textContent='✓ ОТСЛ.';tb.classList.add('on');tb.disabled=true};return w}
     const b=document.createElement('button');b.type='button';b.className='cfsItem';b.innerHTML=`<span><span class="cfsNums">${r.nums.map(f2).join(' ')}</span><span class="cfsMeta">🔥 полностью ${r.full} · почти полных ${r.near} · Σ попаданий ${r.sum} · ход ${r.withHit}</span></span><span class="csFire">№${i+1} ›</span>`;b.onclick=()=>openDetail(r.nums,0);return b
   }
 
@@ -149,20 +173,21 @@
     busy=true;try{
       if(q('cfsLimit'))q('cfsLimit').value=String(limit);if(q('cfsFresh'))q('cfsFresh').value=String(freshN);if(q('cfsTrackN'))q('cfsTrackN').value=String(positive(q('cfsTrackN').value,DEFAULT_TRACK,5000));
       const oldButtons=[...results.querySelectorAll('#csList .csItem')];
-      results.innerHTML=`<div class="cfsBusy">Формирую ${limit} разных и проверяю свежие ${k}К за последние ${freshN} тиражей…</div>`;
+      const date=q('csDateInput')?.value||'';
+      results.innerHTML=`<div class="cfsBusy">Формирую ${limit} разных и проверяю FIRST ${k}К за ${date?'последние '+freshN+' тиражей выбранной даты':'последние '+freshN+' тиражей'}…</div>`;
       let diverse=[];if(limit<=oldButtons.length){diverse=oldButtons.slice(0,limit)}else{const rows=await buildRows(draws,k);diverse=pickDiverse(rows,k,limit)}
       const fresh=await freshRows(k,freshN,limit);
-      results.innerHTML=`<div class="cfsGrid"><div class="cfsPane"><div class="cfsPaneTitle">Разные ${k}К</div><div class="cfsPaneSub">Запрошено ${limit}. Лучшие разные варианты по ${draws.length} выбранным тиражам.</div><div id="cfsDiverse" class="cfsList"></div></div><div class="cfsPane fresh"><div class="cfsPaneTitle">🆕 Свежие ${k}К</div><div class="cfsPaneSub">Точный набор встретился ровно один раз за весь архив. Нажмите «ОТСЛ.», чтобы смотреть его следующие тиражи.</div><div id="cfsFreshList" class="cfsList"></div></div></div><div id="cfsTrackHistory" class="cfsHistory" data-open="0"></div>`;
+      results.innerHTML=`<div class="cfsGrid"><div class="cfsPane"><div class="cfsPaneTitle">Разные ${k}К</div><div class="cfsPaneSub">Запрошено ${limit}. Лучшие разные варианты по ${draws.length} выбранным тиражам.</div><div id="cfsDiverse" class="cfsList"></div></div><div class="cfsPane fresh"><div class="cfsPaneTitle">🆕 Свежие ${k}К</div><div class="cfsPaneSub">FIRST = до этого тиража точный набор ни разу не собирался. Будущий повтор FIRST не отменяет.</div><div id="cfsFreshList" class="cfsList"></div></div></div><div id="cfsTrackHistory" class="cfsHistory" data-open="0"></div>`;
       const dl=q('cfsDiverse');if(Array.isArray(diverse)&&diverse.length&&diverse[0] instanceof Element){diverse.forEach(x=>dl.appendChild(x))}else if(diverse.length){diverse.forEach((r,i)=>dl.appendChild(makeItem(r,i,false)))}else dl.innerHTML='<div class="cfsEmpty">Разных вариантов по этим условиям не найдено.</div>';
-      const fl=q('cfsFreshList');if(fresh.length)fresh.forEach((r,i)=>fl.appendChild(makeItem(r,i,true)));else fl.innerHTML=`<div class="cfsEmpty">Свежих точных ${k}К за последние ${freshN} тиражей не найдено — все такие наборы встречались раньше.</div>`;
+      const fl=q('cfsFreshList');if(fresh.length)fresh.forEach((r,i)=>fl.appendChild(makeItem(r,i,true)));else fl.innerHTML=`<div class="cfsEmpty">FIRST ${k}К в выбранном окне не найдено.</div>`;
       renderTrackingHistory();
-      if(status){status.className='csStatus';status.textContent=`Готово: разные — ${Array.isArray(diverse)?diverse.length:0}; свежие — ${fresh.length}. Отслеживание включается только кнопкой «ОТСЛ.».`}
+      if(status){status.className='csStatus';status.textContent=`Готово: разные — ${Array.isArray(diverse)?diverse.length:0}; FIRST-свежие — ${fresh.length}. Источник FIRST распределяется по выбранному окну, а не только по последнему тиражу.`}
       const go=q('csGo');if(go)go.textContent='🔍 НАЙТИ РАЗНЫЕ + СВЕЖИЕ';
     }catch(e){console.error('COMBO FRESH SPLIT',e);if(status){status.className='csStatus err';status.textContent='Ошибка свежих комб: '+(e?.message||e)}}finally{busy=false}
   }
 
   function schedule(){clearTimeout(timer);timer=setTimeout(enhance,40)}
-  function watch(){const status=q('csStatus');if(!status||observer)return;observer=new MutationObserver(()=>{const t=String(status.textContent||'');if(t.startsWith('Готово:')&&!t.includes('свежие —'))schedule()});observer.observe(status,{childList:true,subtree:true,characterData:true})}
+  function watch(){const status=q('csStatus');if(!status||observer)return;observer=new MutationObserver(()=>{const t=String(status.textContent||'');if(t.startsWith('Готово:')&&!t.includes('FIRST-свежие —'))schedule()});observer.observe(status,{childList:true,subtree:true,characterData:true})}
   function init(){installCss();if(!installControls()){setTimeout(init,120);return}watch();const go=q('csGo');if(go)go.addEventListener('click',()=>{const r=q('csResults');if(r)r.dataset.cfsPending='1'},{capture:true});setInterval(()=>{if(q('cfsTrackHistory'))renderTrackingHistory()},15000);window.addEventListener('focus',()=>{if(q('cfsTrackHistory'))renderTrackingHistory()})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
 })();
