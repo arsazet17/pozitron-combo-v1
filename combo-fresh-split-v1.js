@@ -1,11 +1,12 @@
-/* COMBO KENO · История свежих · Supabase + УДЛ v2 · 02.10.2026
+/* COMBO KENO · История свежих · Supabase + УДЛ v3 · 02.10.2026
    Основная история хранится в Supabase и одинакова на всех устройствах.
    Старый localStorage используется только один раз для автоматической миграции.
+   Здесь же подключается согласованный блок «3 БЛОКА» + его облачный архив.
 */
 (() => {
   'use strict';
-  if (window.__comboFreshDeleteLoaderV2) return;
-  window.__comboFreshDeleteLoaderV2 = true;
+  if (window.__comboFreshDeleteLoaderV3) return;
+  window.__comboFreshDeleteLoaderV3 = true;
 
   function tracks(){
     try{return Array.isArray(window.ComboCloudFresh?.get?.())?window.ComboCloudFresh.get():[]}
@@ -96,7 +97,7 @@
       return;
     }
     const currentSrc = document.currentScript && document.currentScript.src;
-    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-cloud2', currentSrc || location.href);
+    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-cloud3', currentSrc || location.href);
     const s = document.createElement('script');
     s.src = baseUrl.href;
     s.onload = installDeletePatch;
@@ -104,16 +105,44 @@
     document.head.appendChild(s);
   }
 
+  function loadThreeBlocks(){
+    if(window.__comboThreeBlocksLoaderV1)return;
+    window.__comboThreeBlocksLoaderV1=true;
+    const currentSrc=document.currentScript&&document.currentScript.src;
+    const engineUrl=new URL('combo-three-blocks-engine-v1.js?v=20261002-tb1',currentSrc||location.href);
+    const uiUrl=new URL('combo-three-blocks-ui-v1.js?v=20261002-tb1',currentSrc||location.href);
+    const loadUI=()=>{
+      if(window.__comboThreeBlocksUIV1)return;
+      const u=document.createElement('script');
+      u.src=uiUrl.href;
+      u.dataset.comboThreeBlocksUi='1';
+      u.onerror=()=>console.error('COMBO 3 BLOCKS: не загрузился UI',uiUrl.href);
+      document.head.appendChild(u);
+    };
+    if(window.ComboThreeBlocksEngine){loadUI();return;}
+    const e=document.createElement('script');
+    e.src=engineUrl.href;
+    e.dataset.comboThreeBlocksEngine='1';
+    e.onload=loadUI;
+    e.onerror=()=>console.error('COMBO 3 BLOCKS: не загрузился engine',engineUrl.href);
+    document.head.appendChild(e);
+  }
+
+  function afterCloud(){
+    loadBase();
+    loadThreeBlocks();
+  }
+
   function ensureCloud(){
     if (window.ComboCloudHistory && window.ComboCloudFresh) {
-      Promise.resolve(window.ComboCloudHistory.ready).finally(loadBase);
+      Promise.resolve(window.ComboCloudHistory.ready).finally(afterCloud);
       return;
     }
     const currentSrc = document.currentScript && document.currentScript.src;
-    const cloudUrl = new URL('combo-cloud-sync-v1.js?v=20261002-cloud2', currentSrc || location.href);
+    const cloudUrl = new URL('combo-cloud-sync-v1.js?v=20261002-cloud3', currentSrc || location.href);
     const s = document.createElement('script');
     s.src = cloudUrl.href;
-    s.onload = () => Promise.resolve(window.ComboCloudHistory?.ready).finally(loadBase);
+    s.onload = () => Promise.resolve(window.ComboCloudHistory?.ready).finally(afterCloud);
     s.onerror = () => {
       console.error('COMBO CLOUD: модуль Supabase не загрузился', cloudUrl.href);
       alert('Облачная история Supabase не загрузилась. История не будет сохраняться локально.');
