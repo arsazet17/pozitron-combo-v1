@@ -1,12 +1,12 @@
-/* COMBO KENO · История свежих · Supabase + УДЛ v4 · 02.10.2026
+/* COMBO KENO · История свежих · Supabase + УДЛ v5 · 02.10.2026
    Основная история хранится в Supabase и одинакова на всех устройствах.
    Старый localStorage используется только один раз для автоматической миграции.
    «3 БЛОКА» подключается отдельной кнопкой рядом с «Комбы» в нижнем меню.
 */
 (() => {
   'use strict';
-  if (window.__comboFreshDeleteLoaderV4) return;
-  window.__comboFreshDeleteLoaderV4 = true;
+  if (window.__comboFreshDeleteLoaderV5) return;
+  window.__comboFreshDeleteLoaderV5 = true;
 
   function tracks(){
     try{return Array.isArray(window.ComboCloudFresh?.get?.())?window.ComboCloudFresh.get():[]}
@@ -97,7 +97,7 @@
       return;
     }
     const currentSrc = document.currentScript && document.currentScript.src;
-    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-cloud4', currentSrc || location.href);
+    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-cloud5', currentSrc || location.href);
     const s = document.createElement('script');
     s.src = baseUrl.href;
     s.onload = installDeletePatch;
@@ -106,15 +106,15 @@
   }
 
   function loadThreeBlocks(){
-    if(window.__comboThreeBlocksLoaderV2)return;
-    window.__comboThreeBlocksLoaderV2=true;
+    if(window.__comboThreeBlocksLoaderV3)return;
+    window.__comboThreeBlocksLoaderV3=true;
     const currentSrc=document.currentScript&&document.currentScript.src;
-    const engineUrl=new URL('combo-three-blocks-engine-v1.js?v=20261002-tb2',currentSrc||location.href);
-    const uiUrl=new URL('combo-three-blocks-ui-v1.js?v=20261002-tb2',currentSrc||location.href);
-    const placementUrl=new URL('combo-three-blocks-placement-v1.js?v=20261002-tb2',currentSrc||location.href);
+    const engineUrl=new URL('combo-three-blocks-engine-v1.js?v=20261002-tb3',currentSrc||location.href);
+    const uiUrl=new URL('combo-three-blocks-ui-v1.js?v=20261002-tb3',currentSrc||location.href);
+    const placementUrl=new URL('combo-three-blocks-placement-v1.js?v=20261002-tb3',currentSrc||location.href);
 
     const loadPlacement=()=>{
-      if(window.__comboThreeBlocksPlacementV1)return;
+      if(window.__comboThreeBlocksPlacementV11)return;
       const p=document.createElement('script');
       p.src=placementUrl.href;
       p.dataset.comboThreeBlocksPlacement='1';
@@ -123,7 +123,7 @@
     };
 
     const loadUI=()=>{
-      if(window.__comboThreeBlocksUIV1){loadPlacement();return;}
+      if(window.__comboThreeBlocksUIV11){loadPlacement();return;}
       const u=document.createElement('script');
       u.src=uiUrl.href;
       u.dataset.comboThreeBlocksUi='1';
@@ -152,7 +152,7 @@
       return;
     }
     const currentSrc = document.currentScript && document.currentScript.src;
-    const cloudUrl = new URL('combo-cloud-sync-v1.js?v=20261002-cloud4', currentSrc || location.href);
+    const cloudUrl = new URL('combo-cloud-sync-v1.js?v=20261002-cloud5', currentSrc || location.href);
     const s = document.createElement('script');
     s.src = cloudUrl.href;
     s.onload = () => Promise.resolve(window.ComboCloudHistory?.ready).finally(afterCloud);
