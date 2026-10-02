@@ -1,34 +1,20 @@
-/* COMBO KENO · История свежих · кнопка УДЛ v1 · 02.10.2026
-   Loader: запускает исходный модуль и добавляет удаление отслеживаемой комбы
-   прямо из блока «История свежих».
+/* COMBO KENO · История свежих · Supabase + УДЛ v2 · 02.10.2026
+   Основная история хранится в Supabase и одинакова на всех устройствах.
+   Старый localStorage используется только один раз для автоматической миграции.
 */
 (() => {
   'use strict';
-  if (window.__comboFreshDeleteLoaderV1) return;
-  window.__comboFreshDeleteLoaderV1 = true;
+  if (window.__comboFreshDeleteLoaderV2) return;
+  window.__comboFreshDeleteLoaderV2 = true;
 
-  const TRACK_KEY = 'comboKenoFreshWatchV1';
-
-  function loadTracks(){
-    try {
-      const a = JSON.parse(localStorage.getItem(TRACK_KEY) || '[]');
-      return Array.isArray(a) ? a : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveTracks(a){
-    try {
-      localStorage.setItem(TRACK_KEY, JSON.stringify(a.slice(-100)));
-    } catch (e) {
-      console.warn('fresh watch delete save', e);
-    }
+  function tracks(){
+    try{return Array.isArray(window.ComboCloudFresh?.get?.())?window.ComboCloudFresh.get():[]}
+    catch{return[]}
   }
 
   function installDeletePatch(){
-    if (window.__comboFreshHistoryDeleteV1) return;
-    window.__comboFreshHistoryDeleteV1 = true;
+    if (window.__comboFreshHistoryDeleteV2) return;
+    window.__comboFreshHistoryDeleteV2 = true;
 
     if (!document.getElementById('comboFreshHistoryDeleteStyles')) {
       const s = document.createElement('style');
@@ -47,13 +33,13 @@
       scheduled = false;
       const body = document.getElementById('cfsHistoryBody');
       if (!body) return;
-      const tracks = loadTracks().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));
       const rows = [...body.querySelectorAll(':scope > .cfsTrackItem')];
+      const a = tracks().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));
 
       rows.forEach((row, i) => {
         if (row.querySelector('.cfsTrackDel')) return;
         const open = row.querySelector('.cfsTrackOpen');
-        const t = tracks[i];
+        const t = a[i];
         if (!open || !t || !t.id) return;
 
         const actions = document.createElement('div');
@@ -62,18 +48,24 @@
         del.type = 'button';
         del.className = 'cfsTrackDel';
         del.textContent = 'УДЛ';
-        del.title = 'Удалить из истории свежих';
-        del.setAttribute('aria-label','Удалить комбу из истории свежих');
+        del.title = 'Удалить из общей облачной истории свежих';
+        del.setAttribute('aria-label','Удалить комбу из общей истории свежих');
 
-        del.onclick = e => {
+        del.onclick = async e => {
           e.preventDefault();
           e.stopPropagation();
-          const current = loadTracks();
-          const next = current.filter(x => x && x.id !== t.id);
-          if (next.length === current.length) return;
-          saveTracks(next);
+          del.disabled = true;
+          del.textContent = '…';
+          const ok = await window.ComboCloudFresh?.delete?.(t.id);
+          if (!ok) {
+            del.disabled = false;
+            del.textContent = 'УДЛ';
+            alert('Не удалось удалить запись из Supabase. Повторите при наличии интернета.');
+            return;
+          }
+          row.remove();
           window.dispatchEvent(new Event('focus'));
-          setTimeout(schedulePatch, 0);
+          setTimeout(schedulePatch,0);
         };
 
         open.before(actions);
@@ -94,6 +86,7 @@
       observer.observe(root, {childList:true, subtree:true});
     }
     window.addEventListener('focus', () => setTimeout(schedulePatch, 0));
+    window.addEventListener('combo:fresh-cloud', () => setTimeout(schedulePatch, 0));
     schedulePatch();
   }
 
@@ -103,7 +96,7 @@
       return;
     }
     const currentSrc = document.currentScript && document.currentScript.src;
-    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-del1', currentSrc || location.href);
+    const baseUrl = new URL('combo-fresh-split-v1-base.js?v=20261002-cloud2', currentSrc || location.href);
     const s = document.createElement('script');
     s.src = baseUrl.href;
     s.onload = installDeletePatch;
@@ -111,5 +104,22 @@
     document.head.appendChild(s);
   }
 
-  loadBase();
+  function ensureCloud(){
+    if (window.ComboCloudHistory && window.ComboCloudFresh) {
+      Promise.resolve(window.ComboCloudHistory.ready).finally(loadBase);
+      return;
+    }
+    const currentSrc = document.currentScript && document.currentScript.src;
+    const cloudUrl = new URL('combo-cloud-sync-v1.js?v=20261002-cloud2', currentSrc || location.href);
+    const s = document.createElement('script');
+    s.src = cloudUrl.href;
+    s.onload = () => Promise.resolve(window.ComboCloudHistory?.ready).finally(loadBase);
+    s.onerror = () => {
+      console.error('COMBO CLOUD: модуль Supabase не загрузился', cloudUrl.href);
+      alert('Облачная история Supabase не загрузилась. История не будет сохраняться локально.');
+    };
+    document.head.appendChild(s);
+  }
+
+  ensureCloud();
 })();
