@@ -1,11 +1,11 @@
-/* COMBO KENO · 3 БЛОКА · placement v1 · 02.10.2026
+/* COMBO KENO · 3 БЛОКА · placement v1.1 · 02.10.2026
    Кнопка стоит РЯДОМ с «Комбы» в нижнем меню.
-   Сам модуль открывается отдельной полноэкранной карточкой, а не внизу раздела.
+   Сам модуль открывается отдельной полноэкранной карточкой.
 */
 (() => {
   'use strict';
-  if (window.__comboThreeBlocksPlacementV1) return;
-  window.__comboThreeBlocksPlacementV1 = true;
+  if (window.__comboThreeBlocksPlacementV11) return;
+  window.__comboThreeBlocksPlacementV11 = true;
 
   function installCss(){
     if(document.getElementById('comboThreeBlocksPlacementStyles')) return;
@@ -35,7 +35,7 @@
     d=document.createElement('div');
     d.id='threeBlocksDrawer';
     d.className='hidden';
-    d.innerHTML=`<div class="threeBlocksDrawerHead"><div><b>3 БЛОКА</b><small>Вход K7 · Мощность K7 · Переходы · общий архив Supabase</small></div><button id="closeThreeBlocksDrawer" type="button">▼</button></div><div id="threeBlocksDrawerBody"></div>`;
+    d.innerHTML=`<div class="threeBlocksDrawerHead"><div><b>3 БЛОКА</b><small>Три конкретных прогноза · проверка · общий архив Supabase</small></div><button id="closeThreeBlocksDrawer" type="button">▼</button></div><div id="threeBlocksDrawerBody"></div>`;
     document.body.appendChild(d);
     d.querySelector('#closeThreeBlocksDrawer').onclick=closeDrawer;
     return d;
@@ -59,7 +59,7 @@
     saved.insertAdjacentElement('afterend',b);
   }
 
-  function openDrawer(){
+  async function openDrawer(){
     try{ if(typeof closeSavedDrawer==='function') closeSavedDrawer(); }catch(_){ }
     try{ if(typeof closeTableDrawer==='function') closeTableDrawer(); }catch(_){ }
     const d=ensureDrawer();
@@ -67,7 +67,11 @@
     d.classList.remove('hidden');
     document.body.style.overflow='hidden';
     document.getElementById('threeBlocksNavBtn')?.classList.add('on');
-    try{ window.ComboThreeBlocksEngine?.reconcile?.(); }catch(_){ }
+    try{
+      if(window.ComboThreeBlocksUI?.refresh) await window.ComboThreeBlocksUI.refresh();
+      else await window.ComboThreeBlocksEngine?.reconcile?.();
+    }catch(e){console.error('3 БЛОКА open refresh',e)}
+    moveRoot();
   }
 
   function closeDrawer(){
@@ -84,7 +88,7 @@
 
   function setVersion(){
     const el=document.querySelector('.version');
-    if(el) el.textContent='Версия v4.4.0';
+    if(el) el.textContent='Версия v4.4.1';
   }
 
   function install(){
