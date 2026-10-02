@@ -1,16 +1,17 @@
-/* COMBO KENO · 3 БЛОКА · placement v1.3 · 02.10.2026
+/* COMBO KENO · 3 БЛОКА · placement v1.4 · 02.10.2026
    Точное место: ВТОРАЯ строка нижней панели — Таблица · Интервалы · 🔍 Комбы · 3 Блока.
    Верхняя строка остаётся: Наши комбы · Любая комба · ⏰ Комбы · Рентген · История.
+   Версию приложения не переопределяем: её ведёт общий AUTO APP BUILD.
 */
 (() => {
   'use strict';
-  if(window.__comboThreeBlocksPlacementV13)return;
-  window.__comboThreeBlocksPlacementV13=true;
+  if(window.__comboThreeBlocksPlacementV14)return;
+  window.__comboThreeBlocksPlacementV14=true;
   let previousOn=null;
 
   function installCss(){
-    if(document.getElementById('comboThreeBlocksPlacementStylesV13'))return;
-    const s=document.createElement('style');s.id='comboThreeBlocksPlacementStylesV13';s.textContent=`
+    if(document.getElementById('comboThreeBlocksPlacementStylesV14'))return;
+    const s=document.createElement('style');s.id='comboThreeBlocksPlacementStylesV14';s.textContent=`
       .footrow2{grid-template-columns:repeat(4,minmax(0,1fr))!important}
       #threeBlocksNavBtn{min-width:0!important}
       #threeBlocksNavBtn b{font-size:20px}
@@ -71,8 +72,7 @@
   }
 
   function toggleDrawer(){const d=ensureDrawer();d.classList.contains('hidden')?openDrawer():closeDrawer()}
-  function setVersion(){const el=document.querySelector('.version');if(el&&el.textContent!=='Версия v4.6.0')el.textContent='Версия v4.6.0'}
-  function repair(){ensureDrawer();ensureNav();moveRoot();setVersion()}
+  function repair(){ensureDrawer();ensureNav();moveRoot()}
   function install(){installCss();repair();setTimeout(repair,250);setTimeout(repair,900);setTimeout(repair,1800);window.addEventListener('focus',repair);window.addEventListener('pageshow',repair);window.addEventListener('combo:three-blocks-cloud',moveRoot)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
