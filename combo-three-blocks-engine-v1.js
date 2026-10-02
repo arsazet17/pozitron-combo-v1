@@ -1,13 +1,14 @@
-/* COMBO KENO · 3 БЛОКА · engine v1 · 02.10.2026
+/* COMBO KENO · 3 БЛОКА · engine v1.1 · 02.10.2026
    Только новая сетка 66 тиражей/сутки, начиная с №324994.
-   Прогноз строится после N и замораживается до N+1.
+   После каждого N каждый блок формирует КОНКРЕТНЫЕ числа на N+1 и frozen сохраняется в Supabase.
+   Сигнал/нет сигнала влияет на силу режима, но строки больше не остаются пустыми.
 */
 (() => {
   'use strict';
   if (window.ComboThreeBlocksEngine) return;
 
   const NEW_GRID_START = 324994;
-  const VERSION = 'TB1-2026-10-02';
+  const VERSION = 'TB1.1-2026-10-02';
   let reconcileBusy = false;
 
   const nums = d => Array.isArray(d?.balls) ? d.balls.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=80) : [];
@@ -48,7 +49,7 @@
   }
 
   function featureRows(a, idx){
-    const n=a[idx], current=nums(n), curSet=new Set(current);
+    const n=a[idx], current=nums(n);
     const rangeCounts=new Map(), colCounts=new Map();
     for(const x of current){
       const r=range4(x), c=colOf(x);
@@ -61,7 +62,7 @@
       const C=colCounts.get(colOf(x))||0;
       const D=R*C;
       let F5=0; for(const s of history) if(s.has(x)) F5++;
-      return {n:x,R,C,D,F5,inCurrent:curSet.has(x)};
+      return {n:x,R,C,D,F5};
     });
   }
 
@@ -76,30 +77,52 @@
     return 'L0';
   }
 
+  function takeUnique(rows,count){
+    const out=[]; const seen=new Set();
+    for(const x of rows){
+      const n=Number(x?.n??x);
+      if(!Number.isInteger(n)||seen.has(n))continue;
+      seen.add(n); out.push(n);
+      if(out.length>=count)break;
+    }
+    return out;
+  }
+
   function analyzeAt(a, idx){
     if(idx<4 || !a[idx])return null;
-    const N=a[idx], N1=a[idx-1], N2=a[idx-2];
-    const sN=setOf(N), s1=setOf(N1), s2=setOf(N2);
+    const N=a[idx], N1=a[idx-1], N2=a[idx-2], N3=a[idx-3];
+    const sN=setOf(N), s1=setOf(N1), s2=setOf(N2), s3=setOf(N3);
     const interN2=overlapCount(sN,s2);
-    let j3=0; for(const x of sN) if(s1.has(x)&&s2.has(x))j3++;
+
+    // FROZEN-1: J3 = |(N ∩ (N−3)) \ ((N−1) ∪ (N−2))|.
+    let j3=0;
+    for(const x of sN) if(s3.has(x) && !s1.has(x) && !s2.has(x)) j3++;
+
     const level=classifyLevel(interN2,j3);
     const f=featureRows(a,idx);
 
+    // B1: при сильном режиме сначала D>=9 и отсутствующие в N−1;
+    // всегда сохраняем техническую K7, чтобы архив можно было сравнивать по каждому тиражу.
     const b1Signal=level!=='L0';
-    const b1Candidates=f.filter(x=>!s1.has(x.n)&&x.D>=9).sort(sortFeature);
-    const b1K7=b1Signal&&b1Candidates.length>=7?b1Candidates.slice(0,7).map(x=>x.n):[];
+    const strict=f.filter(x=>!s1.has(x.n)&&x.D>=9).sort(sortFeature);
+    const freshRest=f.filter(x=>!s1.has(x.n)&&x.D<9).sort(sortFeature);
+    const repeated=f.filter(x=>s1.has(x.n)).sort(sortFeature);
+    const b1K7=takeUnique([...strict,...freshRest,...repeated],7);
 
+    // B2: U2 определяет силу режима 36+, но ядро и K3/K4/K7 считаются КАЖДЫЙ тираж.
     const u2=new Set([...s1,...s2]).size;
     const b2Signal=u2>=38;
     const b2Rank=f.slice().sort((a,b)=>{
       const pa=(a.C>=4&&a.D>=8)?1:0, pb=(b.C>=4&&b.D>=8)?1:0;
       return pb-pa || sortFeature(a,b);
     });
-    const core9=b2Signal?b2Rank.slice(0,9).map(x=>x.n):[];
-    const b2K3=core9.length>=3?core9.slice(0,3):[];
-    const b2K4=core9.length>=4?core9.slice(0,4):[];
-    const b2K7=core9.length>=7?core9.slice(0,7):[];
+    const core9=takeUnique(b2Rank,9);
+    const b2K3=core9.slice(0,3);
+    const b2K4=core9.slice(0,4);
+    const b2K7=core9.slice(0,7);
 
+    // B3: сильные MAX/STRONG остаются отдельными, но для честного сравнения
+    // технические K3/K4/K5 тоже frozen каждый тираж.
     const transition=[...sN].filter(x=>s1.has(x));
     const transitionCount=transition.length;
     const sumT=transition.reduce((z,x)=>z+x,0);
@@ -108,30 +131,30 @@
       const max=x.R>=3&&x.C>=4&&x.F5>=3;
       const strong=!max&&x.D>=15;
       const watch=!max&&!strong&&x.D>=12;
-      return {...x,cls:max?'MAX':strong?'STRONG':watch?'WATCH':''};
+      return {...x,cls:max?'MAX':strong?'STRONG':watch?'WATCH':'BASE'};
     }).sort((a,b)=>{
-      const rank=x=>x.cls==='MAX'?3:x.cls==='STRONG'?2:x.cls==='WATCH'?1:0;
+      const rank=x=>x.cls==='MAX'?4:x.cls==='STRONG'?3:x.cls==='WATCH'?2:1;
       return rank(b)-rank(a) || sortFeature(a,b);
     });
     const maxNums=ranked.filter(x=>x.cls==='MAX').map(x=>x.n);
     const strongNums=ranked.filter(x=>x.cls==='STRONG').map(x=>x.n);
     const watchNums=ranked.filter(x=>x.cls==='WATCH').map(x=>x.n);
-    const confirmed=ranked.filter(x=>x.cls==='MAX'||x.cls==='STRONG').map(x=>x.n);
-    const b3K3=confirmed.length>=3?confirmed.slice(0,3):[];
-    const b3K4=confirmed.length>=4?confirmed.slice(0,4):[];
-    const b3K5=confirmed.length>=5?confirmed.slice(0,5):[];
+    const rank5=takeUnique(ranked,5);
+    const b3K3=rank5.slice(0,3);
+    const b3K4=rank5.slice(0,4);
+    const b3K5=rank5.slice(0,5);
 
     const next=expectedNextMeta(a,idx);
     return {
       algorithmVersion:VERSION,
       newGridStart:NEW_GRID_START,
-      source:{draw:Number(N.draw),date:N.date||'',time:N.time||'',column:Number(N.column)||null},
+      source:{draw:Number(N.draw),date:N.date||'',time:N.time||'',column:Number(N.column)||null,balls:nums(N)},
       target:{draw:Number(N.draw)+1,date:next.date,time:next.time},
       metrics:{interN2,j3,u2,transitionCount,sumT},
       blocks:{
-        b1:{name:'ВХОД K7',level,signal:b1Signal,candidateCount:b1Candidates.length,k7:b1K7},
+        b1:{name:'ВХОД K7',level,signal:b1Signal,strictCandidates:strict.map(x=>x.n),k7:b1K7},
         b2:{name:'МОЩНОСТЬ K7',signal:b2Signal,u2,core9,k3:b2K3,k4:b2K4,k7:b2K7},
-        b3:{name:'ПЕРЕХОДЫ',flow,transitionCount,sumT,max:maxNums,strong:strongNums,watch:watchNums,k3:b3K3,k4:b3K4,k5:b3K5}
+        b3:{name:'ПЕРЕХОДЫ',flow,transitionCount,sumT,max:maxNums,strong:strongNums,watch:watchNums,rank5,k3:b3K3,k4:b3K4,k5:b3K5}
       }
     };
   }
@@ -152,6 +175,7 @@
       sourceDate:analysis.source.date,
       sourceTime:analysis.source.time,
       sourceColumn:analysis.source.column,
+      sourceBalls:analysis.source.balls,
       targetDraw:analysis.target.draw,
       targetDate:analysis.target.date,
       targetTime:analysis.target.time,
@@ -165,7 +189,7 @@
 
   function scoreNums(list, fact){
     const target=new Set(nums(fact));
-    const a=(Array.isArray(list)?list:[]).map(Number);
+    const a=(Array.isArray(list)?list:[]).map(Number).filter(Number.isFinite);
     const hitNums=a.filter(n=>target.has(n));
     return {size:a.length,hits:hitNums.length,hitNums};
   }
@@ -192,6 +216,8 @@
       if(a.length<5)return false;
       const byDraw=new Map(a.map(d=>[Number(d.draw),d]));
       let rows=window.ComboCloudHistory.cached('three_blocks')||[];
+
+      // Сначала закрываем старые frozen только фактом, не переписывая прогноз.
       for(const rec of rows){
         if(rec?.result || !Number(rec?.targetDraw))continue;
         const fact=byDraw.get(Number(rec.targetDraw));
@@ -199,13 +225,20 @@
         const next={...rec,result:scoreRecord(rec,fact)};
         await window.ComboCloudHistory.upsert('three_blocks',rec.id||`tb-${rec.targetDraw}`,next);
       }
+
       rows=window.ComboCloudHistory.cached('three_blocks')||[];
       const analysis=analyzeAt(a,a.length-1);
       if(!analysis)return false;
       const id=`tb-${analysis.target.draw}`;
-      if(!rows.some(x=>String(x?.id)===id)){
-        const rec=frozenRecord(analysis);
-        await window.ComboCloudHistory.upsert('three_blocks',id,rec);
+      const existing=rows.find(x=>String(x?.id)===id);
+      const factAlreadyExists=byDraw.has(Number(analysis.target.draw));
+
+      if(!existing){
+        await window.ComboCloudHistory.upsert('three_blocks',id,frozenRecord(analysis));
+      } else if(!factAlreadyExists && !existing.result && existing.algorithmVersion!==VERSION){
+        // Текущий ещё НЕ состоявшийся прогноз можно заменить новой версией движка.
+        // Прошедшие факты никогда не переписываем.
+        await window.ComboCloudHistory.upsert('three_blocks',id,frozenRecord(analysis));
       }
       return true;
     } finally { reconcileBusy=false; }
