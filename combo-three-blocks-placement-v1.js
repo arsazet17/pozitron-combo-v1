@@ -1,11 +1,11 @@
-/* COMBO KENO · 3 БЛОКА · placement v1.1 · 02.10.2026
-   Кнопка стоит РЯДОМ с «Комбы» в нижнем меню.
-   Сам модуль открывается отдельной полноэкранной карточкой.
+/* COMBO KENO · 3 БЛОКА · placement v1.2 · 02.10.2026
+   Кнопка стоит рядом с «Комбы».
+   Исправление v1.2: убран глобальный MutationObserver, который мог зациклить перерисовку и подвесить страницу.
 */
 (() => {
   'use strict';
-  if (window.__comboThreeBlocksPlacementV11) return;
-  window.__comboThreeBlocksPlacementV11 = true;
+  if (window.__comboThreeBlocksPlacementV12) return;
+  window.__comboThreeBlocksPlacementV12 = true;
 
   function installCss(){
     if(document.getElementById('comboThreeBlocksPlacementStyles')) return;
@@ -49,14 +49,17 @@
 
   function ensureNav(){
     const saved=document.getElementById('savedDrawerBtn');
-    if(!saved || document.getElementById('threeBlocksNavBtn')) return;
-    const b=document.createElement('button');
-    b.id='threeBlocksNavBtn';
-    b.className='nav';
-    b.type='button';
-    b.innerHTML='<b>🧩</b>3 Блока';
+    if(!saved) return;
+    let b=document.getElementById('threeBlocksNavBtn');
+    if(!b){
+      b=document.createElement('button');
+      b.id='threeBlocksNavBtn';
+      b.className='nav';
+      b.type='button';
+      b.innerHTML='<b>🧩</b>3 Блока';
+      saved.insertAdjacentElement('afterend',b);
+    }
     b.onclick=toggleDrawer;
-    saved.insertAdjacentElement('afterend',b);
   }
 
   async function openDrawer(){
@@ -88,18 +91,22 @@
 
   function setVersion(){
     const el=document.querySelector('.version');
-    if(el) el.textContent='Версия v4.4.1';
+    if(el && el.textContent!=='Версия v4.4.2') el.textContent='Версия v4.4.2';
   }
 
-  function install(){
-    installCss();
+  function repairPlacement(){
     ensureDrawer();
     ensureNav();
     moveRoot();
     setVersion();
-    const mo=new MutationObserver(()=>{ensureNav();moveRoot();setVersion();});
-    mo.observe(document.documentElement,{childList:true,subtree:true});
-    window.addEventListener('focus',()=>{ensureNav();moveRoot();setVersion()});
+  }
+
+  function install(){
+    installCss();
+    repairPlacement();
+    window.addEventListener('focus',repairPlacement);
+    window.addEventListener('pageshow',repairPlacement);
+    window.addEventListener('combo:three-blocks-cloud',moveRoot);
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true});
