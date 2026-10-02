@@ -1,12 +1,12 @@
-/* COMBO KENO · История свежих · Supabase + УДЛ v11 · 02.10.2026
+/* COMBO KENO · История свежих · Supabase + УДЛ v12 · 02.10.2026
    Основная история хранится в Supabase и одинакова на всех устройствах.
    «3 БЛОКА» подключается во второй строке панели сразу после 🔍 Комбы.
-   UI v4 возвращает согласованный компактный макет: свои комбы B1/B2/B3, общие пересечения и архив.
+   UI v4 + archive UX: крупнее шрифт, Открыть/Свернуть и раскрытие всей строки архива.
 */
 (() => {
   'use strict';
-  if (window.__comboFreshDeleteLoaderV11) return;
-  window.__comboFreshDeleteLoaderV11 = true;
+  if (window.__comboFreshDeleteLoaderV12) return;
+  window.__comboFreshDeleteLoaderV12 = true;
 
   function tracks(){try{return Array.isArray(window.ComboCloudFresh?.get?.())?window.ComboCloudFresh.get():[]}catch{return[]}}
   function installDeletePatch(){
@@ -14,19 +14,21 @@
     if(!document.getElementById('comboFreshHistoryDeleteStyles')){const s=document.createElement('style');s.id='comboFreshHistoryDeleteStyles';s.textContent=`#comboSearch .cfsTrackActions{display:flex;align-items:center;gap:6px;justify-content:flex-end}#comboSearch .cfsTrackDel{padding:7px 8px;font-size:10px;line-height:1;background:#281520;border-color:#6d3343;color:#ffd2d7;white-space:nowrap;min-width:45px}@media(max-width:390px){#comboSearch .cfsTrackActions{gap:4px}#comboSearch .cfsTrackDel,#comboSearch .cfsTrackOpen{padding:7px 6px;font-size:9px}}`;document.head.appendChild(s)}
     let scheduled=false;const patch=()=>{scheduled=false;const body=document.getElementById('cfsHistoryBody');if(!body)return;const rows=[...body.querySelectorAll(':scope > .cfsTrackItem')],a=tracks().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));rows.forEach((row,i)=>{if(row.querySelector('.cfsTrackDel'))return;const open=row.querySelector('.cfsTrackOpen'),t=a[i];if(!open||!t?.id)return;const actions=document.createElement('div');actions.className='cfsTrackActions';const del=document.createElement('button');del.type='button';del.className='cfsTrackDel';del.textContent='УДЛ';del.onclick=async e=>{e.preventDefault();e.stopPropagation();del.disabled=true;del.textContent='…';const ok=await window.ComboCloudFresh?.delete?.(t.id);if(!ok){del.disabled=false;del.textContent='УДЛ';alert('Не удалось удалить запись из Supabase.');return}row.remove();window.dispatchEvent(new Event('focus'));setTimeout(schedulePatch,0)};open.before(actions);actions.appendChild(del);actions.appendChild(open)})};const schedulePatch=()=>{if(scheduled)return;scheduled=true;queueMicrotask(patch)};new MutationObserver(schedulePatch).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('focus',()=>setTimeout(schedulePatch,0));window.addEventListener('combo:fresh-cloud',()=>setTimeout(schedulePatch,0));schedulePatch();
   }
-  function loadBase(){if(window.__comboFreshSplitV1){installDeletePatch();return}const currentSrc=document.currentScript&&document.currentScript.src,baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261002-cloud11',currentSrc||location.href),s=document.createElement('script');s.src=baseUrl.href;s.onload=installDeletePatch;s.onerror=()=>console.error('COMBO FRESH base load failed');document.head.appendChild(s)}
+  function loadBase(){if(window.__comboFreshSplitV1){installDeletePatch();return}const currentSrc=document.currentScript&&document.currentScript.src,baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261002-cloud12',currentSrc||location.href),s=document.createElement('script');s.src=baseUrl.href;s.onload=installDeletePatch;s.onerror=()=>console.error('COMBO FRESH base load failed');document.head.appendChild(s)}
   function loadThreeBlocks(){
-    if(window.__comboThreeBlocksLoaderV11)return;window.__comboThreeBlocksLoaderV11=true;
+    if(window.__comboThreeBlocksLoaderV12)return;window.__comboThreeBlocksLoaderV12=true;
     const currentSrc=document.currentScript&&document.currentScript.src;
-    const engineUrl=new URL('combo-three-blocks-engine-v4.js?v=20261002-tb11',currentSrc||location.href);
-    const uiUrl=new URL('combo-three-blocks-ui-v4.js?v=20261002-tb11',currentSrc||location.href);
-    const placementUrl=new URL('combo-three-blocks-placement-v1.js?v=20261002-tb11',currentSrc||location.href);
-    const loadPlacement=()=>{if(window.__comboThreeBlocksPlacementV14)return;const p=document.createElement('script');p.src=placementUrl.href;p.onerror=()=>console.error('COMBO 3 BLOCKS placement load failed');document.head.appendChild(p)};
+    const engineUrl=new URL('combo-three-blocks-engine-v4.js?v=20261002-tb12',currentSrc||location.href);
+    const uiUrl=new URL('combo-three-blocks-ui-v4.js?v=20261002-tb12',currentSrc||location.href);
+    const placementUrl=new URL('combo-three-blocks-placement-v1.js?v=20261002-tb12',currentSrc||location.href);
+    const archiveUxUrl=new URL('combo-three-blocks-archive-ux-v1.js?v=20261002-tb12',currentSrc||location.href);
+    const loadArchiveUx=()=>{if(window.__comboThreeBlocksArchiveUXV1)return;const x=document.createElement('script');x.src=archiveUxUrl.href;x.onerror=()=>console.error('COMBO 3 BLOCKS archive UX load failed');document.head.appendChild(x)};
+    const loadPlacement=()=>{if(window.__comboThreeBlocksPlacementV14){loadArchiveUx();return}const p=document.createElement('script');p.src=placementUrl.href;p.onload=loadArchiveUx;p.onerror=()=>console.error('COMBO 3 BLOCKS placement load failed');document.head.appendChild(p)};
     const loadUI=()=>{if(window.__comboThreeBlocksUIV4){loadPlacement();return}const u=document.createElement('script');u.src=uiUrl.href;u.onload=loadPlacement;u.onerror=()=>console.error('COMBO 3 BLOCKS UI v4 load failed');document.head.appendChild(u)};
     if(window.ComboThreeBlocksEngine?.VERSION==='TB4-2026-10-02'){loadUI();return}
     const e=document.createElement('script');e.src=engineUrl.href;e.onload=loadUI;e.onerror=()=>console.error('COMBO 3 BLOCKS engine v4 load failed');document.head.appendChild(e);
   }
   function afterCloud(){loadBase();loadThreeBlocks()}
-  function ensureCloud(){if(window.ComboCloudHistory&&window.ComboCloudFresh){Promise.resolve(window.ComboCloudHistory.ready).finally(afterCloud);return}const currentSrc=document.currentScript&&document.currentScript.src,cloudUrl=new URL('combo-cloud-sync-v1.js?v=20261002-cloud11',currentSrc||location.href),s=document.createElement('script');s.src=cloudUrl.href;s.onload=()=>Promise.resolve(window.ComboCloudHistory?.ready).finally(afterCloud);s.onerror=()=>alert('Облачная история Supabase не загрузилась.');document.head.appendChild(s)}
+  function ensureCloud(){if(window.ComboCloudHistory&&window.ComboCloudFresh){Promise.resolve(window.ComboCloudHistory.ready).finally(afterCloud);return}const currentSrc=document.currentScript&&document.currentScript.src,cloudUrl=new URL('combo-cloud-sync-v1.js?v=20261002-cloud12',currentSrc||location.href),s=document.createElement('script');s.src=cloudUrl.href;s.onload=()=>Promise.resolve(window.ComboCloudHistory?.ready).finally(afterCloud);s.onerror=()=>alert('Облачная история Supabase не загрузилась.');document.head.appendChild(s)}
   ensureCloud();
 })();
