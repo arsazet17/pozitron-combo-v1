@@ -1,11 +1,12 @@
-/* COMBO KENO · История свежих · Supabase + УДЛ v13 · 02.10.2026
+/* COMBO KENO · История свежих · Supabase + УДЛ v14 · 03.10.2026
    Основная история хранится в Supabase и одинакова на всех устройствах.
-   Модуль «3 БЛОКА» удалён полностью; здесь остаётся только история свежих.
+   Модуль «3 БЛОКА» удалён полностью; здесь остаётся история свежих.
+   Подключает XRAY archive tools: ОТС, УДЛ, столбы и порядок чисел.
 */
 (() => {
   'use strict';
-  if (window.__comboFreshDeleteLoaderV13) return;
-  window.__comboFreshDeleteLoaderV13 = true;
+  if (window.__comboFreshDeleteLoaderV14) return;
+  window.__comboFreshDeleteLoaderV14 = true;
 
   function tracks(){try{return Array.isArray(window.ComboCloudFresh?.get?.())?window.ComboCloudFresh.get():[]}catch{return[]}}
 
@@ -61,7 +62,7 @@
   function loadBase(){
     if(window.__comboFreshSplitV1){installDeletePatch();return}
     const currentSrc=document.currentScript&&document.currentScript.src;
-    const baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261002-cloud13',currentSrc||location.href);
+    const baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261003-cloud14',currentSrc||location.href);
     const s=document.createElement('script');
     s.src=baseUrl.href;
     s.onload=installDeletePatch;
@@ -69,7 +70,17 @@
     document.head.appendChild(s);
   }
 
-  function afterCloud(){loadBase()}
+  function loadXrayArchiveTools(){
+    if(window.__xrayArchiveToolsV1)return;
+    const currentSrc=document.currentScript&&document.currentScript.src;
+    const url=new URL('xray-archive-tools-v1.js?v=20261003-xat1',currentSrc||location.href);
+    const s=document.createElement('script');
+    s.src=url.href;
+    s.onerror=()=>console.error('XRAY archive tools load failed');
+    document.head.appendChild(s);
+  }
+
+  function afterCloud(){loadBase();loadXrayArchiveTools()}
 
   function ensureCloud(){
     if(window.ComboCloudHistory&&window.ComboCloudFresh){
@@ -77,7 +88,7 @@
       return;
     }
     const currentSrc=document.currentScript&&document.currentScript.src;
-    const cloudUrl=new URL('combo-cloud-sync-v1.js?v=20261002-cloud13',currentSrc||location.href);
+    const cloudUrl=new URL('combo-cloud-sync-v1.js?v=20261003-cloud14',currentSrc||location.href);
     const s=document.createElement('script');
     s.src=cloudUrl.href;
     s.onload=()=>Promise.resolve(window.ComboCloudHistory?.ready).finally(afterCloud);
