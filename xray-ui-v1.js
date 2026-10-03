@@ -16,13 +16,15 @@ async function fetchJSON(url){
 }
 async function loadPayouts(){if(!payouts)payouts=await fetchJSON('keno-payouts-v1.json');return payouts}
 
-const controlStyle=document.createElement('style');
-controlStyle.textContent=`
+if(typeof document.createElement==='function'){
+ const controlStyle=document.createElement('style');
+ controlStyle.textContent=`
 .xrayLiveControls{display:flex;justify-content:flex-end;margin:7px 0 2px}.xrayLiveSortToggle{padding:8px 10px!important;border-radius:9px!important;font-size:11px!important;background:linear-gradient(180deg,#176f9f,#104d70)!important;border-color:#5bc4ff!important;color:#fff!important;touch-action:manipulation}
 .xrayLegend{align-items:center}.xrayLegend button[data-xfilter]{display:inline-flex;align-items:center;gap:5px;padding:7px 8px;border:1px solid #315b7d;border-radius:9px;background:#0a1c2d;color:#dceaf4;font-size:9px;cursor:pointer;touch-action:manipulation}.xrayLegend button[data-xfilter]:before{content:"";width:13px;height:13px;border-radius:5px;display:inline-block;border:1px solid #456}.xrayLegend button.current:before{background:linear-gradient(180deg,#45b54f,#207c33);border-color:#6ded7a}.xrayLegend button.predicted:before{background:linear-gradient(180deg,#f1ca36,#b78900);border-color:#ffe45d}.xrayLegend button.both:before{background:linear-gradient(180deg,#b14acb,#753095);border-color:#ef8cff}.xrayLegend button.neighbor:before{background:linear-gradient(180deg,#249ee8,#136ba8);border-color:#69cfff}.xrayLegend button[data-xfilter].selected{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.17),0 0 10px rgba(91,196,255,.16);color:#fff}.xrayLegend button[data-xfilter].dim{opacity:.42}
 @media(max-width:380px){.xrayLiveSortToggle{font-size:10px!important;padding:8px 6px!important}.xrayLegend button[data-xfilter]{font-size:8.6px;padding:6px 5px}}
 `;
-document.head.appendChild(controlStyle);
+ document.head?.appendChild?.(controlStyle);
+}
 
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
 function savedPayout(e,branch){const legacy=branch==='5A'?'combo5Payout':branch==='7A'?'combo7Payout':null;return Number(e['combo'+branch+'Payout']??(legacy?e[legacy]:0)??0)}
