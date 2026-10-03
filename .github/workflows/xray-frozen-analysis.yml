@@ -1,0 +1,28 @@
+name: XRAY frozen analysis
+
+on:
+  push:
+    paths:
+      - '.github/workflows/xray-frozen-analysis.yml'
+      - '.github/scripts/xray-frozen-analysis.mjs'
+      - 'data/xray-runtime.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Analyze immutable frozen history
+        run: node .github/scripts/xray-frozen-analysis.mjs data/xray-runtime.json xray-frozen-analysis.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xray-frozen-analysis
+          path: xray-frozen-analysis.json
+          if-no-files-found: error
