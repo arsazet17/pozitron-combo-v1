@@ -17,13 +17,12 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
   const ENDPOINT='https://oviqrkdkahammpuyreil.supabase.co/functions/v1/combo-history';
   const API_KEY='sb_publishable_1m9JJLimTkluI2uS0r5VXA_EF3trjvU';
   const COLLECTION='xray_archive_prefs';
-  const RUNTIME_URL='data/xray-runtime.json';
 
   let runtime=null;
   let sortMode='asc';
   let hiddenTargets=new Set();
   let patchBusy=false;
-  let patchQueued=false;
+  let prefsLoading=null;
 
   const style=document.createElement('style');
   style.textContent=`
@@ -43,25 +42,27 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
     if(id)qs.set('id',String(id));
     const opts={method,headers:{'content-type':'application/json','apikey':API_KEY},cache:'no-store'};
     if(payload!==null)opts.body=JSON.stringify(payload);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    opts.signal=controller.signal;
+    try{
     const r=await fetch(`${ENDPOINT}?${qs.toString()}`,opts);
     let data={};try{data=await r.json()}catch(_){ }
     if(!r.ok)throw new Error(data?.detail||data?.error||`HTTP ${r.status}`);
     return data;
+    }finally{clearTimeout(timer)}
   }
 
   async function loadPrefs(){
-    try{
+    if(prefsLoading)return prefsLoading;
+    prefsLoading=(async()=>{try{
       const data=await cloud('GET');
-      hiddenTargets=new Set((data.items||[]).filter(x=>x?.payload?.hidden===true).map(x=>String(x.item_id)));
-    }catch(e){console.warn('XRAY prefs load',e)}
-  }
-
-  async function loadRuntime(){
-    try{
-      const r=await fetch(`${RUNTIME_URL}?xrc=${Date.now()}`,{cache:'no-store'});
-      if(!r.ok)throw new Error(`HTTP ${r.status}`);
-      runtime=await r.json();
-    }catch(e){console.warn('XRAY controls runtime',e)}
+      // Both previously published controllers wrote hide preferences; retain both formats.
+      for(const row of data.items||[]){const p=row.payload||{};if(p.hidden===true||p.type==='hidden'){
+        const id=Number(p.targetDraw||p.factDraw||String(row.item_id).replace(/^hide-/,''));if(id)hiddenTargets.add(id);
+      }}
+      window.ComboXrayUI?.setHiddenTargets(hiddenTargets);
+    }catch(e){console.warn('XRAY prefs load',e)}finally{prefsLoading=null}})();
+    return prefsLoading;
   }
 
   function metaHTML(e,isOpenForecast=false){
@@ -79,17 +80,17 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
     if(!host||!e)return;
     let box=host.querySelector(':scope > .xrayExplicitMeta');
     if(!box){box=document.createElement('div');box.className='xrayExplicitMeta';const head=host.querySelector(':scope > .xrayPanelHead, :scope > .xrayArchiveTop');if(head)head.insertAdjacentElement('afterend',box);else host.prepend(box)}
-    box.innerHTML=metaHTML(e,isOpenForecast);
+    const html=metaHTML(e,isOpenForecast);if(box.innerHTML!==html)box.innerHTML=html;
   }
 
-  function sortButtonHTML(){return `<button type="button" class="xraySortToggle active" data-xray-sort-toggle>${sortMode==='asc'?'➡️ По возрастанию':'🎲 По выпадению'}</button>`}
+  function sortButtonHTML(){return `<button type="button" class="xraySortToggle active" title="Факт — в порядке выпадения; прогноз и комбы — в сохранённом порядке или по возрастанию" data-xray-sort-toggle>${sortMode==='asc'?'➡️ По возрастанию':'🎲 По выпадению'}</button>`}
   function ensureSortBar(host){
     if(!host)return;
     let bar=host.querySelector(':scope > .xraySortBar');
     if(!bar){bar=document.createElement('div');bar.className='xraySortBar';const meta=host.querySelector(':scope > .xrayExplicitMeta');if(meta)meta.insertAdjacentElement('afterend',bar);else host.prepend(bar)}
-    bar.innerHTML=sortButtonHTML();
+    const html=sortButtonHTML();if(bar.innerHTML!==html)bar.innerHTML=html;
     const b=bar.querySelector('[data-xray-sort-toggle]');
-    if(b)b.onclick=()=>{sortMode=sortMode==='asc'?'draw':'asc';queuePatch()};
+    if(b)b.onclick=()=>{sortMode=sortMode==='asc'?'draw':'asc';patch()};
   }
 
   function reorder(container,original){
@@ -99,6 +100,8 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
     const buckets=new Map();
     for(const node of nodes){const m=String(node.textContent||'').match(/\d+/);if(!m)continue;const n=Number(m[0]);if(!buckets.has(n))buckets.set(n,[]);buckets.get(n).push(node)}
     const wanted=sortMode==='asc'?[...original].map(Number).sort((a,b)=>a-b):original.map(Number);
+    const current=nodes.map(n=>Number(String(n.textContent||'').match(/\d+/)?.[0]));
+    if(current.length===wanted.length&&current.every((n,i)=>n===wanted[i]))return;
     for(const n of wanted){const bucket=buckets.get(Number(n));const node=bucket?.shift();if(node)container.appendChild(node)}
   }
 
@@ -122,32 +125,22 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
 
   async function deleteArchive(e,item){
     const id=targetId(e);if(!id)return;
-    if(!confirm('Удалить запись из истории?'))return;
+    if(!confirm('Скрыть запись №'+id+' из истории на всех устройствах? Сам frozen-прогноз и результат останутся в архиве.'))return;
+    const button=item.querySelector('.xrayDeleteBtn');button.disabled=true;button.textContent='Сохраняю…';
     const payload={id,targetDraw:Number(e.targetDraw)||null,factDraw:Number(e.factDraw)||null,hidden:true,updatedAt:Date.now()};
-    hiddenTargets.add(id);if(item)item.remove();
-    try{await cloud('POST','',{collection:COLLECTION,id,payload})}
-    catch(err){hiddenTargets.delete(id);alert('Не удалось удалить запись из Supabase.\n'+String(err?.message||err));queuePatch()}
-  }
-
-  function trackArchive(e){
-    const nums=(e?.predicted20||[]).map(Number).filter(Number.isFinite);
-    if(!nums.length){alert('В этой записи нет frozen-комбинации для отслеживания.');return}
-    try{
-      const from=(Number(e.targetDraw)||Number(e.factDraw)||0)+1;
-      const latest=Array.isArray(DRAWS)&&DRAWS.length?Number(DRAWS.at(-1).draw):from;
-      filter.mode='range';filter.fromDraw=String(from);filter.toDraw=String(latest);
-      runCheck(nums,`XRAY frozen №${e.targetDraw} · после факта`);
-    }catch(err){console.error(err);alert('История тиражей ещё не готова. Нажмите «Обновить» и повторите.')}
+    try{await cloud('POST','',{collection:COLLECTION,id,payload});hiddenTargets.add(Number(id));window.ComboXrayUI?.setHiddenTargets(hiddenTargets)}
+    catch(err){alert('Не удалось скрыть запись. Попробуйте ещё раз.\n'+String(err?.message||err))}
+    finally{button.disabled=false;button.textContent='Скрыть запись'}
   }
 
   function ensureActions(item,e){
     if(!item||!e)return;
     let box=item.querySelector(':scope > .xrayArchiveActions');
     if(!box){box=document.createElement('div');box.className='xrayArchiveActions';item.appendChild(box)}
-    box.innerHTML='<button type="button" class="xrayTrackBtn">🔎 Отследить</button><button type="button" class="xrayDeleteBtn">Удалить запись</button>';
-    box.querySelector('.xrayTrackBtn').onclick=()=>trackArchive(e);
+    if(!box.children.length)box.innerHTML='<button type="button" class="xrayTrackBtn">🔎 Отследить 20 чисел</button><button type="button" class="xrayDeleteBtn">Скрыть запись</button>';
+    const track=box.querySelector('.xrayTrackBtn');track.onclick=()=>window.ComboXrayTracking?.open(item,e,'20',track);
     box.querySelector('.xrayDeleteBtn').onclick=()=>deleteArchive(e,item);
-    let note=item.querySelector(':scope > .xrayCloudNote');if(!note){note=document.createElement('div');note.className='xrayCloudNote';item.appendChild(note)}note.textContent='Удаление сохраняется в Supabase';
+    let note=item.querySelector(':scope > .xrayCloudNote');if(!note){note=document.createElement('div');note.className='xrayCloudNote';item.appendChild(note)}if(!note.textContent)note.textContent='Скрытие синхронизируется между устройствами';
   }
 
   function patchTableCard(f){
@@ -170,29 +163,22 @@ window.ComboXrayAnalogColumns={disabled:true,version:'XRAY-AI-2.0.0'};
     const archiveCard=archiveHead?.closest('.card');
     if(archiveCard)ensureSortBar(archiveCard);
     const items=[...document.querySelectorAll('#xrayRoot .xrayArchiveItem')];
-    items.forEach((item,i)=>{
-      const e=h?.[i];if(!e)return;
-      const id=targetId(e);
-      if(hiddenTargets.has(id)){item.remove();return}
+    const byTarget=new Map(h.map(e=>[Number(e.targetDraw||e.factDraw),e]));
+    items.forEach(item=>{
+      const e=byTarget.get(Number(item.dataset.target));if(!e)return;
       addMeta(item,e,false);applyOrderToArchive(item,e);ensureActions(item,e);
     });
   }
 
   function patch(){
-    patchQueued=false;if(patchBusy||!runtime)return;patchBusy=true;
+    runtime=window.ComboXrayUI?.getRuntime();if(patchBusy||!runtime)return;patchBusy=true;
     try{const f=runtime.forecast||null,h=Array.isArray(runtime.history)?runtime.history:[];patchTableCard(f);patchFact(h);patchArchive(h)}finally{patchBusy=false}
   }
-  function queuePatch(){if(patchQueued)return;patchQueued=true;setTimeout(patch,0)}
-
-  async function refreshAll(){await Promise.all([loadRuntime(),loadPrefs()]);queuePatch()}
-
   const boot=()=>{
-    const root=document.getElementById('xrayRoot');
-    if(root&&typeof MutationObserver==='function')new MutationObserver(()=>queuePatch()).observe(root,{childList:true,subtree:true});
-    refreshAll();
-    setInterval(async()=>{await loadRuntime();queuePatch()},30000);
-    window.addEventListener('focus',refreshAll);
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAll()});
+    window.addEventListener('combo:xray-render',patch);
+    window.addEventListener('focus',()=>void loadPrefs());
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)void loadPrefs()});
+    patch();void loadPrefs();
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
