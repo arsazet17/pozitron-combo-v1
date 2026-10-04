@@ -1,0 +1,68 @@
+name: XRAY frozen stats analysis
+
+on:
+  push:
+    branches:
+      - analysis/xray-frozen-stats-20261004
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compute immutable frozen statistics
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const rt=JSON.parse(fs.readFileSync('data/xray-runtime.json','utf8'));
+          const rows=Array.isArray(rt.history)?rt.history:[];
+          const pct=(x,n)=>n?+(100*x/n).toFixed(2):0;
+          const intersection=(a,b)=>{const B=new Set((b||[]).map(Number));return (a||[]).map(Number).filter(x=>B.has(x));};
+          const hit20=e=>Array.isArray(e.forecast20Hits)?e.forecast20Hits.length:intersection(e.predicted20,e.factBalls).length;
+          const comboDefs=[
+            ['5A',e=>e.combo5A||e.combo5||[],e=>e.combo5AHits||e.combo5Hits],
+            ['5B',e=>e.combo5B||[],e=>e.combo5BHits],
+            ['7A',e=>e.combo7A||e.combo7||[],e=>e.combo7AHits||e.combo7Hits],
+            ['7B',e=>e.combo7B||[],e=>e.combo7BHits]
+          ];
+          function calc(list){
+            const vals=list.map(hit20).filter(Number.isFinite).sort((a,b)=>a-b),n=vals.length;
+            const dist={};for(const v of vals)dist[v]=(dist[v]||0)+1;
+            const sum=vals.reduce((a,b)=>a+b,0),mean=n?sum/n:0;
+            const median=n?(n%2?vals[(n-1)/2]:(vals[n/2-1]+vals[n/2])/2):0;
+            const max=n?vals[n-1]:0,min=n?vals[0]:0;
+            const maxRows=list.filter(e=>hit20(e)===max).slice(0,20).map(e=>({targetDraw:e.targetDraw,factDraw:e.factDraw,date:e.factDate||e.targetDate,time:e.factTime||e.targetTime,hits:max,engine:e.engineVersion||e.version||'unknown'}));
+            const countWhere=fn=>vals.filter(fn).length;
+            return {n,min,max,mean:+mean.toFixed(4),median,hitRatePercent:+(mean/20*100).toFixed(2),dist,
+              count2or3:countWhere(v=>v===2||v===3),pct2or3:pct(countWhere(v=>v===2||v===3),n),
+              count0to3:countWhere(v=>v<=3),pct0to3:pct(countWhere(v=>v<=3),n),
+              count4plus:countWhere(v=>v>=4),pct4plus:pct(countWhere(v=>v>=4),n),
+              count5plus:countWhere(v=>v>=5),pct5plus:pct(countWhere(v=>v>=5),n),
+              count6plus:countWhere(v=>v>=6),pct6plus:pct(countWhere(v=>v>=6),n),maxRows};
+          }
+          function comboCalc(list,label,getNums,getHits){
+            const vals=[];let size=0;
+            for(const e of list){const nums=(getNums(e)||[]).map(Number);if(!nums.length)continue;size=Math.max(size,nums.length);const h=getHits(e);vals.push(Array.isArray(h)?h.length:intersection(nums,e.factBalls).length);}
+            vals.sort((a,b)=>a-b);const n=vals.length,dist={};for(const v of vals)dist[v]=(dist[v]||0)+1;const mean=n?vals.reduce((a,b)=>a+b,0)/n:0,max=n?vals[n-1]:0;
+            const c=k=>vals.filter(v=>v>=k).length;
+            return {label,size,n,mean:+mean.toFixed(4),numberHitRatePercent:size?+(mean/size*100).toFixed(2):0,max,dist,pct2plus:pct(c(2),n),pct3plus:pct(c(3),n),pct4plus:pct(c(4),n)};
+          }
+          const eligible=rows.filter(e=>e.statisticsEligible!==false);
+          const ineligible=rows.filter(e=>e.statisticsEligible===false);
+          const engines={};for(const e of eligible){const k=e.engineVersion||e.version||'unknown';(engines[k]??=[]).push(e);}
+          const engineStats={};for(const [k,v] of Object.entries(engines))engineStats[k]=calc(v);
+          const summary={
+            generatedAt:new Date().toISOString(),runtimeUpdatedAt:rt.updatedAt,historyCount:rows.length,eligibleCount:eligible.length,ineligibleCount:ineligible.length,
+            all:calc(rows),eligible:calc(eligible),
+            combos:Object.fromEntries(comboDefs.map(([label,g,h])=>[label,comboCalc(eligible,label,g,h)])),
+            engineStats,
+            latestFact:rows[0]?{targetDraw:rows[0].targetDraw,factDraw:rows[0].factDraw,date:rows[0].factDate,time:rows[0].factTime,hits:hit20(rows[0])}:null
+          };
+          console.log('XRAY_STATS_JSON='+JSON.stringify(summary));
+          NODE
