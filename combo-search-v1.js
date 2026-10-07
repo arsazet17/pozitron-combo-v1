@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const EXT_VERSION='v4.3.31';
+  const EXT_VERSION='v4.8.6';
   const RESULT_LIMIT=4;
   const detailDrawCounts=new Map();
   const DETAIL_MIN_DRAWS=1;
@@ -404,7 +404,7 @@
   }
 
   function bind(){
-    q('csWindowModes')?.querySelectorAll('[data-csw]').forEach(b=>b.onclick=()=>chooseWindow(Number(b.dataset.csw),true));
+    q('csWindowModes')?.querySelectorAll('[data-csw]').forEach(b=>b.onclick=()=>chooseWindow(Number(b.dataset.csw),false));
     if(q('csWindowMinus'))q('csWindowMinus').onclick=()=>chooseWindow(state.window-1,false);
     if(q('csWindowPlus'))q('csWindowPlus').onclick=()=>chooseWindow(state.window+1,false);
     if(q('csWindowMax'))q('csWindowMax').onclick=()=>chooseWindow(archiveDrawCount(),false);
@@ -418,13 +418,13 @@
     q('csSizeModes')?.querySelectorAll('[data-css]').forEach(b=>b.onclick=()=>{
       state.size=Number(b.dataset.css);
       setActive(q('csSizeModes'),'data-css',state.size);
-      scheduleAutoRun();
+      clearOldResult('Размер изменён — нажмите «РАЗНЫЕ» или «СВЕЖИЕ».');
     });
     q('csDateInput').onchange=e=>{
       state.date=e.target.value;
       if(state.date){
         q('csWindowModes')?.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        scheduleAutoRun();
+        clearOldResult('Дата изменена — нажмите «РАЗНЫЕ» или «СВЕЖИЕ».');
       }
     };
     q('csToday').onclick=()=>{
@@ -433,7 +433,7 @@
       state.date=iso;
       q('csDateInput').value=iso;
       q('csWindowModes')?.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-      scheduleAutoRun();
+      clearOldResult('Дата изменена — нажмите «РАЗНЫЕ» или «СВЕЖИЕ».');
     };
     q('csGo').onclick=runSearch;
   }
