@@ -1,4 +1,4 @@
-/* COMBO KENO · Разные + Свежие + отслеживание v3 · 01.10.2026
+/* COMBO KENO · Разные / Свежие отдельно + отслеживание v4 · 07.10.2026
    — «Разные»: свободное количество результатов.
    — «Свежие»: FIRST-комба — точный K-набор, который до этого тиража
      ни разу не собирался полностью. Будущие повторы FIRST не отменяют.
@@ -18,6 +18,7 @@
   const cache=new Map();
   let observer=null;
   let busy=false;
+  let actionBusy=false;
   let timer=0;
 
   const q=id=>document.getElementById(id);
@@ -60,6 +61,9 @@
     if(q('comboFreshSplitStyles'))return;
     const s=document.createElement('style');s.id='comboFreshSplitStyles';s.textContent=`
       #comboSearch .cfsControls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0 2px}
+      #comboSearch .cfsActionRow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0 2px}
+      #comboSearch .cfsActionBtn{width:100%;min-height:52px;font-size:15px;font-weight:950;padding:11px 8px}
+      #comboSearch .cfsActionBtn.busy{opacity:.72}
       #comboSearch .cfsCard{display:grid;grid-template-columns:1fr auto;grid-template-areas:'t i' 's i';gap:2px 8px;align-items:center;padding:9px;border:1px solid #315677;border-radius:11px;background:#081827}
       #comboSearch .cfsCard.fresh{border-color:#416c3d;background:linear-gradient(180deg,#0e2a24,#081827)}#comboSearch .cfsCard.track{border-color:#7b5a17;background:linear-gradient(180deg,#2a2410,#081827)}
       #comboSearch .cfsTitle{grid-area:t;font-size:11px;font-weight:950;color:#fff}#comboSearch .cfsSub{grid-area:s;font-size:9px;color:var(--muted);line-height:1.25}
@@ -87,7 +91,16 @@
       <label class="cfsCard track"><span class="cfsTitle">🔁 ОТСЛ. ТИРАЖЕЙ</span><span class="cfsSub">сколько тиражей смотреть после FIRST</span><input id="cfsTrackN" class="cfsInput" type="tel" inputmode="numeric" pattern="[0-9]*" value="${DEFAULT_TRACK}"></label>`;
     sizeBox.insertAdjacentElement('afterend',wrap);
     bindNumberInput('cfsLimit',DEFAULT_LIMIT);bindNumberInput('cfsFresh',DEFAULT_FRESH);bindNumberInput('cfsTrackN',DEFAULT_TRACK);
-    const go=q('csGo');if(go)go.textContent='🔍 НАЙТИ РАЗНЫЕ + СВЕЖИЕ';
+
+    const actions=document.createElement('div');
+    actions.id='cfsActions';actions.className='cfsActionRow';
+    actions.innerHTML='<button id="cfsGoDiverse" class="primary cfsActionBtn" type="button">🔍 РАЗНЫЕ</button><button id="cfsGoFresh" class="primary cfsActionBtn" type="button">🆕 СВЕЖИЕ</button>';
+    wrap.insertAdjacentElement('afterend',actions);
+
+    const go=q('csGo');
+    if(go){go.classList.add('hidden');go.textContent='🔍 НАЙТИ КОМБЫ'}
+    q('cfsGoDiverse').onclick=runDiverseOnly;
+    q('cfsGoFresh').onclick=runFreshOnly;
     return true;
   }
 
@@ -167,27 +180,110 @@
   function renderTrackingHistory(){
     const host=q('cfsTrackHistory');if(!host)return;const a=loadTracks().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));host.innerHTML=`<button id="cfsHistoryToggle" type="button" class="cfsHistoryHead"><b>🔁 История свежих</b><span>${a.length} ${host.dataset.open==='1'?'▲':'▼'}</span></button><div id="cfsHistoryBody" class="cfsHistoryBody ${host.dataset.open==='1'?'':'hidden'}"></div>`;q('cfsHistoryToggle').onclick=()=>{host.dataset.open=host.dataset.open==='1'?'0':'1';renderTrackingHistory()};const body=q('cfsHistoryBody');if(!body||host.dataset.open!=='1')return;if(!a.length){body.innerHTML='<div class="cfsEmpty">Пока ничего не отслеживается. На свежей комбе нажмите «ОТСЛ.».</div>';return}for(const t of a){const s=trackState(t),rep=s.repeats[0],d=document.createElement('div');d.className='cfsTrackItem'+(rep?' repeat':'');d.innerHTML=`<div><div class="cfsNums">${t.nums.map(f2).join(' ')}</div><div class="cfsProgress">FIRST №${t.startDraw} · ход ${s.progress}/${t.horizon}${s.done?' · завершено':''}</div>${rep?`<div class="cfsTrackSummary fire">🔁 ${t.k}/${t.k} №${rep.d.draw} · +${rep.step} тиражей</div>`:'<div class="cfsTrackSummary">полного повтора пока нет</div>'}${s.wins.length?`<div class="cfsTrackSummary fire">🔥 выигрышных ${s.wins.length} · ${s.sum.toLocaleString('ru-RU')} ₽</div>`:''}</div><button type="button" class="cfsTrackOpen">Открыть ›</button>`;d.querySelector('.cfsTrackOpen').onclick=()=>openTracked(t.id);body.appendChild(d)}}
 
-  async function enhance(){
-    if(busy)return;const results=q('csResults'),status=q('csStatus');if(!results||results.classList.contains('hidden'))return;
-    const limit=positive(q('cfsLimit')?.value,DEFAULT_LIMIT),freshN=positive(q('cfsFresh')?.value,DEFAULT_FRESH,Math.max(1,archive().length)),k=sizeNow(),draws=selectedDraws();if(!draws.length)return;
-    busy=true;try{
-      if(q('cfsLimit'))q('cfsLimit').value=String(limit);if(q('cfsFresh'))q('cfsFresh').value=String(freshN);if(q('cfsTrackN'))q('cfsTrackN').value=String(positive(q('cfsTrackN').value,DEFAULT_TRACK,5000));
-      const oldButtons=[...results.querySelectorAll('#csList .csItem')];
-      const date=q('csDateInput')?.value||'';
-      results.innerHTML=`<div class="cfsBusy">Формирую ${limit} разных и проверяю FIRST ${k}К за ${date?'последние '+freshN+' тиражей выбранной даты':'последние '+freshN+' тиражей'}…</div>`;
-      let diverse=[];if(limit<=oldButtons.length){diverse=oldButtons.slice(0,limit)}else{const rows=await buildRows(draws,k);diverse=pickDiverse(rows,k,limit)}
-      const fresh=await freshRows(k,freshN,limit);
-      results.innerHTML=`<div class="cfsGrid"><div class="cfsPane"><div class="cfsPaneTitle">Разные ${k}К</div><div class="cfsPaneSub">Запрошено ${limit}. Лучшие разные варианты по ${draws.length} выбранным тиражам.</div><div id="cfsDiverse" class="cfsList"></div></div><div class="cfsPane fresh"><div class="cfsPaneTitle">🆕 Свежие ${k}К</div><div class="cfsPaneSub">FIRST = до этого тиража точный набор ни разу не собирался. Будущий повтор FIRST не отменяет.</div><div id="cfsFreshList" class="cfsList"></div></div></div><div id="cfsTrackHistory" class="cfsHistory" data-open="0"></div>`;
-      const dl=q('cfsDiverse');if(Array.isArray(diverse)&&diverse.length&&diverse[0] instanceof Element){diverse.forEach(x=>dl.appendChild(x))}else if(diverse.length){diverse.forEach((r,i)=>dl.appendChild(makeItem(r,i,false)))}else dl.innerHTML='<div class="cfsEmpty">Разных вариантов по этим условиям не найдено.</div>';
-      const fl=q('cfsFreshList');if(fresh.length)fresh.forEach((r,i)=>fl.appendChild(makeItem(r,i,true)));else fl.innerHTML=`<div class="cfsEmpty">FIRST ${k}К в выбранном окне не найдено.</div>`;
-      renderTrackingHistory();
-      if(status){status.className='csStatus';status.textContent=`Готово: разные — ${Array.isArray(diverse)?diverse.length:0}; FIRST-свежие — ${fresh.length}. Источник FIRST распределяется по выбранному окну, а не только по последнему тиражу.`}
-      const go=q('csGo');if(go)go.textContent='🔍 НАЙТИ РАЗНЫЕ + СВЕЖИЕ';
-    }catch(e){console.error('COMBO FRESH SPLIT',e);if(status){status.className='csStatus err';status.textContent='Ошибка свежих комб: '+(e?.message||e)}}finally{busy=false}
+  function setActionBusy(mode,on){
+    const left=q('cfsGoDiverse'),right=q('cfsGoFresh');
+    [left,right].forEach(b=>{if(b)b.disabled=!!on});
+    if(left){left.classList.toggle('busy',!!on&&mode==='diverse');left.textContent=on&&mode==='diverse'?'ИЩУ РАЗНЫЕ…':'🔍 РАЗНЫЕ'}
+    if(right){right.classList.toggle('busy',!!on&&mode==='fresh');right.textContent=on&&mode==='fresh'?'ИЩУ СВЕЖИЕ…':'🆕 СВЕЖИЕ'}
   }
 
-  function schedule(){clearTimeout(timer);timer=setTimeout(enhance,40)}
-  function watch(){const status=q('csStatus');if(!status||observer)return;observer=new MutationObserver(()=>{const t=String(status.textContent||'');if(t.startsWith('Готово:')&&!t.includes('FIRST-свежие —'))schedule()});observer.observe(status,{childList:true,subtree:true,characterData:true})}
-  function init(){installCss();if(!installControls()){setTimeout(init,120);return}watch();const go=q('csGo');if(go)go.addEventListener('click',()=>{const r=q('csResults');if(r)r.dataset.cfsPending='1'},{capture:true});setInterval(()=>{if(q('cfsTrackHistory'))renderTrackingHistory()},15000);window.addEventListener('focus',()=>{if(q('cfsTrackHistory'))renderTrackingHistory()})}
+  function renderSplitSummary(firstValue,firstLabel,k,count,countLabel){
+    const box=q('csSummary');if(!box)return;
+    box.innerHTML=`<div class="csSummary"><div class="csStat"><b>${firstValue}</b><span>${esc(firstLabel)}</span></div><div class="csStat"><b>${k}К</b><span>размер</span></div><div class="csStat"><b>${count}</b><span>${esc(countLabel)}</span></div></div>`;
+  }
+
+  function runDiverseOnly(){
+    if(actionBusy||busy)return;
+    const go=q('csGo'),results=q('csResults'),status=q('csStatus');
+    if(!go||!results)return;
+    actionBusy=true;setActionBusy('diverse',true);
+    results.dataset.cfsPending='diverse';
+    results.classList.add('hidden');
+    q('csDetail')?.classList.add('hidden');if(q('csDetail'))q('csDetail').innerHTML='';
+    if(q('csSummary'))q('csSummary').innerHTML='';
+    if(status){status.dataset.cfsOwner='';status.className='csStatus busy';status.textContent='Ищу разные комбы…'}
+    go.click();
+  }
+
+  async function runFreshOnly(){
+    if(actionBusy||busy)return;
+    const results=q('csResults'),status=q('csStatus');if(!results||!status)return;
+    actionBusy=true;busy=true;setActionBusy('fresh',true);
+    q('csDetail')?.classList.add('hidden');if(q('csDetail'))q('csDetail').innerHTML='';
+    if(q('csSummary'))q('csSummary').innerHTML='';
+    results.classList.remove('hidden');
+    results.innerHTML='<div class="cfsBusy">Ищу FIRST-свежие комбинации…</div>';
+    status.dataset.cfsOwner='1';status.className='csStatus busy';status.textContent='Проверяю свежие FIRST-комбы…';
+    try{
+      const limit=positive(q('cfsLimit')?.value,DEFAULT_LIMIT);
+      const freshN=positive(q('cfsFresh')?.value,DEFAULT_FRESH,Math.max(1,archive().length));
+      const k=sizeNow();
+      if(q('cfsLimit'))q('cfsLimit').value=String(limit);
+      if(q('cfsFresh'))q('cfsFresh').value=String(freshN);
+      if(q('cfsTrackN'))q('cfsTrackN').value=String(positive(q('cfsTrackN').value,DEFAULT_TRACK,5000));
+      const fresh=await freshRows(k,freshN,limit);
+      results.innerHTML=`<div class="cfsPane fresh"><div class="cfsPaneTitle">🆕 Свежие ${k}К</div><div class="cfsPaneSub">FIRST = до этого тиража точный набор ни разу не собирался. Показаны только свежие.</div><div id="cfsFreshList" class="cfsList"></div></div><div id="cfsTrackHistory" class="cfsHistory" data-open="0"></div>`;
+      const fl=q('cfsFreshList');
+      if(fresh.length)fresh.forEach((r,i)=>fl.appendChild(makeItem(r,i,true)));
+      else fl.innerHTML=`<div class="cfsEmpty">FIRST ${k}К в выбранном окне не найдено.</div>`;
+      renderTrackingHistory();
+      renderSplitSummary(freshN,'FIRST окно',k,fresh.length,'свежие');
+      status.className='csStatus';status.textContent=`Готово: FIRST-свежие — ${fresh.length}. Разные не считались.`;
+    }catch(e){
+      console.error('COMBO FRESH ONLY',e);
+      status.className='csStatus err';status.textContent='Ошибка свежих комб: '+(e?.message||e);
+    }finally{
+      busy=false;actionBusy=false;setActionBusy('',false);
+    }
+  }
+
+  async function enhanceDiverse(){
+    if(busy)return;
+    const results=q('csResults'),status=q('csStatus');
+    if(!results||results.dataset.cfsPending!=='diverse'||results.classList.contains('hidden'))return;
+    const limit=positive(q('cfsLimit')?.value,DEFAULT_LIMIT),k=sizeNow(),draws=selectedDraws();
+    if(!draws.length){delete results.dataset.cfsPending;actionBusy=false;setActionBusy('',false);return}
+    busy=true;
+    try{
+      if(q('cfsLimit'))q('cfsLimit').value=String(limit);
+      const oldButtons=[...results.querySelectorAll('#csList .csItem')];
+      results.innerHTML=`<div class="cfsBusy">Формирую ${limit} разных комбинаций…</div>`;
+      let diverse=[];
+      if(limit<=oldButtons.length)diverse=oldButtons.slice(0,limit);
+      else{const rows=await buildRows(draws,k);diverse=pickDiverse(rows,k,limit)}
+      results.innerHTML=`<div class="cfsPane"><div class="cfsPaneTitle">Разные ${k}К</div><div class="cfsPaneSub">Лучшие разные варианты по ${draws.length} выбранным тиражам. Показаны только разные.</div><div id="cfsDiverse" class="cfsList"></div></div>`;
+      const dl=q('cfsDiverse');
+      if(Array.isArray(diverse)&&diverse.length&&diverse[0] instanceof Element)diverse.forEach(x=>dl.appendChild(x));
+      else if(diverse.length)diverse.forEach((r,i)=>dl.appendChild(makeItem(r,i,false)));
+      else dl.innerHTML='<div class="cfsEmpty">Разных вариантов по этим условиям не найдено.</div>';
+      renderSplitSummary(draws.length,'тиражей',k,Array.isArray(diverse)?diverse.length:0,'разные комбы');
+      if(status){status.dataset.cfsOwner='1';status.className='csStatus';status.textContent=`Готово: разные — ${Array.isArray(diverse)?diverse.length:0}. Свежие не считались.`}
+    }catch(e){
+      console.error('COMBO DIVERSE ONLY',e);
+      if(status){status.className='csStatus err';status.textContent='Ошибка разных комб: '+(e?.message||e)}
+    }finally{
+      delete results.dataset.cfsPending;
+      busy=false;actionBusy=false;setActionBusy('',false);
+    }
+  }
+
+  function schedule(){clearTimeout(timer);timer=setTimeout(enhanceDiverse,40)}
+  function watch(){
+    const status=q('csStatus');if(!status||observer)return;
+    observer=new MutationObserver(()=>{
+      const results=q('csResults'),pending=results?.dataset.cfsPending||'',t=String(status.textContent||'');
+      if(pending==='diverse'&&t.startsWith('Готово:'))schedule();
+      else if(pending==='diverse'&&status.classList.contains('err')){
+        delete results.dataset.cfsPending;actionBusy=false;setActionBusy('',false);
+      }
+    });
+    observer.observe(status,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
+  }
+  function init(){
+    installCss();if(!installControls()){setTimeout(init,120);return}
+    watch();
+    setInterval(()=>{if(q('cfsTrackHistory'))renderTrackingHistory()},15000);
+    window.addEventListener('focus',()=>{if(q('cfsTrackHistory'))renderTrackingHistory()});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
 })();
