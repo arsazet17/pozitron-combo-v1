@@ -62,7 +62,7 @@
   function loadBase(){
     if(window.__comboFreshSplitV1){installDeletePatch();return}
     const currentSrc=document.currentScript&&document.currentScript.src;
-    const baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261003-cloud14',currentSrc||location.href);
+    const baseUrl=new URL('combo-fresh-split-v1-base.js?v=20261007-split15',currentSrc||location.href);
     const s=document.createElement('script');
     s.src=baseUrl.href;
     s.onload=installDeletePatch;
