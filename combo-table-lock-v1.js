@@ -197,9 +197,10 @@
             source.has(n) ? 'sourceOn' : '',
             echo ? 'tableEcho' : '',
             echo,
-            mirrorNumbers.has(n) ? 'mirrorPair' : ''
+            mirrorNumbers.has(n) ? 'mirrorPair' : '',
+            tableMarkedNumbers.has(n) ? 'numberPicked' : ''
           ].filter(Boolean).join(' ');
-          return '<span class="' + cls + '"' +
+          return '<span class="' + cls + '" data-dnum="' + n + '"' +
             (typeof tableParityVisible === 'function' && !tableParityVisible(n)
               ? ' style="visibility:hidden"' : '') + '>' + (typeof tableReverseDisplay === 'function' ? tableReverseDisplay(n) : fmt(n)) + '</span>';
         }).join(' ');
