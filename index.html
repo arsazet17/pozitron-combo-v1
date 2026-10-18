@@ -184,8 +184,8 @@ function cmRender(){
  panel.classList.toggle('hidden',!cmOpen);toggle?.classList.toggle('active',cmOpen);toggle?.setAttribute('aria-pressed',String(cmOpen));trg?.classList.toggle('active',cmTrg);trg?.setAttribute('aria-pressed',String(cmTrg));
  if(!cmOpen)return;
  const all=cmData(),freq=Array(11).fill(0);all.forEach(d=>{const c=drawColumn(d);if(c)freq[c]++});
- const rows=[],trail=Array(11).fill(false);
- all.forEach((d,idx)=>{const col=drawColumn(d);if(col)trail[col]=true;const parity=(d.balls||[]).filter(n=>n%2===0).length;const sign=parity===10?'=':parity>10?'II':'I';const cells=Array.from({length:10},(_,j)=>{const n=j+1;const hit=n===col,hot=cmTemperature&&freq[n]>all.length/10,mark=cmTrg&&idx>=2&&idx<all.length-1&&[all[idx-2],all[idx-1],d].every(x=>drawColumn(x))&&n===col&&new Set([drawColumn(all[idx-2]),drawColumn(all[idx-1]),col]).size===3;return '<td data-cm-draw="'+d.draw+'" data-cm-col="'+n+'" class="'+(hit?'cm-hit cm-picked':trail[n]?'cm-trail':'')+(hot?' cm-muted':'')+(mark?' cm-future':'')+'">'+(hit?n:'')+'</td>'}).join('');
+ const rows=[],trail=Array(11).fill(false);const latestByCol=Array(11).fill(-1);all.forEach((d,i)=>{const c=drawColumn(d);if(c)latestByCol[c]=i});
+ all.forEach((d,idx)=>{const col=drawColumn(d);const parity=(d.balls||[]).filter(n=>n%2===0).length;const sign=parity===10?'=':parity>10?'II':'I';const cells=Array.from({length:10},(_,j)=>{const n=j+1;const hit=n===col,hot=cmTemperature&&freq[n]>all.length/10,mark=false;return '<td data-cm-draw="'+d.draw+'" data-cm-col="'+n+'" class="'+(hit?'cm-hit cm-picked':idx>latestByCol[n]&&latestByCol[n]>=0?'cm-trail':'')+(hot?' cm-muted':'')+('')+'">'+(hit?n:'')+'</td>'}).join('');
  rows.push('<tr><td class="cm-draw">'+d.draw+'</td>'+cells+'<td>'+sign+'</td></tr>');if(cmEmpty&&idx<all.length-1){for(let gap=0;gap<cmEmpty;gap++)rows.push('<tr class="cm-empty"><td class="cm-draw">·</td>'+Array(10).fill('<td></td>').join('')+'<td></td></tr>')}});
  const counts=Array.from({length:10},(_,i)=>'<td>'+Math.max(0,freq[i+1]-cmReduce)+'</td>').join('');
  const heads=Array.from({length:10},(_,i)=>'<th class="cm-num">'+(i+1)+'</th>').join('');
