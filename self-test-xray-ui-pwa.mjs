@@ -116,7 +116,7 @@ await check('APP BUILD changes when installed mathematical engine or UI changes'
   for(const output of ['index.html','sw.js','manifest.webmanifest','app-version.json'])assert.equal(again[output],changed[output],file+': repeated build');
  }
 });
-await check('PWA activation reloads once; returning to the phone app checks for updates',async()=>{
+await check('PWA checks for updates without interrupting the current screen',async()=>{
  const code=index.match(/<script id="comboAutoUpdate">([\s\S]*?)<\/script>/)[1];
  const callbacks={},storage=new Map();let reloads=0,updates=0;
  const worker={addEventListener:(name,fn)=>{callbacks[name]=fn},getRegistration:async()=>({update:async()=>{updates++}})};
@@ -128,9 +128,9 @@ await check('PWA activation reloads once; returning to the phone app checks for 
   (name,fn)=>{callbacks[name]=fn},()=>{},async name=>{assert.equal(name,'app-version.json');return {build}}, {},
   {getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)});
  run();documentMock.hidden=false;await callbacks.focus();
- assert.equal(reloads,1);assert.equal(updates,1);
- await callbacks.controllerchange();await callbacks.pageshow();assert.equal(reloads,1);
+ assert.equal(reloads,0);assert.equal(updates,1);
+ await callbacks.controllerchange();await callbacks.pageshow();assert.equal(reloads,0);
  documentMock.hidden=true;run();documentMock.hidden=false;await callbacks.focus();
- assert.equal(reloads,1,'sessionStorage prevents repeated reloads');
+ assert.equal(reloads,0,'sessionStorage prevents navigation during work');
 });
 console.log('XRAY UI / PWA PASS '+tests.length+' checks');
