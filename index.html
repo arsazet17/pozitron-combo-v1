@@ -41,11 +41,11 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
   #tableDrawerBody .recentModes button {padding:7px 8px;font-size:13px;min-height:34px}
   #tableDrawerBody .recentModes input {padding:7px 8px!important;font-size:14px}
   #tableDrawerBody .tableActions button {padding:7px 10px}
-  #tableDrawerBody > .recentDraws {grid-column:2;grid-row:1 / span 10;align-self:start;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:calc(100dvh - 85px);overflow-y:auto;overflow-x:hidden;padding:0 4px 10px 0}
-  #tableDrawerBody .recentDrawItem {padding:10px 11px;align-self:start}
-  #tableDrawerBody .recentDrawNums {font-size:13px;line-height:1.75;overflow-wrap:normal}
-  #tableDrawerBody .recentDrawNum {padding:1px 3px}
-  #tableDrawerBody .recentDrawDetails {font-size:12px}
+  #tableDrawerBody > .recentDraws {grid-column:2;grid-row:1 / span 10;align-self:start;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;max-height:calc(100dvh - 85px);overflow-y:auto;overflow-x:hidden;padding:0 4px 10px 0}
+  #tableDrawerBody .recentDrawItem {padding:14px 16px;align-self:start}
+  #tableDrawerBody .recentDrawNums {font-size:16px;line-height:1.85;overflow-wrap:normal}
+  #tableDrawerBody .recentDrawNum {padding:2px 5px}
+  #tableDrawerBody .recentDrawDetails {font-size:14px}
 }
 @media (min-width: 900px) and (pointer: fine) and (max-width:1150px) {
   #tableDrawerBody {grid-template-columns:minmax(340px,440px) minmax(400px,1fr);column-gap:14px}
@@ -55,7 +55,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.17</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.18</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
