@@ -181,6 +181,9 @@
         const balls = tableRecentOrder === 'asc'
           ? [...(draw.balls || [])].sort((a,b)=>a-b)
           : (draw.balls || []);
+        const mirrorNumbers = typeof tableMirrorPairs !== 'undefined' && tableMirrorPairs &&
+          typeof getTableMirrorPairNumbers === 'function'
+          ? getTableMirrorPairNumbers(draw) : new Set();
 
         return balls.map(raw => {
           const n = Number(raw);
@@ -193,7 +196,8 @@
             'recentDrawNum',
             source.has(n) ? 'sourceOn' : '',
             echo ? 'tableEcho' : '',
-            echo
+            echo,
+            mirrorNumbers.has(n) ? 'mirrorPair' : ''
           ].filter(Boolean).join(' ');
           return '<span class="' + cls + '"' +
             (typeof tableParityVisible === 'function' && !tableParityVisible(n)
@@ -419,3 +423,4 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
