@@ -270,10 +270,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{co
     const reg=await navigator.serviceWorker.getRegistration();
     if(reg)await reg.update().catch(e=>console.warn('SW update',e));
    }
+   // Install the new service worker in the background, but never navigate
+   // away from the user's current section or discard in-memory table state.
    sessionStorage.setItem(key,'1');
    reloading=true;
-   url.searchParams.set('v',build);url.searchParams.delete('_v');
-   location.replace(url.href);
   }catch(e){console.warn('COMBO app update',e)}finally{busy=false}
  };
  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',check);
