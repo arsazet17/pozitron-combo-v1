@@ -195,7 +195,9 @@
             echo ? 'tableEcho' : '',
             echo
           ].filter(Boolean).join(' ');
-          return '<span class="' + cls + '">' + fmt(n) + '</span>';
+          return '<span class="' + cls + '"' +
+            (typeof tableParityVisible === 'function' && !tableParityVisible(n)
+              ? ' style="visibility:hidden"' : '') + '>' + fmt(n) + '</span>';
         }).join(' ');
       };
       wrapped.__tableLockV1 = true;
