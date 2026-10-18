@@ -54,7 +54,22 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 .recentDrawTop{align-items:center;flex-wrap:wrap}.drawModeSwitch{display:inline-flex;gap:3px}.drawModeSwitch button{font-size:11px;padding:4px 8px;border-radius:7px;background:#17334c;border:1px solid #446781;color:#e9f2fa;cursor:pointer}.drawModeSwitch button.active{background:#277440;border-color:#6bdb89;color:white}.recentDrawNum.numberPicked{background:#21883e!important;color:#fff!important;box-shadow:0 0 0 1px #91f3a3 inset!important;font-weight:950}.recentDrawItem:has(.drawModeSwitch button[data-dmode="number"].active) .recentDrawNum:not([style*="visibility:hidden"]){cursor:pointer}.recentDrawItem:has(.drawModeSwitch button[data-dmode="number"].active) .recentDrawNum:not([style*="visibility:hidden"]):hover{outline:1px solid #80dd9b}
 .recentDrawItem.on{background:linear-gradient(180deg,#24783d,#15572e)!important;border:2px solid #78e99a!important;color:#fff!important;box-shadow:0 0 0 1px #b3ffc8 inset}.recentDrawItem.on .recentDrawNums{color:#fff}.recentDrawNum.numberPicked{background:#18a34a!important;color:white!important;outline:2px solid #a7ffb8!important;outline-offset:1px;box-shadow:0 0 0 1px #effff0 inset!important}.drawModeSwitch button.active{background:#1d9b48!important;border-color:#b5ffbd!important;color:#fff!important}
 .recentDrawItem .recentDrawNum.numberPicked{display:inline-block!important;background:#159447!important;background-image:none!important;color:#ffffff!important;border:2px solid #baffc5!important;border-radius:6px!important;padding:1px 4px!important;box-shadow:0 0 9px #20df69!important;font-weight:950!important}.recentDrawItem:has([data-dmode="number"].active) [data-dnum]{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.cm-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain}.cm-scroll .cm-table{min-width:570px}.cm-table td.cm-mark{background:#098449!important;color:#fff!important;font-weight:800}.cm-table .cm-date{width:23%!important;font-size:10px!important;white-space:nowrap}.cm-toolbar input[type=range]{width:110px;accent-color:#b76bff}.cm-table .cm-empty td:not(.cm-mark){color:#667a8e}.cm-table .cm-empty td[data-cm-col]{cursor:pointer}.cm-table td.cm-history{background:#455b73!important}.cm-table td.cm-picked{background:#ffd03d!important}</style>
+.cm-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain}.cm-scroll .cm-table{min-width:570px}.cm-table td.cm-mark{background:#098449!important;color:#fff!important;font-weight:800}.cm-table .cm-date{width:23%!important;font-size:10px!important;white-space:nowrap}.cm-toolbar input[type=range]{width:110px;accent-color:#b76bff}.cm-table .cm-empty td:not(.cm-mark){color:#667a8e}.cm-table .cm-empty td[data-cm-col]{cursor:pointer}.cm-table td.cm-history{background:#455b73!important}.cm-table td.cm-picked{background:#ffd03d!important}/* Compact mobile matrix: all ten columns, parity and date fit the viewport. */
+#tableMatrixPanel{width:100%;min-width:0;box-sizing:border-box}
+#tableMatrixPanel .cm-panel{width:100%;min-width:0;box-sizing:border-box;padding:5px;margin:6px 0}
+#tableMatrixPanel .cm-scroll{width:100%;overflow-x:hidden}
+#tableMatrixPanel .cm-scroll .cm-table{width:100%;min-width:0;table-layout:fixed}
+#tableMatrixPanel .cm-table .cm-draw{width:15%!important}
+#tableMatrixPanel .cm-table .cm-num{width:6.6%!important}
+#tableMatrixPanel .cm-table .cm-parity{width:4%!important}
+#tableMatrixPanel .cm-table .cm-date{width:15%!important;white-space:nowrap;letter-spacing:-.35px;font-size:clamp(7px,1.85vw,10px)!important}
+#tableMatrixPanel .cm-table td,#tableMatrixPanel .cm-table th{font-size:clamp(8px,2.35vw,12px);height:23px;white-space:nowrap}
+#tableMatrixPanel .cm-table td.cm-date{font-size:clamp(7px,1.85vw,10px)!important}
+#tableMatrixPanel .cm-table td.cm-trail{background:#263343}
+#tableMatrixPanel .cm-table td.cm-trail[style]{background:var(--cm-heat,transparent)}
+#tableMatrixPanel .cm-toolbar input[type=range]{width:clamp(80px,26vw,170px)}
+@media(min-width:720px){#tableMatrixPanel .cm-panel{padding:12px}#tableMatrixPanel .cm-table td,#tableMatrixPanel .cm-table th{height:28px;font-size:13px}#tableMatrixPanel .cm-table .cm-date{font-size:12px!important}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -187,12 +202,12 @@ function cmRender(){
  const all=cmData(),freq=Array(11).fill(0),latestByCol=Array(11).fill(-1);
  all.forEach((d,i)=>{const c=drawColumn(d);if(c){freq[c]++;latestByCol[c]=i}});
  const maxFreq=Math.max(1,...freq.slice(1)),rows=[];
- const heatColor=n=>cmTemperature?'rgba(236,143,39,'+(0.12+0.60*freq[n]/maxFreq).toFixed(2)+')':'';
- const renderCell=(col,hit,last,trail,mark,draw)=>{const cls=mark?'cm-mark':hit?(last?'cm-hit cm-picked':'cm-hit cm-history'):trail?'cm-trail':'';const heat=trail&&cmTemperature?' style="background:'+heatColor(col)+'"':'';return '<td data-cm-draw="'+draw+'" data-cm-col="'+col+'" class="'+cls+'"'+heat+'>'+(mark||hit?col:'')+'</td>';};
+ const heatColor=n=>{const intensity=Math.max(0,freq[n]-cmReduce)/Math.max(1,maxFreq-cmReduce);return 'rgba(245,150,30,'+(0.08+0.84*intensity).toFixed(2)+')';};
+ const renderCell=(col,hit,last,trail,mark,draw)=>{const cls=mark?'cm-mark':hit?(last?'cm-hit cm-picked':'cm-hit cm-history'):trail?'cm-trail':'';const heat=trail&&cmTemperature?' style="--cm-heat:'+heatColor(col)+'"':'';return '<td data-cm-draw="'+draw+'" data-cm-col="'+col+'" class="'+cls+'"'+heat+'>'+(mark||hit?col:'')+'</td>';};
  all.forEach((d,idx)=>{
   const col=drawColumn(d),even=(d.balls||[]).filter(n=>Number(n)%2===0).length,sign=even===10?'=':even>10?'II':'I';
   const cells=Array.from({length:10},(_,j)=>{const n=j+1,hit=n===col;return renderCell(n,hit,hit&&idx===latestByCol[n],!hit&&idx>latestByCol[n]&&latestByCol[n]>=0,false,d.draw)}).join('');
-  rows.push('<tr><td class="cm-draw">'+d.draw+'</td>'+cells+'<td class="cm-parity">'+sign+'</td><td class="cm-date">'+String(d.date||'')+' '+String(d.time||'').slice(0,5)+'</td></tr>');
+  rows.push('<tr><td class="cm-draw">'+d.draw+'</td>'+cells+'<td class="cm-parity">'+sign+'</td><td class="cm-date">'+String(d.date||'').slice(0,5)+' '+String(d.time||'').slice(0,5)+'</td></tr>');
  });
  const lastDraw=Math.max(0,...DRAWS.map(d=>Number(d.draw)||0));
  for(let gap=1;gap<=cmEmpty;gap++){
