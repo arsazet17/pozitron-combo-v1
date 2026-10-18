@@ -197,7 +197,7 @@
           ].filter(Boolean).join(' ');
           return '<span class="' + cls + '"' +
             (typeof tableParityVisible === 'function' && !tableParityVisible(n)
-              ? ' style="visibility:hidden"' : '') + '>' + fmt(n) + '</span>';
+              ? ' style="visibility:hidden"' : '') + '>' + (typeof tableReverseDisplay === 'function' ? tableReverseDisplay(n) : fmt(n)) + '</span>';
         }).join(' ');
       };
       wrapped.__tableLockV1 = true;
