@@ -30,7 +30,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 .recentDrawNum.mirrorPair{background:#29090d!important;color:#ff3535!important;border-radius:5px;box-shadow:0 0 0 1px #ff3535 inset}.recentModes:has(#tableMirrorPairs){grid-template-columns:repeat(2,minmax(0,1fr))!important}.mirrorDrawRow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed #42627d}.mirrorLabel{font-size:15px}.mirrorNum{display:inline-block;background:#b70d16;color:white;border-radius:5px;padding:3px 6px;font-weight:800;font-size:14px}
 /* Desktop-only Table layout. Mobile rules and all application logic remain unchanged. */
 @media (min-width: 900px) and (pointer: fine) {
-  .tableDrawer {padding:14px 22px 20px;overflow:hidden}
+  .tableDrawer {padding:14px 22px 20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
   .tableDrawerHead {max-width:1480px;margin:0 auto 10px}
   #tableDrawerBody {max-width:1480px;margin:0 auto;display:grid;grid-template-columns:minmax(380px,560px) minmax(420px,1fr);column-gap:24px;row-gap:7px;align-content:start}
   #tableDrawerBody > * {grid-column:1;min-width:0;margin-top:0}
