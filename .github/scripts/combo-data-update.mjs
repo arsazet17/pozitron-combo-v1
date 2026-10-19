@@ -28,21 +28,7 @@ export async function updateData({run = defaultOfficialRun, readStatus = async (
   const target = publicationStamp(due);
   if (!Number.isFinite(target)) throw new Error('Invalid frozen DATA UPDATE publication target');
   console.log('DATA UPDATE: publication target', due.date, due.time);
-  // Prefer the independently verified FULL20 official OAuth archive. Its importer
-  // checks the last COMBO draw as an exact anchor and rejects gaps or mismatches.
-  // A mirror failure falls back to COMBO's own Stoloto browser loader.
-  if (run === defaultOfficialRun) {
-    const mirror = spawnSync(process.execPath, ['.github/scripts/combo-full20-import.mjs'], {stdio:'inherit',timeout:35000});
-    if (mirror.status === 0) {
-      const status = await readStatus();
-      const waiting = publicationStamp(status.latestOfficial) < target;
-      await writeStatus({...status,checkedAt:new Date().toISOString(),sourceState:waiting?'waiting':'current',expectedPublication:due});
-      console.log('DATA UPDATE: anchored FULL20 official mirror PASS');
-      return;
-    }
-    console.warn('DATA UPDATE: FULL20 mirror unavailable; falling back to direct Stoloto OAuth');
-  }
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 6; attempt++) {
     console.log('DATA UPDATE: official verification attempt', attempt);
     const result = await run();
     if (result.status === 0) {
@@ -54,7 +40,7 @@ export async function updateData({run = defaultOfficialRun, readStatus = async (
       console.log(waiting ? 'DATA UPDATE: source delayed; publish verified tail immediately, latest #' + status.latestDraw : 'DATA UPDATE: official target reached');
       return;
     }
-    if (attempt < 2) await wait(5000);
+    if (attempt < 6) await wait(25000);
   }
   throw new Error('Official verification failed; nothing will be committed');
 }
