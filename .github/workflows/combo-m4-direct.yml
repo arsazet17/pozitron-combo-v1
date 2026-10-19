@@ -4,7 +4,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: combo-data-writer
+  group: combo-m4-direct-writer
   cancel-in-progress: false
 jobs:
   update:
