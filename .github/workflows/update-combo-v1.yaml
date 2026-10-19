@@ -1,22 +1,7 @@
 {
   "name": "COMBO v1 · Stoloto AUTO",
   "on": {
-    "workflow_dispatch": {},
-    "schedule": [
-      {
-        "cron": "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
-      }
-    ],
-    "push": {
-      "branches": [
-        "main"
-      ],
-      "paths": [
-        "stoloto-combo-update-v1.mjs",
-        ".github/scripts/combo-data-update.mjs",
-        ".github/workflows/update-combo-v1.yaml"
-      ]
-    }
+    "workflow_dispatch": {}
   },
   "permissions": {
     "contents": "write"
