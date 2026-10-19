@@ -422,7 +422,7 @@ function updateTableNextDraw(){
  // scheduled slot after COMBO's own last confirmed draw, never from wall clock.
  const last=DRAWS.reduce((best,item)=>Number.isSafeInteger(Number(item?.draw))&&Number(item.draw)>0&&(!best||Number(item.draw)>Number(best.draw))?item:best,null);
  if(!last){el.textContent='Ожидание последнего подтверждённого тиража';return;}
- const m=String(last.time||'').match(/([01]?\\d|2[0-3]):([0-5]\\d)/);
+ const m=String(last.time||'').match(/([01]?\d|2[0-3]):([0-5]\d)/);
  const lastTime=m?m[1].padStart(2,'0')+':'+m[2]:'';
  const slot=COMBO_DRAW_TIMES.indexOf(lastTime);
  const draw=Number(last.draw)+1;
