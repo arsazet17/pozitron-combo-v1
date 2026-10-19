@@ -1,0 +1,60 @@
+name: COMBO · M4-style DIRECT Stoloto
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: combo-data-writer
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: combo-direct-playwright-chromium-1.54.0-v1
+      - name: Install Python Playwright
+        run: python -m pip install --disable-pip-version-check --no-input playwright==1.54.0
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Read official Stoloto with M4 stable confirmation
+        env:
+          STOLOTO_EMAIL: ${{ secrets.STOLOTO_EMAIL }}
+          STOLOTO_PASSWORD: ${{ secrets.STOLOTO_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if python .github/scripts/combo-m4-direct.py; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 20
+          done
+      - name: Commit only verified COMBO draw data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add combo-history-v1.json combo-status-v1.json
+          if git diff --cached --quiet; then
+            echo 'No new confirmed draws'
+            exit 0
+          fi
+          git commit -m 'COMBO: direct official Stoloto M4-style verified draws'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
