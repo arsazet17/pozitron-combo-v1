@@ -418,15 +418,22 @@ async function refreshAllFromTable(){
 const COMBO_DRAW_TIMES='00:02 00:17 00:32 01:02 01:17 01:32 02:02 02:17 02:32 03:02 03:32 04:02 04:17 04:32 05:02 05:17 05:32 06:02 06:17 06:32 07:02 07:32 08:02 08:17 08:32 09:02 09:17 09:32 10:02 10:17 10:32 11:02 11:32 12:02 12:17 12:32 13:02 13:17 13:32 14:02 14:17 14:32 15:02 15:32 16:02 16:17 16:32 17:02 17:17 17:32 18:02 18:17 18:32 19:02 19:32 20:02 20:17 20:32 21:02 21:17 21:32 22:02 22:17 22:32 23:02 23:32'.split(' ');
 function updateTableNextDraw(){
  const el=$('tableNextDraw');if(!el)return;
- // Use the latest confirmed draw; the banner must not depend on date formatting.
- const last=DRAWS.reduce((best,item)=>Number.isInteger(Number(item?.draw))&&Number(item.draw)>0&&(!best||Number(item.draw)>Number(best.draw))?item:best,null);
- if(!last){if(el.textContent!=='Ожидание данных последнего тиража')el.textContent='Ожидание данных последнего тиража';return;}
- const match=String(last.time||'').match(/\\b([01]?\\d|2[0-3]):([0-5]\\d)\\b/);
- const time=match?match[1].padStart(2,'0')+':'+match[2]:'';
- const minutes=time?Number(time.slice(0,2))*60+Number(time.slice(3)):NaN;
- const next=COMBO_DRAW_TIMES.find(t=>Number(t.slice(0,2))*60+Number(t.slice(3))>minutes)||COMBO_DRAW_TIMES[0];
+ // The schedule is a fixed Moscow-time grid. Always advance exactly one
+ // scheduled slot after COMBO's own last confirmed draw, never from wall clock.
+ const last=DRAWS.reduce((best,item)=>Number.isSafeInteger(Number(item?.draw))&&Number(item.draw)>0&&(!best||Number(item.draw)>Number(best.draw))?item:best,null);
+ if(!last){el.textContent='Ожидание последнего подтверждённого тиража';return;}
+ const m=String(last.time||'').match(/([01]?\\d|2[0-3]):([0-5]\\d)/);
+ const lastTime=m?m[1].padStart(2,'0')+':'+m[2]:'';
+ const slot=COMBO_DRAW_TIMES.indexOf(lastTime);
  const draw=Number(last.draw)+1;
- const html='<span class="nextDrawLabel">СЛЕД. ТИРАЖ №'+draw+'</span><span class="nextDrawTime">'+(time?next:'—')+'</span>';
+ if(slot<0){
+  const label='СЛЕД. ТИРАЖ №'+draw;
+  if(el.textContent!==label)el.textContent=label;
+  return;
+ }
+ const nextSlot=(slot+1)%COMBO_DRAW_TIMES.length;
+ const nextTime=COMBO_DRAW_TIMES[nextSlot];
+ const html='<span class="nextDrawLabel">СЛЕД. ТИРАЖ №'+draw+'</span><span class="nextDrawTime">'+nextTime+'</span>';
  if(el.innerHTML!==html)el.innerHTML=html;
 }
 
