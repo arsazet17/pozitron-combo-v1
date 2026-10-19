@@ -102,6 +102,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 #tableMatrixPanel .cm-table td.cm-draw-with-a{position:relative!important;overflow:visible!important}
 #tableMatrixPanel .cm-inline-a{position:absolute;right:1px;top:1px;min-width:12px;height:12px;padding:0 1px;border:1px solid #647d93;border-radius:2px;background:#183449;color:#e2eaf0;font-size:9px;line-height:10px;cursor:pointer;z-index:2}
 #tableMatrixPanel .cm-inline-a.active{background:#188a45;color:white;border-color:#8cf5aa}
+.tableNextDraw{margin:7px 0 10px;padding:9px 12px;border:1px solid #3a6b8d;border-radius:11px;background:#102c44;color:#e7f4ff;font-weight:700;font-size:14px;line-height:1.4;min-height:40px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -136,6 +137,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <div id="tableDrawer" class="tableDrawer hidden">
   <div class="tableDrawerHead"><b>📊 Таблица</b><button id="tableRefreshBtn" type="button" aria-label="Обновить все данные" title="Обновить тиражи и все данные">⟳</button><button id="tableLockBtn" class="tableHeadToggle tableLockBtn" type="button" aria-pressed="false" aria-label="Закрепить цветные числа" title="Закрепить цветные числа">🔒</button><button id="tableActiveBtn" class="tableHeadToggle" type="button" aria-pressed="false">Актив</button><button id="tableOrderBtn" class="tableHeadToggle" type="button" aria-pressed="false">Воз</button><button id="closeTableDrawer" type="button">▼</button></div>
   <div class="tableFeatureControls"><button id="tableMatrixBtn" type="button" aria-pressed="false" title="Открыть или закрыть матрицу столбов">МАТР</button><button id="tableTrgBtn" type="button" aria-pressed="false" title="Режим малых треугольников">🔺 TRG</button></div>
+  <div id="tableNextDraw" class="tableNextDraw" aria-live="polite">Следующий тираж: ожидаем данные…</div>
   <div id="tableDrawerBody"></div><div id="tableMatrixPanel" class="hidden"></div>
 </div>
 <nav class="footer"><div class="footwrap"><div class="footin">
@@ -386,7 +388,7 @@ async function autoRefreshLive(force=false){
   if(changed){
    const view=captureLiveView();
    try{
-    DRAWS=d;updateDbLine();refreshOpenHistory();
+    DRAWS=d;updateDbLine();updateTableNextDraw();refreshOpenHistory();
     const drawer=$('tableDrawer');
     if(drawer&&!drawer.classList.contains('hidden'))renderTableDrawer(true);
     notifyComboXray();
@@ -411,9 +413,27 @@ async function refreshAllFromTable(){
  }catch(error){alert('Не удалось обновить данные: '+error.message);}
  finally{buttons.forEach((b,i)=>{b.disabled=false;if(b.textContent==='⟳ Проверяю…')b.textContent=labels[i]});}
 }
+
+// Official Moscow schedule; derived from the Stoloto ingestion schedule, not a browser prediction.
+const COMBO_DRAW_TIMES='00:02 00:17 00:32 01:02 01:17 01:32 02:02 02:17 02:32 03:02 03:17 03:32 04:02 04:17 04:32 05:02 05:17 05:32 06:02 06:17 06:32 07:02 07:17 07:32 08:02 08:17 08:32 09:02 09:17 09:32 10:02 10:17 10:32 11:02 11:17 11:32 12:02 12:17 12:32 13:02 13:17 13:32 14:02 14:17 14:32 15:02 15:17 15:32 16:02 16:17 16:32 17:02 17:17 17:32 18:02 18:17 18:32 19:02 19:17 19:32 20:02 20:17 20:32 21:02 21:17 21:32 22:02 22:17 22:32 23:02 23:17 23:32'.split(' ');
+function updateTableNextDraw(){
+ const el=$('tableNextDraw');if(!el)return;
+ const last=DRAWS.at(-1);
+ if(!last||!Number.isInteger(Number(last.draw))||!/^\\d{2}\\.\\d{2}\\.\\d{2}$/.test(String(last.date||''))){el.textContent='Следующий тираж: ожидание официальных данных';return;}
+ const parts=String(last.date).split('.').map(Number);
+ const date=new Date(Date.UTC(2000+parts[2],parts[1]-1,parts[0]));
+ const time=String(last.time||'');
+ let index=COMBO_DRAW_TIMES.indexOf(time);
+ if(index<0){el.textContent='Последний №'+last.draw+' · '+last.date+' '+time+' МСК · расписание уточняется';return;}
+ if(index===COMBO_DRAW_TIMES.length-1){date.setUTCDate(date.getUTCDate()+1);index=0;}else index++;
+ const day=String(date.getUTCDate()).padStart(2,'0'),month=String(date.getUTCMonth()+1).padStart(2,'0');
+ const label='Следующий тираж №'+(Number(last.draw)+1)+' · '+day+'.'+month+'.'+String(date.getUTCFullYear()).slice(-2)+' · '+COMBO_DRAW_TIMES[index]+' МСК';
+ if(el.textContent!==label)el.textContent=label;
+}
+
 function startAutoRefresh(){window.setTimeout(()=>autoRefreshLive(false),1000);window.setInterval(()=>autoRefreshLive(false),AUTO_REFRESH_MS);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoRefreshLive(true)});window.addEventListener('focus',()=>autoRefreshLive(false));window.addEventListener('pageshow',()=>autoRefreshLive(false));window.addEventListener('online',()=>autoRefreshLive(true));}
 async function forceUpdate(){return refreshAllFromTable();}
-async function load(){let d,p,s,pay;try{[d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json').catch(()=>null),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error('COMBO DB LOAD',e);window.setTimeout(load,AUTO_REFRESH_MS);return}try{updateDbLine();renderGroups();renderCombos();renderPick();}catch(e){console.error('COMBO UI RENDER',e)}startAutoRefresh();notifyComboXray();openIntervalHistory();}
+async function load(){let d,p,s,pay;try{[d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json').catch(()=>null),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error('COMBO DB LOAD',e);window.setTimeout(load,AUTO_REFRESH_MS);return}try{updateDbLine();updateTableNextDraw();renderGroups();renderCombos();renderPick();}catch(e){console.error('COMBO UI RENDER',e)}startAutoRefresh();notifyComboXray();openIntervalHistory();}
 
 document.querySelectorAll('.nav[data-sec]').forEach(b=>b.onclick=()=>{closeSavedDrawer();closeTableDrawer();switchSec(b.dataset.sec)});
 $('anyParams').innerHTML=paramsHTML('anyP');bindParams(document);renderFields('anyP');$('checkAny').onclick=()=>runCheck(selected,'Любая комба');$('refreshBtn').onclick=forceUpdate;
