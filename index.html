@@ -89,6 +89,12 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 @media(max-width:600px){#tableMatrixPanel .cm-panel{padding:3px!important}#tableMatrixPanel .cm-table td,#tableMatrixPanel .cm-table th{height:23px;font-size:clamp(7px,2.1vw,11px)!important}#tableMatrixPanel .cm-table .cm-date{font-size:clamp(6px,1.55vw,9px)!important}}
 #tableMatrixPanel .cm-table tfoot .cm-column-head th.cm-heat-label{box-shadow:inset 0 -3px 0 var(--cm-temp-color)}
 #tableMatrixPanel .cm-table tfoot tr:last-child th,#tableMatrixPanel .cm-table tfoot tr:last-child td{background:#0f172a}
+/* Desktop matrix only: retain mobile geometry and vertical drawer scrolling. */
+@media (min-width:900px) and (pointer:fine) {
+ #tableMatrixPanel{width:min(100%,740px)!important;max-width:740px!important;margin-left:0!important;margin-right:auto!important}
+ #tableMatrixPanel .cm-panel{width:100%!important;max-width:100%!important}
+ #tableMatrixPanel .cm-scroll{width:100%!important}
+}
 </style>
 </head>
 <body>
