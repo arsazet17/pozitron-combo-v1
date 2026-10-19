@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="2a9d4defe651">
-<link rel="manifest" href="manifest.webmanifest?v=2a9d4defe651">
+<meta name="app-build" content="c31001879038">
+<link rel="manifest" href="manifest.webmanifest?v=c31001879038">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=2a9d4defe651">
+<link rel="stylesheet" href="xray-v1.css?v=c31001879038">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -106,7 +106,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.41</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.43</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -146,14 +146,14 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <button class="nav" data-sec="history"><b>◷</b>История</button>
 </div><div class="footrow2">
 <button id="tableDrawerBtn" class="nav" type="button"><b>📊</b>Таблица</button>
-<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=2a9d4defe651'"><b>🔁</b>Интервалы</button>
+<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=c31001879038'"><b>🔁</b>Интервалы</button>
 <div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=2a9d4defe651"></script>
-<script src="xray-ui-v1.js?v=2a9d4defe651"></script>
-<script src="xray-archive-tools-v1.js?v=2a9d4defe651"></script>
-<script src="xray-analog-columns-v1.js?v=2a9d4defe651"></script>
+<script src="xray-engine-v1.js?v=c31001879038"></script>
+<script src="xray-ui-v1.js?v=c31001879038"></script>
+<script src="xray-archive-tools-v1.js?v=c31001879038"></script>
+<script src="xray-analog-columns-v1.js?v=c31001879038"></script>
 <script>
 'use strict';
 
@@ -265,15 +265,28 @@ function cmRender(updateTableOnly=false){
  const footer='<tr class="cm-column-head"><th>Тираж</th>'+footerHeads+'<td>⚖</td><td>Дата</td></tr><tr><th>Частота</th>'+counts+'<td>⚖</td><td>Частота</td></tr>';
  // Keep both native range inputs mounted during dragging (including touch capture).
  const table=panel.querySelector('.cm-table');
- if(updateTableOnly&&table){table.tBodies[0].innerHTML=rows.join('');table.tFoot.innerHTML=footer;return;}
+ if(updateTableOnly&&table){
+  // Retain row buttons, toolbar, range capture and scroll containers on data updates.
+  const body=table.tBodies[0],next=document.createElement('tbody');next.innerHTML=rows.join('');
+  const key=row=>row.querySelector('[data-cm-draw]')?.dataset.cmDraw;
+  const old=new Map([...body.rows].map(row=>[key(row),row]));
+  let cursor=body.firstElementChild;
+  for(const fresh of [...next.rows]){
+   const id=key(fresh),row=old.get(id)||fresh;old.delete(id);
+   if(row!==fresh){row.className=fresh.className;[...fresh.cells].forEach((cell,i)=>{if(row.cells[i].outerHTML!==cell.outerHTML)row.cells[i].replaceWith(cell)});}
+   if(row!==cursor)body.insertBefore(row,cursor);cursor=row.nextElementSibling;
+  }
+  for(const row of old.values())row.remove();
+  if(table.tFoot.innerHTML!==footer)table.tFoot.innerHTML=footer;return;
+ }
  const card=cmSelected?(()=>{const d=DRAWS.find(x=>x.draw===cmSelected.draw);if(!d)return '';const g=cmGroups(d),previous=DRAWS[DRAWS.findIndex(z=>z.draw===d.draw)-1],previousCounts=comboColumnCounts(previous),selectedCount=previousCounts[cmSelected.col]||0,selectedGroup=comboGroupLabel(selectedCount),groupCols=Array.from({length:10},(_,i)=>i+1).filter(i=>selectedCount>=4?previousCounts[i]>=4:previousCounts[i]===selectedCount),selectedNumbers=(previous?.balls||[]).filter(n=>comboColOf(n)===cmSelected.col);return '<div class="cm-card"><button type="button" data-cm-close="1">✕</button><b>ст'+cmSelected.col+'</b><p>Тираж: №'+d.draw+'</p><p>Дата: '+(d.date||'—')+' · Время: '+(d.time||'—')+'</p><p>Вышел из группы: '+selectedGroup+'</p><p>В этой группе были: '+(groupCols.map(v=>'ст'+v).join(' · ')||'—')+'</p><p>Числа выбранного столба в предыдущем тираже: '+(selectedNumbers.join(' · ')||'—')+'</p><b>Группы сейчас</b>'+g.map((a,i)=>'<div>ГР '+(i===4?'4+':i)+': '+(a.join(' · ')||'—')+'</div>').join('')+'</div>'})():'';
  panel.innerHTML='<section class="cm-panel"><div class="cm-toolbar"><b>Матрица столбов</b><button type="button" data-cm-action="numbers" aria-pressed="'+cmNumbers+'" class="'+(cmNumbers?'active':'')+'" title="Показать числа тиражей">А</button><select id="cmCount">'+[20,50,100,200,500].map(n=>'<option value="'+n+'" '+(cmCount===n?'selected':'')+'>'+n+'</option>').join('')+'</select><button data-cm-action="close">✕</button><button data-cm-action="refresh">⟳ Обновить</button><button data-cm-action="reverse">↑↓ Перевернуть</button><button data-cm-action="temp" class="'+(cmTemperature?'active':'')+'">🌡 Температура</button><button data-cm-action="trg" class="'+(cmTrg?'active':'')+'">🔺 TRG</button></div><div class="cm-toolbar"><label>Пустые строки <input id="cmEmpty" type="range" min="0" max="10" value="'+cmEmpty+'"><output>'+cmEmpty+'</output></label><label>Сократить частоту <input id="cmReduce" type="range" min="0" max="20" value="'+cmReduce+'"><output>'+cmReduce+'</output></label></div><div class="cm-note">Новые тиражи внизу · серый — история · жёлтый — последний столб · зелёный — отметка</div><div class="cm-scroll"><table class="cm-table"><thead><tr><th class="cm-draw">Тираж</th>'+heads+'<th>⚖</th><th class="cm-date">Дата / время</th></tr></thead><tbody>'+rows.join('')+'</tbody><tfoot>'+footer+'</tfoot></table></div>'+card+'</section>';
 }
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.id==='tableMatrixBtn'){cmOpen=!cmOpen;cmSaveState();cmRender();return}if(b?.id==='tableTrgBtn'){cmTrg=!cmTrg;cmOpen=true;cmSaveState();cmRender();return}if(!cmOpen)return;const action=b?.dataset.cmAction;if(action){if(action==='close')cmOpen=false;if(action==='reverse')cmReverse=!cmReverse;if(action==='temp')cmTemperature=!cmTemperature;if(action==='numbers')cmNumbers=!cmNumbers;if(action==='row-numbers'){const id=Number(b.dataset.cmRow);if(cmIndividual.has(id))cmIndividual.delete(id);else cmIndividual.add(id);}cmSaveState();if(action==='trg')cmTrg=!cmTrg;if(action==='refresh'){const refresh=$('tableRefreshBtn');refresh?.click()}cmRender();return}if(b?.dataset.cmClose){cmSelected=null;cmRender();return}const cell=e.target.closest('[data-cm-draw]');if(cell){const draw=Number(cell.dataset.cmDraw),col=Number(cell.dataset.cmCol),latest=Math.max(0,...DRAWS.map(d=>Number(d.draw)||0));if(draw>latest){const marks=cmFutureMarks.get(draw)||new Set();if(marks.has(col))marks.delete(col);else marks.add(col);cmFutureMarks.set(draw,marks);cmRender();return}cmSelected={draw,col};cmRender()}});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.id==='tableMatrixBtn'){cmOpen=!cmOpen;cmSaveState();cmRender();return}if(b?.id==='tableTrgBtn'){cmTrg=!cmTrg;cmOpen=true;cmSaveState();cmRender();return}if(!cmOpen)return;const action=b?.dataset.cmAction;if(action){if(action==='close')cmOpen=false;if(action==='reverse')cmReverse=!cmReverse;if(action==='temp')cmTemperature=!cmTemperature;if(action==='numbers')cmNumbers=!cmNumbers;if(action==='row-numbers'){const id=Number(b.dataset.cmRow);if(cmIndividual.has(id))cmIndividual.delete(id);else cmIndividual.add(id);}cmSaveState();if(action==='trg')cmTrg=!cmTrg;if(action==='refresh'){const refresh=$('tableRefreshBtn');refresh?.click();return}cmRender();return}if(b?.dataset.cmClose){cmSelected=null;cmRender();return}const cell=e.target.closest('[data-cm-draw]');if(cell){const draw=Number(cell.dataset.cmDraw),col=Number(cell.dataset.cmCol),latest=Math.max(0,...DRAWS.map(d=>Number(d.draw)||0));if(draw>latest){const marks=cmFutureMarks.get(draw)||new Set();if(marks.has(col))marks.delete(col);else marks.add(col);cmFutureMarks.set(draw,marks);cmRender();return}cmSelected={draw,col};cmRender()}});
 document.addEventListener('change',e=>{if(e.target.id==='cmCount'){cmCount=Number(e.target.value);cmRender()}});
 document.addEventListener('input',e=>{if(e.target.id==='cmEmpty'||e.target.id==='cmReduce'){const n=Number(e.target.value);if(e.target.id==='cmEmpty')cmEmpty=n;else cmReduce=n;const output=e.target.parentElement?.querySelector('output');if(output)output.textContent=n;cmRender(true);}});
 
-function renderTableDrawer(){cmRender();const box=$('tableDrawerBody');if(!box)return;syncTableHeadButtons();const nums=getTableEffectiveSelected().filter(tableParityVisible);const recent=getRecentVisibleDraws();const numberMap=getTableNumberMap(recent);const overlaps=getTableOverlapNumbers(recent).filter(tableParityVisible);const legend=`<div class="tableLegend">
+function renderTableDrawer(live=false){cmRender(live);const box=$('tableDrawerBody');if(!box)return;syncTableHeadButtons();const nums=getTableEffectiveSelected().filter(tableParityVisible);const recent=getRecentVisibleDraws();const numberMap=getTableNumberMap(recent);const overlaps=getTableOverlapNumbers(recent).filter(tableParityVisible);const legend=`<div class="tableLegend">
 <button type="button" class="lg c1 ${tablePaintColor==='c1'?'paintOn':''}" data-paint="c1">1 зел</button>
 <button type="button" class="lg c2 ${tablePaintColor==='c2'?'paintOn':''}" data-paint="c2">2 жёлт</button>
 <button type="button" class="lg c3 ${tablePaintColor==='c3'?'paintOn':''}" data-paint="c3">3 красн</button>
@@ -296,7 +309,7 @@ function renderPick(){$('pickgrid').innerHTML=Array.from({length:80},(_,i)=>i+1)
 function hitCell(h,selectedCount){const prize=prizeForHits(selectedCount,h);if(prize){return `<div class="hitbox"><div class="hits fire"><span class="flame">🔥</span><span>${h}</span></div><div class="prize">Сумма<br>${money(prize)}</div></div>`}const cl=h===0?'z':h>=2?'h':'o';return `<div class="hitbox"><div class="hits ${cl}">${h}</div></div>`}
 function historyBalls(d){return historyOrder==='asc'?[...d.balls].sort((a,b)=>a-b):d.balls}
 function histRow(d,nums){const balls=historyBalls(d);const transitions=historyTransitions&&window.ComboHistoryTransitions?window.ComboHistoryTransitions(d):new Set();return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${drawColumn(d)??'—'}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${hitCell(hitsFor(nums,d),nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${historyMarks.has(n)?'mark':''} ${transitions.has(Number(n))?'transition':''}" data-hn="${n}" role="button" tabindex="0" aria-pressed="${historyMarks.has(n)?'true':'false'}">${fmt(n)}</span>`).join('')}</div></div>`}
-function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=2a9d4defe651">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
+function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=c31001879038">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
 function bindHistoryOrder(){const transitions=$('historyTransitionsBtn');if(transitions)transitions.onclick=()=>{historyTransitions=!historyTransitions;renderHistory()};document.querySelectorAll('#historyBox [data-history-order]').forEach(b=>b.onclick=()=>{historyOrder=b.dataset.historyOrder;renderHistory()})}
 function markBarHTML(){const a=[...historyMarks].sort((x,y)=>x-y);return `<div class="markHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Можно отметить несколько.</div>${a.length?`<div class="markBar"><span class="muted">Подсвечено:</span>${a.map(n=>`<span class="markChip">${fmt(n)}</span>`).join('')}<button id="markClear" class="markClear" type="button">Снять всё</button></div>`:''}`}
 function toggleHistoryMark(n){n=Number(n);if(!Number.isInteger(n)||n<1||n>80)return;if(historyMarks.has(n)){historyMarks.delete(n);selected=selected.filter(x=>x!==n);}else{if(!selected.includes(n) && selected.length>=10){alert('Максимум 10 чисел в комбинации');return}historyMarks.add(n);if(!selected.includes(n))selected=[...selected,n];}renderPick();renderHistory();}
@@ -327,10 +340,79 @@ async function fetchJSONLive(name){
   return JSON.parse(text);
  }finally{clearTimeout(timer)}
 }
-async function autoRefreshLive(force=false){if(autoRefreshBusy||document.hidden)return;autoRefreshBusy=true;try{const s=await fetchJSONLive('combo-status-v1.json');const current=Number(DRAWS.at(-1)?.draw||0);const official=Number(s?.latestDraw||0);syncMeta=s;if(!force && official<=current)return;const d=await fetchJSONLive('combo-history-v1.json');if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');d.sort((a,b)=>a.draw-b.draw);const received=Number(d.at(-1)?.draw||0);if(official && received<official)throw new Error(`История ещё не догнала status: ${received}<${official}`);if(received>current || force){DRAWS=d;updateDbLine();renderFields('anyP');renderFields('ourP');refreshOpenHistory();notifyComboXray();if($('tableDrawer')&&!$('tableDrawer').classList.contains('hidden')&&cmOpen){cmRender(true);}}}catch(e){console.warn('COMBO LIVE AUTO',e);}finally{autoRefreshBusy=false;}}
-async function refreshAllFromTable(){const btn=$('tableRefreshBtn');if(btn?.disabled)return;const drawer=$('tableDrawer');const scroll=drawer?.scrollTop||0;if(btn){btn.disabled=true;btn.textContent='⏳';}try{const [d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json'),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('История пуста');d.sort((a,b)=>a.draw-b.draw);const latest=Number(d.at(-1)?.draw||0),official=Number(s?.latestDraw||0);if(official>latest)throw new Error('Новый тираж ещё загружается: '+latest+' / '+official);DRAWS=d;PRESETS=p;PAYOUTS=pay;syncMeta=s;updateDbLine();renderGroups();renderCombos();renderPick();renderFields('anyP');renderFields('ourP');refreshOpenHistory();notifyComboXray();renderTableDrawer();if(drawer)drawer.scrollTop=scroll;if(btn)btn.title='Обновлено до тиража №'+latest;}catch(e){console.warn('TABLE REFRESH',e);alert('Не удалось обновить данные: '+e.message);}finally{if(btn){btn.disabled=false;btn.textContent='⟳';}}}
+// One in-flight refresh for every entry point. Slow/older responses cannot roll data back.
+let liveRefreshTask=null;
+function captureLiveView(){
+ const selectors=['#tableDrawer','#tableDrawerBody','#tableMatrixPanel .cm-scroll'];
+ const scrolls=selectors.map(selector=>{const el=document.querySelector(selector);return {selector,top:el?.scrollTop||0,left:el?.scrollLeft||0}});
+ const scroller=document.querySelector('#tableMatrixPanel .cm-scroll');
+ const anchor=scroller&&[...scroller.querySelectorAll('tbody tr')].find(row=>row.getBoundingClientRect().bottom>scroller.getBoundingClientRect().top);
+ const focused=document.activeElement;
+ return {scrolls,x:window.scrollX,y:window.scrollY,anchor:anchor?.querySelector('[data-cm-draw]')?.dataset.cmDraw,offset:anchor?.getBoundingClientRect().top,
+  focus:focused?.id,value:focused?.value,start:focused?.selectionStart,end:focused?.selectionEnd};
+}
+function restoreLiveView(view){
+ for(const s of view.scrolls){const el=document.querySelector(s.selector);if(el){el.scrollTop=s.top;el.scrollLeft=s.left;}}
+ const scroller=document.querySelector('#tableMatrixPanel .cm-scroll');
+ const anchor=view.anchor&&scroller?.querySelector('[data-cm-draw="'+view.anchor+'"]')?.closest('tr');
+ if(anchor)scroller.scrollTop+=anchor.getBoundingClientRect().top-view.offset;
+ const focus=view.focus&&$(view.focus);
+ if(focus&&focus!==document.activeElement){if(view.value!==undefined)focus.value=view.value;focus.focus({preventScroll:true});try{focus.setSelectionRange(view.start,view.end)}catch{}}
+ window.scrollTo(view.x,view.y);
+}
+function validateLiveHistory(draws,status){
+ if(!Array.isArray(draws)||!draws.length)throw new Error('История пуста');
+ const current=Number(DRAWS.at(-1)?.draw||0);let previous=0;
+ for(const d of draws){
+  if(!Number.isSafeInteger(d.draw)||d.draw<=previous||!Array.isArray(d.balls)||d.balls.length!==20||new Set(d.balls).size!==20||d.balls.some(n=>!Number.isInteger(n)||n<1||n>80))throw new Error('Некорректный или повторный тираж');
+  if(current&&d.draw>current&&d.draw!==Math.max(previous,current)+1)throw new Error('Пропуск нового тиража');
+  previous=d.draw;
+ }
+ if(previous<current)throw new Error('Источник вернул устаревшую историю');
+ if(previous<Number(status?.latestDraw||0))throw new Error('История ещё не догнала статус источника');
+ return previous;
+}
+async function autoRefreshLive(force=false){
+ if(liveRefreshTask)return liveRefreshTask;
+ if(document.hidden&&!force)return;
+ autoRefreshBusy=true;
+ liveRefreshTask=(async()=>{
+  const s=await fetchJSONLive('combo-status-v1.json');
+  const current=Number(DRAWS.at(-1)?.draw||0);
+  if(!force&&Number(s?.latestDraw||0)<=current){syncMeta=s;return {latest:current,changed:false};}
+  const d=await fetchJSONLive('combo-history-v1.json');
+  const latest=validateLiveHistory(d,s),changed=JSON.stringify(d)!==JSON.stringify(DRAWS);
+  syncMeta=s;
+  if(changed){
+   const view=captureLiveView();
+   try{
+    DRAWS=d;updateDbLine();refreshOpenHistory();
+    const drawer=$('tableDrawer');
+    if(drawer&&!drawer.classList.contains('hidden'))renderTableDrawer(true);
+    notifyComboXray();
+   }finally{restoreLiveView(view)}
+  }
+  return {latest,changed};
+ })().catch(error=>{console.warn('COMBO LIVE AUTO',error);return {error};}).finally(()=>{autoRefreshBusy=false;liveRefreshTask=null;});
+ return liveRefreshTask;
+}
+async function refreshAllFromTable(){
+ const buttons=[$('refreshBtn'),$('tableRefreshBtn'),...document.querySelectorAll('[data-cm-action="refresh"]')].filter(Boolean);
+ if(buttons.some(b=>b.disabled))return;
+ const labels=buttons.map(b=>b.textContent);
+ buttons.forEach(b=>{b.disabled=true;b.textContent='⟳ Проверяю…'});
+ try{
+  const result=await autoRefreshLive(true);
+  if(result?.error)throw result.error;
+  const message=result.changed?'Загружен тираж №'+result.latest:'Новых опубликованных тиражей нет · последний №'+result.latest;
+  const status=$('dbline');if(status){updateDbLine();status.textContent+=' · '+message;status.title=message;}
+  buttons.forEach(b=>b.title=message);
+  if(!result.changed)alert(message);
+ }catch(error){alert('Не удалось обновить данные: '+error.message);}
+ finally{buttons.forEach((b,i)=>{b.disabled=false;if(b.textContent==='⟳ Проверяю…')b.textContent=labels[i]});}
+}
 function startAutoRefresh(){window.setTimeout(()=>autoRefreshLive(false),1000);window.setInterval(()=>autoRefreshLive(false),AUTO_REFRESH_MS);document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoRefreshLive(true)});window.addEventListener('focus',()=>autoRefreshLive(false));window.addEventListener('pageshow',()=>autoRefreshLive(false));window.addEventListener('online',()=>autoRefreshLive(true));}
-async function forceUpdate(){if($('tableDrawer')&&!$('tableDrawer').classList.contains('hidden')){refreshAllFromTable();return}const b=$('refreshBtn');if(!b)return;b.disabled=true;b.textContent='↻ Обновляю…';try{if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.update().catch(()=>{})))}if('caches' in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('combo-keno-shell')).map(k=>caches.delete(k)))}}catch(e){console.warn(e)}finally{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString())}}
+async function forceUpdate(){return refreshAllFromTable();}
 async function load(){let d,p,s,pay;try{[d,p,s,pay]=await Promise.all([fetchJSONLive('combo-history-v1.json'),fetchJSONLive('combo-presets-v1.json'),fetchJSONLive('combo-status-v1.json').catch(()=>null),fetchJSONLive('keno-payouts-v1.json')]);if(!Array.isArray(d)||!d.length)throw new Error('combo-history-v1.json пуст');DRAWS=d.sort((a,b)=>a.draw-b.draw);PRESETS=p;PAYOUTS=pay;syncMeta=s;}catch(e){$('dbline').textContent='Ошибка загрузки базы';console.error('COMBO DB LOAD',e);window.setTimeout(load,AUTO_REFRESH_MS);return}try{updateDbLine();renderGroups();renderCombos();renderPick();}catch(e){console.error('COMBO UI RENDER',e)}startAutoRefresh();notifyComboXray();openIntervalHistory();}
 
 document.querySelectorAll('.nav[data-sec]').forEach(b=>b.onclick=()=>{closeSavedDrawer();closeTableDrawer();switchSec(b.dataset.sec)});
@@ -345,12 +427,12 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=2a9d4defe651',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=c31001879038',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-table-lock-v1.js?v=2a9d4defe651"></script>
-<script src="combo-search-v1.js?v=2a9d4defe651"></script>
-<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.8.41'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
-<script src="combo-max-details-v1.js?v=2a9d4defe651"></script>
+<script src="combo-table-lock-v1.js?v=c31001879038"></script>
+<script src="combo-search-v1.js?v=c31001879038"></script>
+<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.8.43'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
+<script src="combo-max-details-v1.js?v=c31001879038"></script>
 <script id="comboAutoUpdate">
 (()=>{
  const current=document.querySelector('meta[name="app-build"]')?.content;

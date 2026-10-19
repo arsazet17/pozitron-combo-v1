@@ -71,14 +71,14 @@ await check('PWA build ID, shell queries and manifest are consistent',()=>{
 const handlers={},deleted=[],networkCalls=[];let networkOffline=true,cachedShell=new Response('offline-shell'),cachedAsset=new Response('offline-js'),added=[];
 const cacheMock={async addAll(list){added=list},async match(req){const url=typeof req==='string'?req:req.url;return url.endsWith('/index.html')?cachedShell:url.includes('xray-ui-v1.js?v='+build)?cachedAsset:undefined}};
 let activated=0,claimed=0;
-const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{activated++},clients:{claim:async()=>{claimed++}},addEventListener(type,fn){handlers[type]=fn}};
+const scope='https://example.test/combo/',selfMock={registration:{scope},skipWaiting:async()=>{activated++},clients:{claim:async()=>{claimed++},matchAll:async()=>[{url:'https://example.test/combo/',navigate:()=>{throw new Error('SW must never navigate an open client')}}]},addEventListener(type,fn){handlers[type]=fn}};
 const cacheStorage={open:async()=>cacheMock,keys:async()=>['other-app-cache','combo-keno-shell-old','combo-keno-shell-'+build],delete:async key=>{deleted.push(key);return true}};
 new Function('self','caches','fetch','URL','Request','Response',sw)(selfMock,cacheStorage,async req=>{networkCalls.push(req);if(networkOffline)throw new Error('offline');return new Response('live')},URL,Request,Response);
 async function eventDone(name){let promise;handlers[name]({waitUntil(p){promise=p}});await promise}
 async function request(url,mode){let handled=false,promise;const req=new Request(url);handlers.fetch({request:mode?{url:req.url,method:'GET',mode}:req,respondWith(p){handled=true;promise=p}});return {handled,response:handled?await promise:null}}
 await check('PWA install caches actual versioned requests; activate retains foreign cache',async()=>{
  await eventDone('install');assert(added.some(x=>x.url===scope+'xray-ui-v1.js?v='+build));assert(added.every(x=>x.cache==='no-store'));assert(!added.some(x=>/history|runtime|payout|presets|status/.test(x.url)));
- await eventDone('activate');assert.equal(activated,1);assert.equal(claimed,1);assert.deepEqual(deleted,['combo-keno-shell-old']);
+ assert(!sw.includes('client.navigate'),'SW activation must preserve open tabs');await eventDone('activate');assert.equal(activated,1);assert.equal(claimed,1);assert.deepEqual(deleted,['combo-keno-shell-old']);
  const asset=await request(scope+'xray-ui-v1.js?v='+build);assert.equal(await asset.response.text(),'offline-js');
 });
 await check('PWA offline navigation uses shell, data always uses network no-store',async()=>{

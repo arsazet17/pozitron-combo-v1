@@ -4,9 +4,19 @@
     "workflow_dispatch": {},
     "schedule": [
       {
-        "cron": "6,16,26,36,46,56 * * * *"
+        "cron": "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
       }
-    ]
+    ],
+    "push": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "stoloto-combo-update-v1.mjs",
+        ".github/scripts/combo-data-update.mjs",
+        ".github/workflows/update-combo-v1.yaml"
+      ]
+    }
   },
   "permissions": {
     "contents": "write"

@@ -93,6 +93,14 @@
             "COMBO_BASE_SHA": "${{ github.event.pull_request.base.sha || github.event.before || '' }}"
           },
           "run": "node .github/scripts/check-published-baseline.mjs"
+        },
+        {
+          "name": "Install pinned browser for live UI regression",
+          "run": "npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.54.2\nnpx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Real browser: automatic data updates preserve matrix state",
+          "run": "node self-test-combo-live-browser.mjs"
         }
       ]
     }

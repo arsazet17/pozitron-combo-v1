@@ -21,7 +21,7 @@ export function publicationStamp({ date, time } = {}) {
   const check = new Date(stamp);
   return check.getUTCDate() === d && check.getUTCMonth() === m - 1 ? stamp : NaN;
 }
-export async function updateData() {
+export async function updateData({run = () => spawnSync(process.execPath, ['stoloto-combo-update-v1.mjs'], { stdio: 'inherit', timeout: 240000 }), readStatus = async () => JSON.parse(await fs.readFile('combo-status-v1.json', 'utf8')), writeStatus = async status => fs.writeFile('combo-status-v1.json', JSON.stringify(status, null, 2) + '\n'), wait = ms => new Promise(resolve => setTimeout(resolve, ms))} = {}) {
   const due = process.env.COMBO_DUE_DATE && process.env.COMBO_DUE_TIME
     ? { date: process.env.COMBO_DUE_DATE, time: process.env.COMBO_DUE_TIME } : dueTarget();
   const target = publicationStamp(due);
@@ -29,13 +29,18 @@ export async function updateData() {
   console.log('DATA UPDATE: publication target', due.date, due.time);
   for (let attempt = 1; attempt <= 6; attempt++) {
     console.log('DATA UPDATE: official verification attempt', attempt);
-    const result = spawnSync(process.execPath, ['stoloto-combo-update-v1.mjs'], { stdio: 'inherit', timeout: 240000 });
+    const result = await run();
     if (result.status === 0) {
-      const status = JSON.parse(await fs.readFile('combo-status-v1.json', 'utf8'));
-      if (publicationStamp(status.latestOfficial) >= target) return;
+      const status = await readStatus();
+      if (!Number.isFinite(publicationStamp(status.latestOfficial)) || Number(status.latestOfficial.draw) !== Number(status.latestDraw)) throw new Error('Invalid verified official status');
+      const waiting = publicationStamp(status.latestOfficial) < target;
+      await writeStatus({...status, checkedAt:new Date().toISOString(), sourceState:waiting?'waiting':'current', expectedPublication:due});
+      // The clock is a freshness indicator, never a veto on verified draws.
+      console.log(waiting ? 'DATA UPDATE: source delayed; publish verified tail immediately, latest #' + status.latestDraw : 'DATA UPDATE: official target reached');
+      return;
     }
-    if (attempt < 6) await new Promise(resolve => setTimeout(resolve, 25000));
+    if (attempt < 6) await wait(25000);
   }
-  throw new Error('Official archive did not reach the frozen publication target; nothing will be committed');
+  throw new Error('Official verification failed; nothing will be committed');
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await updateData();
