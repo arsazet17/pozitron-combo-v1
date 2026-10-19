@@ -1,19 +1,25 @@
 {
-  "version": "1.0.5",
-  "source": "https://m.stoloto.ru/keno2/archive/",
-  "updatedAt": "2026-10-19T18:14:56.663Z",
-  "drawsStored": 35264,
-  "latestDraw": 329845,
+  "version": "1.0.6",
+  "source": "https://raw.githubusercontent.com/arsazet17/pozitron-keno-4m/main/data/full20_draws.json",
+  "updatedAt": "2026-10-19T19:42:38.157Z",
+  "drawsStored": 35269,
+  "latestDraw": 329850,
   "latestDate": "19.10.26",
-  "latestTime": "21:02",
-  "verification": "2of3-auto-catchup",
+  "latestTime": "22:32",
+  "verification": "full20-official-mirror-anchored",
   "stableDraws": 10,
   "checkedTail": 10,
-  "added": 1,
+  "added": 5,
   "latestOfficial": {
-    "draw": 329845,
+    "draw": 329850,
     "date": "19.10.26",
-    "time": "21:02",
-    "column": 5
+    "time": "22:32",
+    "column": 1
+  },
+  "checkedAt": "2026-10-19T19:42:38.220Z",
+  "sourceState": "current",
+  "expectedPublication": {
+    "date": "19.10.26",
+    "time": "22:32"
   }
 }
