@@ -1,7 +1,10 @@
 # COMBO publication pipeline
 
-The four active writer entry points all call `ci-publish.mjs` and share the
-`combo-main-writer` concurrency group with `cancel-in-progress: false`.
+The four active writer entry points all call `ci-publish.mjs` with
+`cancel-in-progress: false`. Official data uses `combo-data-writer`, so a pending
+draw update cannot be displaced by an XRAY/journal request in `combo-main-writer`.
+App builds use `combo-app-writer`; concurrent publishers still verify remote HEAD
+and recompute on a fresh checkout before retrying a rejected push.
 Only this helper commits and pushes generated files.
 
 Each attempt fetches current main into a disposable Actions checkout, saves

@@ -18,7 +18,7 @@ for (const name of names) {
     continue;
   }
   if (w.permissions.contents === 'write') {
-    assert.equal(w.concurrency.group, name === 'combo-auto-app-build.yml' ? 'combo-app-writer' : 'combo-main-writer');
+    assert.equal(w.concurrency.group, name === 'combo-auto-app-build.yml' ? 'combo-app-writer' : name === 'update-combo-v1.yaml' ? 'combo-data-writer' : 'combo-main-writer');
     assert.equal(w.concurrency['cancel-in-progress'], false);
     const jobs = Object.values(w.jobs);
     assert.equal(jobs.length, 1);
@@ -30,6 +30,7 @@ for (const name of names) {
 }
 assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 4);
 assert(workflows.get('update-combo-v1.yaml').on.workflow_dispatch);
+assert.notEqual(workflows.get('update-combo-v1.yaml').concurrency.group, workflows.get('xray-ai-train.yml').concurrency.group, 'Runtime/journal requests must not replace pending official data updates');
 assert.deepEqual(workflows.get('update-combo-v1.yaml').on.schedule, [{cron:'1,6,11,16,21,26,31,36,41,46,51,56 * * * *'}], 'Data updates must run automatically, including retry opportunities between draws');
 const rebuild = workflows.get('xray-ai-train.yml');
 for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-runtime-core.mjs', 'xray-runtime-io.mjs', 'keno-payouts-v1.json', 'combo-history-v1.json']) {

@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const archive=JSON.parse(await fs.readFile('combo-history-v1.json','utf8'));
-const tail=archive.slice(-103);let count=100,statusRequests=0,historyRequests=0;
+const tail=archive.slice(-106);let count=100,statusRequests=0,historyRequests=0,statusFailure=false,nextBuild=null;
 const root=process.cwd(),errors=[],dialogs=[];
 const server=http.createServer(async(req,res)=>{
  try{
@@ -13,8 +13,9 @@ const server=http.createServer(async(req,res)=>{
   const file=path.resolve(root,name);if(!file.startsWith(root+path.sep))throw Error('path');
   res.setHeader('Cache-Control','no-store');
   res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.json')?'application/json':name.endsWith('.css')?'text/css':'text/html');
-  if(name==='combo-status-v1.json'){statusRequests++;res.end(JSON.stringify({latestDraw:tail[count-1].draw}));return}
+  if(name==='combo-status-v1.json'){statusRequests++;if(statusFailure){res.writeHead(503);res.end('offline');return}res.end(JSON.stringify({latestDraw:tail[count-1].draw}));return}
   if(name==='combo-history-v1.json'){historyRequests++;res.end(JSON.stringify(tail.slice(0,count)));return}
+  if(name==='app-version.json'&&nextBuild){res.end(JSON.stringify({build:nextBuild}));return}
   res.end(await fs.readFile(file));
  }catch{res.writeHead(404);res.end()}
 });
@@ -43,15 +44,26 @@ try{
  assert(await page.locator('[data-tdraw="'+tail[100].draw+'"]').count());
  assert.match(await page.locator('#dbline').textContent(),new RegExp(String(tail[100].draw)));
  const scroll=await page.locator('.cm-scroll').evaluate(el=>[el.scrollTop,el.scrollLeft]);
+ // A published app build must not reload an open table or discard its A controls.
+ nextBuild='0123456789ab';await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.waitForFunction(build=>sessionStorage.getItem('combo-app-reloaded:'+location.pathname+':'+build)==='1',nextBuild);
+ assert.deepEqual(await state(),before);assert.deepEqual(await page.locator('.cm-scroll').evaluate(el=>[el.scrollTop,el.scrollLeft]),scroll);
+ assert(await page.evaluate(()=>window.testToolbar===document.querySelector('.cm-toolbar')&&window.testRange===document.querySelector('#cmReduce')&&window.testRow===document.querySelector('.cm-inline-a.active')));
  await page.evaluate(()=>refreshAllFromTable());assert.deepEqual(await state(),before);assert.deepEqual(await page.locator('.cm-scroll').evaluate(el=>[el.scrollTop,el.scrollLeft]),scroll);
  assert(dialogs.at(-1).includes('Новых опубликованных тиражей нет'));
  count=102;await page.evaluate(()=>refreshAllFromTable());assert.deepEqual(await state(),before);
  assert.equal(await page.evaluate(()=>DRAWS.at(-1).draw),tail[101].draw);
+ // Recover a failed request and catch up multiple draws without losing table state.
+ statusFailure=true;await page.evaluate(()=>autoRefreshLive(true));assert.deepEqual(await state(),before);
+ assert.equal(await page.evaluate(()=>DRAWS.at(-1).draw),tail[101].draw);
+ statusFailure=false;count=105;await page.evaluate(()=>autoRefreshLive(true));
+ assert.deepEqual(await state(),before);
+ assert.deepEqual(await page.evaluate(()=>({count:DRAWS.length,unique:new Set(DRAWS.map(d=>d.draw)).size,last:DRAWS.at(-1).draw})),{count:105,unique:105,last:tail[104].draw});
  await page.locator('#closeTableDrawer').click();await page.locator('.nav[data-sec="any"]').click();
  const active=await page.locator('.nav[data-sec="any"]').getAttribute('class');
- count=103;await page.locator('#refreshBtn').click();await page.waitForFunction(latest=>DRAWS.at(-1).draw===latest,tail[102].draw);
+ count=106;await page.locator('#refreshBtn').click();await page.waitForFunction(latest=>DRAWS.at(-1).draw===latest,tail[105].draw);
  assert.equal(await page.locator('.nav[data-sec="any"]').getAttribute('class'),active);
  assert.equal(navigations,1,'no refresh navigates or reloads');assert.deepEqual(errors,[]);
  assert(historyRequests>=4&&statusRequests>=4);
- console.log('PASS real browser: timer + manual updates, matrix A states, filters, controls, width, scroll, table rows, no navigation or JS errors');
+ console.log('PASS real browser: timer + manual updates, published app build, outage recovery, multi-draw catch-up without duplicates, matrix A states, filters, controls, width, scroll, no navigation or JS errors');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
