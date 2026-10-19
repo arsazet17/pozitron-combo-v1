@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { publishFresh } from './.github/scripts/ci-publish.mjs';
-import { dueTarget, publicationStamp } from './.github/scripts/combo-data-update.mjs';
+import { dueTarget, publicationStamp, updateData } from './.github/scripts/combo-data-update.mjs';
 
 const names = (await fs.readdir('.github/workflows')).filter(x => /\.ya?ml$/.test(x));
 const workflows = new Map();
@@ -30,7 +30,7 @@ for (const name of names) {
 }
 assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 4);
 assert(workflows.get('update-combo-v1.yaml').on.workflow_dispatch);
-assert.deepEqual(workflows.get('update-combo-v1.yaml').on.schedule, [{cron:'6,16,26,36,46,56 * * * *'}], 'Data updates must run automatically, including retry opportunities between draws');
+assert.deepEqual(workflows.get('update-combo-v1.yaml').on.schedule, [{cron:'1,6,11,16,21,26,31,36,41,46,51,56 * * * *'}], 'Data updates must run automatically, including retry opportunities between draws');
 const rebuild = workflows.get('xray-ai-train.yml');
 for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-runtime-core.mjs', 'xray-runtime-io.mjs', 'keno-payouts-v1.json', 'combo-history-v1.json']) {
   assert(rebuild.on.push.paths.includes(p), 'Missing runtime dependency: ' + p);
@@ -112,3 +112,9 @@ const publisherSource=await fs.readFile('.github/scripts/ci-publish.mjs','utf8')
 assert(publisherSource.includes("...(mode === 'app' ? ['app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'] : [])"));
 for(const p of ['xray-runtime-core.mjs','xray-runtime-io.mjs','build-xray-runtime.mjs'])assert(app.on.push.paths.includes(p));
 console.log('PASS data writers cannot regenerate or stage application releases');
+
+// A verified new draw must be published even when the official feed trails the clock.
+let reads=0,publishedStatus;
+await updateData({run:async()=>{reads++;return {status:0}},readStatus:async()=>({latestDraw:329844,latestOfficial:{draw:329844,date:'19.10.26',time:'20:32'}}),writeStatus:async value=>{publishedStatus=value},wait:async()=>{throw new Error('Verified data must not wait')}});
+assert.equal(reads,1);assert.equal(publishedStatus.latestDraw,329844);assert(publishedStatus.checkedAt);
+console.log('PASS verified delayed source is published immediately instead of discarded');

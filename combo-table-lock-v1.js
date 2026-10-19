@@ -225,7 +225,7 @@
        !renderTableDrawer.__tableLockV1){
       const original = renderTableDrawer;
       const wrapped = function(){
-        const out = original();
+        const out = original.apply(this, arguments);
         bindLockButton();
         syncLockButton();
         return out;

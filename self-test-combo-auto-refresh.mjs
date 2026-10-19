@@ -18,7 +18,7 @@ const env={
  document:{hidden:false,addEventListener:(name,fn)=>{events[name]=fn}},
  setTimeout:(fn,ms)=>{const id=++nextTimer;timeouts.set(id,{fn,ms});return id},clearTimeout:id=>timeouts.delete(id),
  openIntervalHistory(){},updateDbLine(){},renderFields(){},refreshOpenHistory(){},notifyComboXray(){notifications++},
- renderGroups(){},renderCombos(){},renderPick(){},$:()=>({textContent:''}),
+ renderGroups(){},renderCombos(){},renderPick(){},renderTableDrawer(){},$:()=>({textContent:'',classList:{contains:()=>true}}),
  fetch:async(url,options)=>{
   requests.push({url,options});
   assert.equal(options.cache,'no-store');assert.match(url,/_live=\d+/);
@@ -35,6 +35,7 @@ const env={
 };
 env.window={setTimeout:env.setTimeout,setInterval:(fn,ms)=>intervals.push({fn,ms}),addEventListener:(name,fn)=>{events[name]=fn}};
 vm.createContext(env);vm.runInContext(code,env);
+env.captureLiveView=()=>({});env.restoreLiveView=()=>{};
 env.startAutoRefresh();assert.equal(intervals.length,1);assert.equal(intervals[0].ms,10000);
 const tick=()=>intervals[0].fn();
 for(let i=1;i<=3;i++){
@@ -49,10 +50,10 @@ await tick();assert.equal(notifications,3,'unchanged status does not redraw');
 for(const mode of ['headers','body']){
  failure=mode;
  const pending=env.autoRefreshLive(true);
- await Promise.resolve();await Promise.resolve();
- const before=requests.length;await tick();assert.equal(requests.length,before,'no concurrent refresh');
+ await new Promise(setImmediate);
+ const before=requests.length;const shared=tick();assert.equal(requests.length,before,'no concurrent refresh');
  const timeout=[...timeouts.values()].find(t=>t.ms===30000);assert(timeout,'request deadline installed');timeout.fn();
- await pending;assert.equal(env.autoRefreshBusy,false);assert.equal(JSON.stringify(env.DRAWS),saved);
+ await pending;await shared;assert.equal(env.autoRefreshBusy,false);assert.equal(JSON.stringify(env.DRAWS),saved);
  failure=null;await env.autoRefreshLive(true);assert.equal(env.autoRefreshBusy,false);
  console.log(`PASS stalled ${mode}: abort, unlock, preserve archive, recover on next update`);
 }
@@ -61,6 +62,11 @@ for(const mode of ['http','html','lag']){
  failure=null;await env.autoRefreshLive(true);
 }
 console.log('PASS HTTP failure, invalid JSON/HTML and publication lag preserve data and recover');
+const beforeUnchanged=notifications;await env.autoRefreshLive(true);assert.equal(notifications,beforeUnchanged,'manual unchanged refresh does not redraw');
+for(const bad of [tail.slice(0,-1),[...tail,tail.at(-1)],[...tail,{...tail.at(-1),draw:tail.at(-1).draw+2}],[...tail,{...tail.at(-1),draw:tail.at(-1).draw+1,balls:Array(20).fill(1)}]]){
+ available=bad;const result=await env.autoRefreshLive(true);assert(result.error);assert.equal(JSON.stringify(env.DRAWS),saved);
+}
+available=tail;console.log('PASS stale, duplicate, missing and invalid draws rejected without rollback');
 env.document.hidden=true;const before=requests.length;await tick();assert.equal(requests.length,before);
 env.document.hidden=false;await events.visibilitychange();await events.online();
 // An initial outage previously returned before startAutoRefresh forever.
