@@ -102,7 +102,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 #tableMatrixPanel .cm-table td.cm-draw-with-a{position:relative!important;overflow:visible!important}
 #tableMatrixPanel .cm-inline-a{position:absolute;right:1px;top:1px;min-width:12px;height:12px;padding:0 1px;border:1px solid #647d93;border-radius:2px;background:#183449;color:#e2eaf0;font-size:9px;line-height:10px;cursor:pointer;z-index:2}
 #tableMatrixPanel .cm-inline-a.active{background:#188a45;color:white;border-color:#8cf5aa}
-.tableNextDraw{margin:7px 0 10px;padding:9px 12px;border:1px solid #3a6b8d;border-radius:11px;background:#102c44;color:#e7f4ff;font-weight:700;font-size:14px;line-height:1.4;min-height:40px;font-variant-numeric:tabular-nums}
+.tableNextDraw{display:block!important;visibility:visible!important;position:relative;z-index:2;margin:7px 0 10px;padding:9px 12px;border:1px solid #3a6b8d;border-radius:11px;background:#102c44;color:#e7f4ff;font-weight:700;font-size:14px;line-height:1.4;min-height:40px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -222,7 +222,7 @@ function setTableDrawMode(id,mode){id=Number(id);if(mode==='draw'){tableNumberMo
 function toggleTableDrawNumber(id,n){n=Number(n);if(!Number.isInteger(n)||n<1||n>80)return;if(tableMarkedNumbers.has(n))tableMarkedNumbers.delete(n);else tableMarkedNumbers.add(n);renderTableDrawer()}
 function toggleTableDraw(id){id=Number(id);if(tableActiveDrawIds.includes(id)) tableActiveDrawIds=tableActiveDrawIds.filter(x=>x!==id);else tableActiveDrawIds=[...tableActiveDrawIds,id];renderTableDrawer();}
 function clearTableAll(){tableManualSelected=[];tableManualColors={};tablePaintColor='';tableActiveDrawIds=[];tableMarkedNumbers.clear();renderTableDrawer()}
-function openTableDrawer(){closeSavedDrawer();const d=$('tableDrawer');if(!d)return;renderTableDrawer();d.classList.remove('hidden');document.body.style.overflow='hidden';if($('tableDrawerBtn'))$('tableDrawerBtn').classList.add('on')}
+function openTableDrawer(){updateTableNextDraw();closeSavedDrawer();const d=$('tableDrawer');if(!d)return;renderTableDrawer();d.classList.remove('hidden');document.body.style.overflow='hidden';if($('tableDrawerBtn'))$('tableDrawerBtn').classList.add('on')}
 function closeTableDrawer(){const d=$('tableDrawer');if(!d)return;d.classList.add('hidden');document.body.style.overflow='';if($('tableDrawerBtn'))$('tableDrawerBtn').classList.remove('on')}
 function toggleTableDrawer(){const d=$('tableDrawer');if(!d)return;if(d.classList.contains('hidden'))openTableDrawer();else closeTableDrawer()}
 
@@ -288,7 +288,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.i
 document.addEventListener('change',e=>{if(e.target.id==='cmCount'){cmCount=Number(e.target.value);cmRender()}});
 document.addEventListener('input',e=>{if(e.target.id==='cmEmpty'||e.target.id==='cmReduce'){const n=Number(e.target.value);if(e.target.id==='cmEmpty')cmEmpty=n;else cmReduce=n;const output=e.target.parentElement?.querySelector('output');if(output)output.textContent=n;cmRender(true);}});
 
-function renderTableDrawer(live=false){cmRender(live);const box=$('tableDrawerBody');if(!box)return;syncTableHeadButtons();const nums=getTableEffectiveSelected().filter(tableParityVisible);const recent=getRecentVisibleDraws();const numberMap=getTableNumberMap(recent);const overlaps=getTableOverlapNumbers(recent).filter(tableParityVisible);const legend=`<div class="tableLegend">
+function renderTableDrawer(live=false){updateTableNextDraw();cmRender(live);const box=$('tableDrawerBody');if(!box)return;syncTableHeadButtons();const nums=getTableEffectiveSelected().filter(tableParityVisible);const recent=getRecentVisibleDraws();const numberMap=getTableNumberMap(recent);const overlaps=getTableOverlapNumbers(recent).filter(tableParityVisible);const legend=`<div class="tableLegend">
 <button type="button" class="lg c1 ${tablePaintColor==='c1'?'paintOn':''}" data-paint="c1">1 зел</button>
 <button type="button" class="lg c2 ${tablePaintColor==='c2'?'paintOn':''}" data-paint="c2">2 жёлт</button>
 <button type="button" class="lg c3 ${tablePaintColor==='c3'?'paintOn':''}" data-paint="c3">3 красн</button>
