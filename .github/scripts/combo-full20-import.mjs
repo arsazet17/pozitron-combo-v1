@@ -13,7 +13,7 @@ try {
 if(!Array.isArray(upstream)||!upstream.length)throw new Error('FULL20 empty');
 const raw=JSON.parse(await fs.readFile(historyFile,'utf8'));
 if(!Array.isArray(raw)||!raw.length)throw new Error('COMBO history empty');
-const valid=d=>Number.isSafeInteger(Number(d?.draw))&&/^\\d{2}\\.\\d{2}\\.\\d{2}$/.test(String(d?.date||''))&&/^\\d{2}:\\d{2}$/.test(String(d?.time||''))&&Number.isInteger(Number(d?.column))&&Number(d.column)>=1&&Number(d.column)<=10&&Array.isArray(d.balls)&&d.balls.length===20&&new Set(d.balls.map(Number)).size===20&&d.balls.every(n=>Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=80);
+const valid=d=>Number.isSafeInteger(Number(d?.draw))&&/^\d{2}\.\d{2}\.\d{2}$/.test(String(d?.date||''))&&/^\d{2}:\d{2}$/.test(String(d?.time||''))&&Number.isInteger(Number(d?.column))&&Number(d.column)>=1&&Number(d.column)<=10&&Array.isArray(d.balls)&&d.balls.length===20&&new Set(d.balls.map(Number)).size===20&&d.balls.every(n=>Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=80);
 const official=upstream.filter(valid).sort((a,b)=>a.draw-b.draw);
 const last=raw.at(-1);
 const lastId=Number(last.draw);
@@ -33,6 +33,6 @@ for(const d of fresh){
 }
 const combined=[...existing.values()].sort((a,b)=>Number(a.draw)-Number(b.draw));
 const status={version:'1.0.6',source:url,updatedAt:new Date().toISOString(),drawsStored:combined.length,latestDraw:Number(combined.at(-1).draw),latestDate:combined.at(-1).date,latestTime:combined.at(-1).time,verification:'full20-official-mirror-anchored',stableDraws:Math.min(10,official.length),checkedTail:Math.min(10,official.length),added:fresh.length,latestOfficial:{draw:Number(newest.draw),date:newest.date,time:newest.time,column:Number(newest.column)}};
-if(fresh.length)await fs.writeFile(historyFile,JSON.stringify(combined)+'\\n');
-await fs.writeFile(statusFile,JSON.stringify(status,null,2)+'\\n');
+if(fresh.length)await fs.writeFile(historyFile,JSON.stringify(combined)+'\n');
+await fs.writeFile(statusFile,JSON.stringify(status,null,2)+'\n');
 console.log('COMBO FULL20 VERIFIED: anchor #'+lastId+' added '+fresh.length+' latest #'+newest.draw);
