@@ -221,10 +221,10 @@ async def main():
     for d in fresh:
         existing_by_id[d['draw']]={'draw':d['draw'],'date':d['date'],'time':d['time'],'column':d['column'],'balls':d['balls'],'source':'Stoloto OAuth · M4-style direct'}
     merged=sorted(existing_by_id.values(),key=lambda d:int(d['draw']))
-    if fresh: history_path.write_text(json.dumps(merged,ensure_ascii=False)+'\\n',encoding='utf-8')
+    if fresh: history_path.write_text(json.dumps(merged,ensure_ascii=False)+'\n',encoding='utf-8')
     latest=merged[-1]
     status={'version':'1.0.7','source':'https://m.stoloto.ru/keno2/archive/','updatedAt':datetime.now(timezone.utc).isoformat(),'drawsStored':len(merged),'latestDraw':latest['draw'],'latestDate':latest['date'],'latestTime':latest['time'],'verification':'direct-stoloto-m4-stable','stableDraws':len(official),'checkedTail':len(official),'added':len(fresh),'latestOfficial':{'draw':official[-1]['draw'],'date':official[-1]['date'],'time':official[-1]['time'],'column':official[-1]['column']},'checkedAt':datetime.now(timezone.utc).isoformat(),'sourceState':'current' if latest['draw']==official[-1]['draw'] else 'waiting'}
-    status_path.write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
+    status_path.write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(f'COMBO DIRECT M4 STYLE PASS: added {len(fresh)} latest #{latest["draw"]} {latest["time"]}')
 
 if __name__=='__main__':
