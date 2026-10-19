@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime,date,timezone,timedelta
 from playwright.async_api import async_playwright
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 DATA=ROOT/'data'
 OUT=DATA/'full20_draws.json'
 STATUS=DATA/'full20_sync.json'
