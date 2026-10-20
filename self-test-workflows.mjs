@@ -15,8 +15,8 @@ for (const name of names) {
     assert.match(source, /^  group: combo-m4-direct-writer$/m);
     assert.match(source, /^  cancel-in-progress: false$/m);
     assert.match(source, /^  contents: write$/m);
-    assert.match(source, /python \\.github\\/scripts\\/combo-m4-direct\\.py/);
-    assert.match(source, /git add combo-history-v1\\.json combo-status-v1\\.json/);
+    assert(source.includes('python .github/scripts/combo-m4-direct.py'));
+    assert(source.includes('git add combo-history-v1.json combo-status-v1.json'));
     assert.doesNotMatch(source, /^  schedule:/m);
     continue;
   }
