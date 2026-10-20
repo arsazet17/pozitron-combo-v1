@@ -8,6 +8,12 @@
           "type": "boolean",
           "required": false,
           "default": false
+        },
+        "run_manual_xray": {
+          "description": "Manually run XRAY forecast/settlement cycle",
+          "type": "boolean",
+          "required": false,
+          "default": false
         }
       }
     },
@@ -63,7 +69,8 @@
           "name": "Reconcile current main, test, then publish",
           "run": "node .github/scripts/ci-publish.mjs runtime",
           "env": {
-            "XRAY_RESUME_LIVE_AFTER_GAP": "${{ github.event_name == 'workflow_dispatch' && inputs.resume_live_after_gap && 'true' || 'false' }}"
+            "XRAY_RESUME_LIVE_AFTER_GAP": "${{ github.event_name == 'workflow_dispatch' && inputs.resume_live_after_gap && 'true' || 'false' }}",
+            "XRAY_MANUAL_RUN": "${{ github.event_name == 'workflow_dispatch' && inputs.run_manual_xray && 'true' || 'false' }}"
           }
         },
         {
