@@ -14,12 +14,14 @@ const baselineArgs = ['--baseline', baseline, '--baseline-guard', baselineGuard]
 node('validate-xray-runtime.mjs', baselineArgs);
 if (mode === 'data') node('.github/scripts/combo-data-update.mjs');
 
-console.log('XRAY RUNTIME UPDATE: settle existing frozen, then create next forecast');
+const manualXray = process.env.XRAY_MANUAL_RUN === 'true';
+if (!manualXray) console.log('XRAY MANUAL MODE: automatic forecast generation and settlement disabled; analysis data still refreshes');
+else console.log('XRAY MANUAL MODE: explicit manual forecast cycle');
 // A data refresh can legitimately ingest more than one official draw when a scheduled run was delayed.
 // Resume from that audited gap automatically: never backfill forecasts for already-finished draws;
 // xray-runtime-core records them in missingForecasts and freezes only the next future forecast.
 const resumeArgs = mode === 'data' || process.env.XRAY_RESUME_LIVE_AFTER_GAP === 'true' ? ['--resume-live-after-gap'] : [];
-const runtimeStatus = node('build-xray-runtime.mjs', resumeArgs, [0, 2]);
+const runtimeStatus = manualXray ? node('build-xray-runtime.mjs', resumeArgs, [0, 2]) : 0;
 if (runtimeStatus === 2) {
   const runtime = JSON.parse(await fs.readFile('data/xray-runtime.json', 'utf8'));
   if (runtime.status !== 'error' || !['MISSING_TARGET_FACT', 'MISSED_FORECAST_WINDOW'].includes(runtime.anomaly?.code)) {
