@@ -8,6 +8,18 @@ const workflows = new Map();
 for (const name of names) {
   // JSON is a strict subset of YAML 1.2. Active workflow documents use JSON so
   // the complete YAML structure can be checked without a downloaded parser.
+  if (name === 'combo-m4-direct.yml') {
+    const source = await fs.readFile('.github/workflows/' + name, 'utf8');
+    assert.match(source, /^name: COMBO · M4-style DIRECT Stoloto$/m);
+    assert.match(source, /^on:\\n  workflow_dispatch:$/m);
+    assert.match(source, /^  group: combo-m4-direct-writer$/m);
+    assert.match(source, /^  cancel-in-progress: false$/m);
+    assert.match(source, /^  contents: write$/m);
+    assert.match(source, /python \\.github\\/scripts\\/combo-m4-direct\\.py/);
+    assert.match(source, /git add combo-history-v1\\.json combo-status-v1\\.json/);
+    assert.doesNotMatch(source, /^  schedule:/m);
+    continue;
+  }
   const w = JSON.parse(await fs.readFile('.github/workflows/' + name, 'utf8'));
   assert(w.name && w.on && w.jobs, name + ': required workflow fields');
   workflows.set(name, w);
@@ -15,6 +27,12 @@ for (const name of names) {
     assert.deepEqual(Object.keys(w.on), ['workflow_dispatch']);
     assert.equal(w.permissions.contents, 'read');
     assert(w.jobs.retired);
+    continue;
+  }
+  if (name === 'update-combo-v1.yaml') {
+    assert.deepEqual(Object.keys(w.on), ['workflow_dispatch']);
+    assert.equal(w.jobs.publish.if, "${{ false }}", 'Legacy loader must remain disabled');
+    assert.equal(w.concurrency.group, 'combo-data-writer');
     continue;
   }
   if (w.permissions.contents === 'write') {
@@ -31,7 +49,7 @@ for (const name of names) {
 assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 4);
 assert(workflows.get('update-combo-v1.yaml').on.workflow_dispatch);
 assert.notEqual(workflows.get('update-combo-v1.yaml').concurrency.group, workflows.get('xray-ai-train.yml').concurrency.group, 'Runtime/journal requests must not replace pending official data updates');
-assert.deepEqual(workflows.get('update-combo-v1.yaml').on.schedule, [{cron:'1,6,11,16,21,26,31,36,41,46,51,56 * * * *'}], 'Data updates must run automatically, including retry opportunities between draws');
+assert.equal(workflows.get('update-combo-v1.yaml').on.schedule, undefined, 'Legacy loader must not have an automatic schedule');
 const rebuild = workflows.get('xray-ai-train.yml');
 for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-runtime-core.mjs', 'xray-runtime-io.mjs', 'keno-payouts-v1.json', 'combo-history-v1.json']) {
   assert(rebuild.on.push.paths.includes(p), 'Missing runtime dependency: ' + p);
