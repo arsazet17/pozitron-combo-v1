@@ -11,7 +11,7 @@ for (const name of names) {
   if (name === 'combo-m4-direct.yml') {
     const source = await fs.readFile('.github/workflows/' + name, 'utf8');
     assert.match(source, /^name: COMBO · M4-style DIRECT Stoloto$/m);
-    assert.match(source, /^on:\\n  workflow_dispatch:$/m);
+    assert(source.includes('on:\n  workflow_dispatch:'));
     assert.match(source, /^  group: combo-m4-direct-writer$/m);
     assert.match(source, /^  cancel-in-progress: false$/m);
     assert.match(source, /^  contents: write$/m);
