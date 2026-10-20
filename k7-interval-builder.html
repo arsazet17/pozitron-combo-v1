@@ -97,6 +97,7 @@ button,select,input{font:inherit}button{border:1px solid #315677;border-radius:1
   <div class="muted">Сюда попадают <b>только K7, которые вы сами сохранили</b>. Отсчёт начинается со следующего тиража после сохранения. При каждом обновлении архива карточка сама пересчитывает новые тиражи, выигрыши и повторные 7/7.</div>
   <div class="notice">Основная копия сохранённых K7 хранится в Supabase. Телефон используется только как локальный кэш. После обновления или смены телефона архив восстанавливается автоматически.</div>
   <div class="cloudBar"><button id="cloudSetup" class="ghost">☁ Supabase: подключён</button><span id="cloudStatus" class="cloudStatus">Supabase: подготовка архива…</span></div>
+  <div class="savedActions" style="margin:12px 0"><button type="button" id="clearSavedK7" class="danger">🗑 УДАЛИТЬ ВСЕ КОМБЫ K7</button></div>
   <div id="savedArchive" class="savedArchive"></div>
  </div>
 
@@ -383,6 +384,34 @@ async function removeSaved(key){
  if(!(await cloudDelete(key)))return false;
  await writeSaved(readSaved().filter(x=>x.key!==key));renderSavedArchive();renderCombos(LAST_COMBOS);return true;
 }
+let K7_CLEAR_BUSY=false;
+async function clearAllSavedK7(){
+ if(K7_CLEAR_BUSY)return;
+ const items=[...readSaved()];
+ if(!items.length){alert('Архив K7 уже пуст.');return;}
+ if(!confirm('Удалить ВСЕ '+items.length+' сохранённых K7 из Supabase и с телефона? Действие необратимо. Архив тиражей COMBO не затрагивается.'))return;
+ K7_CLEAR_BUSY=true;
+ const button=$('clearSavedK7');
+ if(button){button.disabled=true;button.textContent='Удаляю K7: 0/'+items.length;}
+ let deleted=0;
+ try{
+  for(const item of items){
+   if(!(await cloudDelete(item.key)))break;
+   await writeSaved(readSaved().filter(x=>x.key!==item.key));
+   deleted++;
+   if(button)button.textContent='Удаляю K7: '+deleted+'/'+items.length;
+  }
+  renderSavedArchive();renderCombos(LAST_COMBOS);
+  if(deleted===items.length)alert('Архив сохранённых K7 очищен в Supabase и на телефоне. Можно сохранять новые комбинации.');
+  else alert('Удалено '+deleted+' из '+items.length+'. Остальные сохранены; проверьте соединение и повторите.');
+ }catch(e){
+  console.error('K7 bulk delete:',e);
+  alert('Очистка прервана после '+deleted+' из '+items.length+'. Остальные K7 сохранены. '+String(e.message||e));
+ }finally{
+  K7_CLEAR_BUSY=false;
+  if(button){button.disabled=false;button.textContent='🗑 УДАЛИТЬ ВСЕ КОМБЫ K7';}
+ }
+}
 function hitCount(nums,d){const set=new Set((d.balls||[]).map(Number));return nums.reduce((a,n)=>a+(set.has(n)?1:0),0)}
 function rub(n){return Number(n||0).toLocaleString('ru-RU')+' ₽'}
 function renderSavedArchive(){
@@ -538,7 +567,7 @@ initSectionToggles();
 $('build').onclick=build;$('checkK7').onclick=()=>{const n=parseK7();if(n)checkK7(n)};
 $('mStrict').onclick=()=>{MATRIX_MODE='strict';renderMatrix()};$('mSoft').onclick=()=>{MATRIX_MODE='soft';renderMatrix()};
 $('refresh').onclick=()=>location.replace(location.pathname+'?v='+Date.now());$('back').onclick=()=>location.href='./';
-$('cloudSetup').onclick=setupCloud;
+$('cloudSetup').onclick=setupCloud;$('clearSavedK7').onclick=clearAllSavedK7;
 load();
 </script>
 <script src="./k7-supabase-cloud-v19.js?v=4"></script>
