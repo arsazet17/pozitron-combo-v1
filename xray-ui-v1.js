@@ -66,17 +66,32 @@ function factBlock(e){if(!e)return '';const h20=e.forecast20Hits||e.layerHits||[
 function archiveItem(e){const h20=e.forecast20Hits||e.layerHits||[],total=savedTotal(e);return `<div class="xrayArchiveItem" data-target="${Number(e.targetDraw||e.factDraw)}"><div class="xrayArchiveTop"><div><b>Проверка frozen на №${e.targetDraw} · ${e.targetDate||'—'} ${e.targetTime||'—'}</b><small>Источник: ${sourceLabel(e)}</small></div><span class="done">проверен</span></div>${eligibilityHTML(e)}<div class="xrayArchiveSection"><b>Факт · 20 чисел</b>${nums20(e.factBalls,e.factBalls,'fact')}</div><div class="xrayArchiveSection"><b>Frozen-прогноз · попаданий ${h20.length}/20</b>${nums20(e.predicted20,h20)}</div><div class="xrayArchiveCombos">${comboRow('5A',e.combo5A||e.combo5||[],e.combo5AHits||e.combo5Hits||[],savedPayout(e,'5A'))}${comboRow('5B',e.combo5B||[],e.combo5BHits||[],savedPayout(e,'5B'))}${comboRow('7A',e.combo7A||e.combo7||[],e.combo7AHits||e.combo7Hits||[],savedPayout(e,'7A'))}${comboRow('7B',e.combo7B||[],e.combo7BHits||[],savedPayout(e,'7B'))}</div><div class="xrayArchiveFoot">Факт: №${e.factDraw} · столб ${e.factColumn||'—'} <strong>Итого: ${money(total)}</strong></div></div>`}
 function payoutRows(size){const m=payouts?.combination?.[String(size)]||{};return Object.keys(m).map(Number).sort((a,b)=>a-b).map(h=>`<span><b>${h}/${size}</b> — ${money(m[h])}</span>`).join('')}
 const ARCHIVE_PAGE_SIZE=10;
-let archivePage=0,hiddenTargets=new Set();
+const XRAY_HIDDEN_KEY='comboXrayHiddenTargetsV1';
+function readHiddenTargets(){try{const a=JSON.parse(localStorage.getItem(XRAY_HIDDEN_KEY)||'[]');return new Set(Array.isArray(a)?a.filter(Number.isInteger):[])}catch{return new Set()}}
+let archivePage=0,hiddenTargets=readHiddenTargets();
+function saveHiddenTargets(){try{localStorage.setItem(XRAY_HIDDEN_KEY,JSON.stringify([...hiddenTargets]))}catch(e){console.warn('XRAY archive visibility save failed',e);alert('Не удалось сохранить очистку архива на этом устройстве.')}}
 function rendered(){window.dispatchEvent(new Event('combo:xray-render'))}
 function visibleHistory(){return (runtime?.history||[]).filter(e=>!hiddenTargets.has(Number(e.targetDraw||e.factDraw)))}
 function archiveHTML(){
  const rows=visibleHistory(),pages=Math.max(1,Math.ceil(rows.length/ARCHIVE_PAGE_SIZE));
  archivePage=Math.min(archivePage,pages-1);
  const start=archivePage*ARCHIVE_PAGE_SIZE;
- return `<div class="xrayArchivePager"><button type="button" data-xpage="-1" ${archivePage===0?'disabled':''}>← Новее</button><span>Страница ${archivePage+1} / ${pages}<br>Записи ${rows.length?start+1:0}–${Math.min(start+ARCHIVE_PAGE_SIZE,rows.length)} из ${rows.length}</span><button type="button" data-xpage="1" ${archivePage===pages-1?'disabled':''}>Старее →</button></div>`+(rows.length?rows.slice(start,start+ARCHIVE_PAGE_SIZE).map(archiveItem).join(''):'<div class="xrayEmpty">Нет записей для отображения.</div>');
+ return `<div class="xrayArchiveControls"><button type="button" data-xclear-all style="background:#5d1725;color:#fff;border:1px solid #a44;border-radius:12px;padding:12px;font-weight:700">🗑 УДАЛИТЬ ВСЕ КОМБЫ</button><div class="muted" style="margin-top:8px">Очистка списка на этом устройстве. Защищённая история прогнозов и статистика XRAY сохраняются на сервере.</div></div><div class="xrayArchivePager"><button type="button" data-xpage="-1" ${archivePage===0?'disabled':''}>← Новее</button><span>Страница ${archivePage+1} / ${pages}<br>Записи ${rows.length?start+1:0}–${Math.min(start+ARCHIVE_PAGE_SIZE,rows.length)} из ${rows.length}</span><button type="button" data-xpage="1" ${archivePage===pages-1?'disabled':''}>Старее →</button></div>`+(rows.length?rows.slice(start,start+ARCHIVE_PAGE_SIZE).map(e=>archiveItem(e).replace('<div class="xrayArchiveFoot">',`<div style="padding:8px 0"><button type="button" data-xdelete="${Number(e.targetDraw||e.factDraw)}" style="background:#5d1725;color:#fff;border:1px solid #a44;border-radius:10px;padding:9px">✕ УДАЛИТЬ</button></div><div class="xrayArchiveFoot">`)).join(''):'<div class="xrayEmpty">Нет записей для отображения.</div>');
 }
 function renderArchive(){const body=$('xrayArchiveBody');if(!body)return;body.innerHTML=panel.archive?archiveHTML():'';bindPages();rendered();scheduleOverlay()}
-function bindPages(){document.querySelectorAll('#xrayRoot [data-xpage]').forEach(b=>b.onclick=()=>{archivePage+=Number(b.dataset.xpage);renderArchive();$('xrayArchiveBody')?.scrollIntoView({block:'start'})})}
+function bindPages(){
+ document.querySelectorAll('#xrayRoot [data-xdelete]').forEach(b=>b.onclick=()=>{
+  const id=Number(b.dataset.xdelete);
+  if(!confirm('Убрать прогноз №'+id+' из архива на этом устройстве? Серверная история XRAY сохранится.'))return;
+  hiddenTargets.add(id);saveHiddenTargets();renderArchive();
+ });
+ document.querySelectorAll('#xrayRoot [data-xclear-all]').forEach(b=>b.onclick=()=>{
+  const rows=visibleHistory();if(!rows.length){alert('Архив на этом устройстве уже пуст.');return}
+  if(!confirm('Очистить все '+rows.length+' записей из отображаемого архива на этом устройстве? Защищённая серверная история XRAY останется неизменной.'))return;
+  for(const e of rows)hiddenTargets.add(Number(e.targetDraw||e.factDraw));
+  saveHiddenTargets();archivePage=0;renderArchive();
+ });
+ document.querySelectorAll('#xrayRoot [data-xpage]').forEach(b=>b.onclick=()=>{archivePage+=Number(b.dataset.xpage);renderArchive();$('xrayArchiveBody')?.scrollIntoView({block:'start'})})}
 function setHiddenTargets(values){const next=new Set([...values].map(Number));if(next.size===hiddenTargets.size&&[...next].every(n=>hiddenTargets.has(n)))return;hiddenTargets=next;renderArchive()}
 function bind(){document.querySelectorAll('#xrayRoot [data-xfold]').forEach(b=>b.onclick=()=>{
  const key=b.dataset.xfold;panel[key]=!panel[key];
