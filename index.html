@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<meta name="app-build" content="b85120261021">
-<link rel="manifest" href="manifest.webmanifest?v=b85120261021">
+<meta name="app-build" content="b85220261021">
+<link rel="manifest" href="manifest.webmanifest?v=b85220261021">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="xray-v1.css?v=b85120261021">
+<link rel="stylesheet" href="xray-v1.css?v=b85220261021">
 <title>COMBO KENO</title>
 <style>
 :root{--bg:#04111e;--p:#0c2135;--p2:#102a43;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--green2:#2e8f2b;--gold:#ffbd23;--red:#ff453a;--blue:#35a9ff}
@@ -106,14 +106,35 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 #tableMatrixPanel .cm-inline-a{right:15px!important}
 #tableMatrixPanel .cm-inline-b{position:absolute;right:1px;top:1px;min-width:12px;height:12px;padding:0 1px;border:1px solid #647d93;border-radius:2px;background:#183449;color:#e2eaf0;font-size:9px;line-height:10px;cursor:pointer;z-index:3}
 #tableMatrixPanel .cm-inline-b.active{background:#188a45;color:#fff;border-color:#8cf5aa}
-/* Matrix mobile rows: A top-left, B top-right; draw ID on its own bottom line. */
-#tableMatrixPanel .cm-table tbody tr td{height:34px!important}
-#tableMatrixPanel .cm-table td.cm-draw-with-a{position:relative!important;overflow:hidden!important;height:34px!important}
-#tableMatrixPanel .cm-table td.cm-draw-with-a>.cm-draw-id{display:block;position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:clamp(9px,2.25vw,12px);line-height:12px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
-#tableMatrixPanel .cm-inline-a,#tableMatrixPanel .cm-inline-b{box-sizing:border-box;top:2px;width:16px;min-width:16px;height:16px;padding:0;text-align:center;font-size:12px;line-height:14px;touch-action:manipulation}
+/* Matrix A/B: same original A palette and readable, identical large buttons. */
+#tableMatrixPanel .cm-table tbody tr td{height:42px!important}
+#tableMatrixPanel .cm-table td.cm-draw-with-a{position:relative!important;overflow:hidden!important;height:42px!important}
+#tableMatrixPanel .cm-table td.cm-draw-with-a>.cm-draw-id{
+ display:block;position:absolute;left:0;right:0;bottom:2px;text-align:center;
+ font-size:12px!important;line-height:13px!important;white-space:nowrap;
+ pointer-events:none;font-variant-numeric:tabular-nums
+}
+#tableMatrixPanel .cm-inline-a,#tableMatrixPanel .cm-inline-b{
+ position:absolute!important;top:2px!important;box-sizing:border-box!important;
+ width:22px!important;min-width:22px!important;height:22px!important;padding:0!important;
+ background:#183449!important;border:2px solid #647d93!important;border-radius:4px!important;
+ color:#e2eaf0!important;font-weight:900!important;font-size:16px!important;line-height:18px!important;
+ text-align:center!important;touch-action:manipulation;cursor:pointer
+}
 #tableMatrixPanel .cm-inline-a{left:2px!important;right:auto!important}
-#tableMatrixPanel .cm-inline-b{left:auto!important;right:2px!important}
-
+#tableMatrixPanel .cm-inline-b{right:2px!important;left:auto!important}
+#tableMatrixPanel .cm-inline-a.active,#tableMatrixPanel .cm-inline-b.active{
+ background:#188a45!important;border-color:#8cf5aa!important;color:#fff!important
+}
+/* On narrow phones, retain full-size column text instead of shrinking the whole matrix.
+   Scroll horizontally to see the remaining columns, as in the earlier large-scale view. */
+@media(max-width:600px){
+ #tableMatrixPanel .cm-scroll{overflow-x:auto!important;overscroll-behavior-x:contain}
+ #tableMatrixPanel .cm-scroll .cm-table{width:max(100%,545px)!important;min-width:545px!important}
+ #tableMatrixPanel .cm-table td[data-cm-col]{font-size:11px!important}
+ #tableMatrixPanel .cm-cell-numbers{font-size:9px!important;line-height:1.05!important;letter-spacing:0!important}
+ #tableMatrixPanel .cm-table td.cm-date{font-size:10px!important;letter-spacing:0!important}
+}
 #tableMatrixPanel .cm-table td.cm-b-path{background:#0e807c!important;color:#fff!important;box-shadow:inset 0 0 0 2px #a6ffe0!important;font-weight:950}
 #tableMatrixPanel .cm-table.cm-b-show td.cm-trail:not(.cm-b-path){background:#0b2034!important}
 .tableNextDraw{display:block!important;visibility:visible!important;position:relative;z-index:2;margin:10px 0 12px;padding:17px 12px;border:2px solid #4ade80;border-radius:15px;background:#0e1b2d;color:#f4f8ff;text-align:center;font-weight:950;font-size:clamp(21px,5vw,29px);line-height:1.25;min-height:94px;font-variant-numeric:tabular-nums}.tableNextDraw .nextDrawTime{display:block;color:#72df95;font-size:clamp(25px,6vw,34px);margin-top:2px}.tableNextDraw .nextDrawLabel{color:#e7f0fa}
@@ -121,7 +142,7 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 </head>
 <body>
 <div class="app">
-<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.51</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
+<header class="top"><img class="logo" src="icon-192.png" alt=""><div><div class="title">COMBO KENO</div><div id="dbline" class="dbline">База загружается…</div><div class="topmeta"><span class="version">Версия v4.8.52</span><button id="refreshBtn" class="refresh" type="button">↻ Обновить</button></div></div></header>
 
 <section id="our" class="section on">
  <div class="card"><h2>Наши комбы</h2><div class="muted">45 комбинаций · К16 и ТС7 считаются отдельно</div><div id="groups" class="groups" style="margin-top:8px"></div><div id="comboList" class="comboList" style="margin-top:8px"></div></div>
@@ -162,14 +183,14 @@ button{border:1px solid #315677;border-radius:12px;background:#132e48;color:#fff
 <button class="nav" data-sec="history"><b>◷</b>История</button>
 </div><div class="footrow2">
 <button id="tableDrawerBtn" class="nav" type="button"><b>📊</b>Таблица</button>
-<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=b85120261021'"><b>🔁</b>Интервалы</button>
+<button id="intervalsBtn" class="nav" type="button" onclick="location.href='./k7-interval-builder.html?v=b85220261021'"><b>🔁</b>Интервалы</button>
 <div class="navSpacer"></div><div class="navSpacer"></div>
 </div></div></nav>
 
-<script src="xray-engine-v1.js?v=b85120261021"></script>
-<script src="xray-ui-v1.js?v=b85120261021"></script>
-<script src="xray-archive-tools-v1.js?v=b85120261021"></script>
-<script src="xray-analog-columns-v1.js?v=b85120261021"></script>
+<script src="xray-engine-v1.js?v=b85220261021"></script>
+<script src="xray-ui-v1.js?v=b85220261021"></script>
+<script src="xray-archive-tools-v1.js?v=b85220261021"></script>
+<script src="xray-analog-columns-v1.js?v=b85220261021"></script>
 <script>
 'use strict';
 
@@ -331,7 +352,7 @@ function renderPick(){$('pickgrid').innerHTML=Array.from({length:80},(_,i)=>i+1)
 function hitCell(h,selectedCount){const prize=prizeForHits(selectedCount,h);if(prize){return `<div class="hitbox"><div class="hits fire"><span class="flame">🔥</span><span>${h}</span></div><div class="prize">Сумма<br>${money(prize)}</div></div>`}const cl=h===0?'z':h>=2?'h':'o';return `<div class="hitbox"><div class="hits ${cl}">${h}</div></div>`}
 function historyBalls(d){return historyOrder==='asc'?[...d.balls].sort((a,b)=>a-b):d.balls}
 function histRow(d,nums){const balls=historyBalls(d);const transitions=historyTransitions&&window.ComboHistoryTransitions?window.ComboHistoryTransitions(d):new Set();return `<div class="hrow"><div class="hcell"><div class="hdraw">${d.draw}</div><div class="hsub">Столб ${drawColumn(d)??'—'}</div><div class="hdate">${d.date} ${d.time}</div></div><div class="hcell">${hitCell(hitsFor(nums,d),nums.length)}</div><div class="hcell drawnums">${balls.map(n=>`<span class="dn ${nums.includes(n)?'hit':''} ${historyMarks.has(n)?'mark':''} ${transitions.has(Number(n))?'transition':''}" data-hn="${n}" role="button" tabindex="0" aria-pressed="${historyMarks.has(n)?'true':'false'}">${fmt(n)}</span>`).join('')}</div></div>`}
-function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=b85120261021">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
+function orderSwitchHTML(){return `${new URLSearchParams(location.search).has('intervalK7')?'<a href="./k7-interval-builder.html?v=b85220261021">← Сохранённые K7 · Интервалы</a>':''}<div class="historyTools"><button type="button" data-history-order="draw" class="${historyOrder==='draw'?'active':''}">🎲 Выпадение</button><button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}">➡️ Возрастание</button><button id="historyTransitionsBtn" type="button" class="${historyTransitions?'active':''}" aria-pressed="${historyTransitions}">🔸 Переходы</button></div>`}
 function bindHistoryOrder(){const transitions=$('historyTransitionsBtn');if(transitions)transitions.onclick=()=>{historyTransitions=!historyTransitions;renderHistory()};document.querySelectorAll('#historyBox [data-history-order]').forEach(b=>b.onclick=()=>{historyOrder=b.dataset.historyOrder;renderHistory()})}
 function markBarHTML(){const a=[...historyMarks].sort((x,y)=>x-y);return `<div class="markHelp">Нажмите на любое число в тираже — это же число подсветится во всех показанных тиражах. Можно отметить несколько.</div>${a.length?`<div class="markBar"><span class="muted">Подсвечено:</span>${a.map(n=>`<span class="markChip">${fmt(n)}</span>`).join('')}<button id="markClear" class="markClear" type="button">Снять всё</button></div>`:''}`}
 function toggleHistoryMark(n){n=Number(n);if(!Number.isInteger(n)||n<1||n>80)return;if(historyMarks.has(n)){historyMarks.delete(n);selected=selected.filter(x=>x!==n);}else{if(!selected.includes(n) && selected.length>=10){alert('Максимум 10 чисел в комбинации');return}historyMarks.add(n);if(!selected.includes(n))selected=[...selected,n];}renderPick();renderHistory();}
@@ -473,12 +494,12 @@ if($('closeTableDrawer'))$('closeTableDrawer').onclick=closeTableDrawer;
 if($('tableActiveBtn'))$('tableActiveBtn').onclick=toggleTableHighlight;
 if($('tableOrderBtn'))$('tableOrderBtn').onclick=toggleTableRecentOrder;
 loadSavedAnyCombos();renderSavedCombos();renderPick();syncTableHeadButtons();load();
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=b85120261021',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('sw.js?v=b85220261021',{updateViaCache:'none'});await reg.update();}catch(e){console.warn('SW update',e)}});}
 </script>
-<script src="combo-table-lock-v1.js?v=b85120261021"></script>
-<script src="combo-search-v1.js?v=b85120261021"></script>
-<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.8.51'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
-<script src="combo-max-details-v1.js?v=b85120261021"></script>
+<script src="combo-table-lock-v1.js?v=b85220261021"></script>
+<script src="combo-search-v1.js?v=b85220261021"></script>
+<script id="appVersionOwner">(()=>{const fix=()=>{const el=document.querySelector('.version');if(el)el.textContent='Версия v4.8.52'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix()})()</script>
+<script src="combo-max-details-v1.js?v=b85220261021"></script>
 <script id="comboAutoUpdate">
 (()=>{
  const current=document.querySelector('meta[name="app-build"]')?.content;
