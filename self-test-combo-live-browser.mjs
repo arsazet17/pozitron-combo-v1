@@ -50,7 +50,8 @@ try{
  assert.deepEqual(await state(),before);assert.deepEqual(await page.locator('.cm-scroll').evaluate(el=>[el.scrollTop,el.scrollLeft]),scroll);
  assert(await page.evaluate(()=>window.testToolbar===document.querySelector('.cm-toolbar')&&window.testRange===document.querySelector('#cmReduce')&&window.testRow===document.querySelector('.cm-inline-a.active')));
  await page.evaluate(()=>refreshAllFromTable());assert.deepEqual(await state(),before);assert.deepEqual(await page.locator('.cm-scroll').evaluate(el=>[el.scrollTop,el.scrollLeft]),scroll);
- assert(dialogs.at(-1).includes('Новых опубликованных тиражей нет'));
+ assert.match(await page.locator('#comboToast').textContent(),/^Новых тиражей нет\. Последний №\d+/);assert.equal(dialogs.length,0,'no blocking dialogs');
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'refresh notice never widens the page');
  count=102;await page.evaluate(()=>refreshAllFromTable());assert.deepEqual(await state(),before);
  assert.equal(await page.evaluate(()=>DRAWS.at(-1).draw),tail[101].draw);
  // Recover a failed request and catch up multiple draws without losing table state.
