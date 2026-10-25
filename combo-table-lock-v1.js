@@ -425,3 +425,206 @@
   else start();
 })();
 
+
+/* COMBO · Линии переходов на Таблице v1
+   Кнопка «Линии» рядом с МАТР / TRG. Для каждого открытого тира (5 / 10 / 20 или
+   своё количество; если список свёрнут — последний тираж) берутся числа, которые
+   перешли из предыдущего тиража, и соединяются ломаной в порядке выпадения.
+   Цвет линии = цвет тира (1 зел, 2 жёлт, 3 красн, 4 голуб, 5 синий по кругу). */
+(() => {
+  'use strict';
+  if(window.__comboTransitionLinesV1)return;
+  window.__comboTransitionLinesV1=true;
+
+  const KEY='combo-transition-lines-v1';
+  const ORDER=['c1','c2','c3','c4','c5'];
+  const COLORS={c1:'#62e06c',c2:'#ffd43b',c3:'#ff5f5f',c4:'#4fd2ff',c5:'#9aa6ff'};
+  const NS='http://www.w3.org/2000/svg';
+  let on=false;
+  const hidden=new Set();
+  try{on=localStorage.getItem(KEY)==='1'}catch(e){}
+
+  const f2=n=>String(n).padStart(2,'0');
+  const allDraws=()=>{try{return Array.isArray(DRAWS)?DRAWS:[]}catch(e){return[]}};
+  const windowSize=()=>{try{return Number(tableRecentWindow)||0}catch(e){return 0}};
+
+  function injectStyle(){
+    if(document.getElementById('comboTransitionLinesStyle'))return;
+    const st=document.createElement('style');
+    st.id='comboTransitionLinesStyle';
+    st.textContent=[
+      '#tableDrawerBody .tableGrid{position:relative}',
+      '#tableDrawerBody .tlSvg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:3}',
+      '#tableDrawerBody .tlLegend{display:flex;flex-direction:column;gap:4px;margin:8px 0 4px}',
+      '#tableDrawerBody .tlRow{display:flex;align-items:center;gap:7px;padding:5px 8px;border:1px solid #33536d;border-radius:9px;background:#0d2236;color:#fff;font-size:12px;line-height:1.3;text-align:left;width:100%}',
+      '#tableDrawerBody .tlRow.off{opacity:.38}',
+      '#tableDrawerBody .tlDot{flex:0 0 12px;width:12px;height:12px;border-radius:50%}',
+      '#tableDrawerBody .tlRow b{white-space:nowrap}',
+      '#tableDrawerBody .tlSeq{font-weight:700;letter-spacing:.2px}',
+      '#tableDrawerBody .tlNone{color:#9fb3c6}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  function linesData(){
+    const all=allDraws();
+    if(all.length<2)return[];
+    const count=Math.min(windowSize()||1,all.length-1);
+    const out=[];
+    for(let i=0;i<count;i++){
+      const idx=all.length-1-i;
+      const cur=all[idx],prev=all[idx-1];
+      if(!cur||!prev)continue;
+      const prevSet=new Set((prev.balls||[]).map(Number));
+      const nums=(cur.balls||[]).map(Number).filter(n=>prevSet.has(n));
+      out.push({draw:Number(cur.draw),prev:Number(prev.draw),nums,color:COLORS[ORDER[i%ORDER.length]]});
+    }
+    return out;
+  }
+
+  function ensureButton(){
+    const bar=document.querySelector('.tableFeatureControls');
+    if(!bar)return null;
+    let b=document.getElementById('tableLinesBtn');
+    if(!b){
+      b=document.createElement('button');
+      b.id='tableLinesBtn';
+      b.type='button';
+      b.title='Линии переходов чисел между тиражами';
+      b.textContent='〰 Линии';
+      bar.appendChild(b);
+    }
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+    return b;
+  }
+
+  function svgEl(tag,attrs){
+    const el=document.createElementNS(NS,tag);
+    for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));
+    return el;
+  }
+
+  let observedGrid=null;
+  const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>schedule()):null;
+
+  function draw(){
+    ensureButton();
+    const box=document.getElementById('tableDrawerBody');
+    if(!box)return;
+    box.querySelectorAll('.tlSvg,.tlLegend').forEach(el=>el.remove());
+    const grid=box.querySelector('.tableGrid');
+    if(!grid)return;
+    if(resizeObserver&&observedGrid!==grid){
+      if(observedGrid)resizeObserver.unobserve(observedGrid);
+      resizeObserver.observe(grid);
+      observedGrid=grid;
+    }
+    if(!on)return;
+    injectStyle();
+
+    const data=linesData();
+    const legend=document.createElement('div');
+    legend.className='tlLegend';
+    legend.innerHTML=data.length?data.map(l=>{
+      const seq=l.nums.length?l.nums.map(f2).join(' → '):'<span class="tlNone">переходов нет</span>';
+      return `<button type="button" class="tlRow ${hidden.has(l.draw)?'off':''}" data-tl-draw="${l.draw}"><span class="tlDot" style="background:${l.color}"></span><b>№${l.draw}</b><span>${l.nums.length}:</span><span class="tlSeq">${seq}</span></button>`;
+    }).join(''):'<div class="tlRow"><span class="tlNone">Недостаточно тиражей для линий</span></div>';
+    grid.after(legend);
+
+    const w=grid.clientWidth,h=grid.clientHeight;
+    if(!w||!h)return;
+    const gr=grid.getBoundingClientRect();
+    const ox=gr.left+grid.clientLeft,oy=gr.top+grid.clientTop;
+    const centers=new Map();
+    grid.querySelectorAll('[data-tcell]').forEach(c=>{
+      const r=c.getBoundingClientRect();
+      centers.set(Number(c.dataset.tcell),{x:r.left-ox+r.width/2,y:r.top-oy+r.height/2,s:Math.min(r.width,r.height)});
+    });
+    const cell=[...centers.values()][0]?.s||30;
+
+    const svg=svgEl('svg',{class:'tlSvg',viewBox:`0 0 ${w} ${h}`,'aria-hidden':'true'});
+    const defs=svgEl('defs',{});
+    svg.appendChild(defs);
+    const visible=data.filter(l=>!hidden.has(l.draw)&&l.nums.length);
+    const step=visible.length>1?Math.min(3,cell*0.36/(visible.length-1)):0;
+    // Старые тиражи рисуются первыми, свежий — сверху.
+    [...visible].reverse().forEach(l=>{
+      const k=visible.indexOf(l);
+      const shift=(k-(visible.length-1)/2)*step;
+      const pts=l.nums.map(n=>centers.get(n)).filter(Boolean).map(p=>({x:p.x+shift,y:p.y+shift}));
+      if(!pts.length)return;
+      const id='tlArrow'+l.draw;
+      const marker=svgEl('marker',{id,viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'4.2',markerHeight:'4.2',orient:'auto-start-reverse'});
+      marker.appendChild(svgEl('path',{d:'M0,0 L10,5 L0,10 z',fill:l.color}));
+      defs.appendChild(marker);
+      const g=svgEl('g',{});
+      const r=Math.max(9,cell*0.4);
+      if(pts.length>1){
+        // Отрезок идёт от кольца до кольца: цифры в клетках не перекрываются, стрелка видна.
+        const parts=[];
+        for(let i=1;i<pts.length;i++){
+          const a=pts[i-1],b=pts[i];
+          const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+          const cut=Math.min(r+1,len/2-1);
+          if(cut<0)continue;
+          parts.push({x1:a.x+dx/len*cut,y1:a.y+dy/len*cut,x2:b.x-dx/len*cut,y2:b.y-dy/len*cut});
+        }
+        for(const p of parts)g.appendChild(svgEl('line',{...p,stroke:'rgba(0,0,0,.6)','stroke-width':5.5,'stroke-linecap':'round'}));
+        for(const p of parts)g.appendChild(svgEl('line',{...p,stroke:l.color,'stroke-width':2.6,'stroke-linecap':'round','marker-end':`url(#${id})`}));
+      }
+      // Кольцо по краю клетки, чтобы цифра оставалась читаемой; старт — толстое кольцо.
+      pts.forEach((p,i)=>{
+        const sw=i===0?4.2:2;
+        g.appendChild(svgEl('circle',{cx:p.x,cy:p.y,r,fill:'none',stroke:'rgba(0,0,0,.55)','stroke-width':sw+2.4}));
+        g.appendChild(svgEl('circle',{cx:p.x,cy:p.y,r,fill:'none',stroke:l.color,'stroke-width':sw}));
+      });
+      svg.appendChild(g);
+    });
+    grid.appendChild(svg);
+  }
+
+  let raf=0;
+  function schedule(){
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>requestAnimationFrame(draw));
+  }
+
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('#tableLinesBtn');
+    if(b){
+      on=!on;
+      try{localStorage.setItem(KEY,on?'1':'0')}catch(err){}
+      schedule();
+      return;
+    }
+    const row=e.target.closest?.('[data-tl-draw]');
+    if(row){
+      const id=Number(row.dataset.tlDraw);
+      if(hidden.has(id))hidden.delete(id);else hidden.add(id);
+      schedule();
+    }
+  });
+
+  function wrapRender(){
+    try{
+      if(typeof renderTableDrawer!=='function'||renderTableDrawer.__transitionLinesV1)return;
+      const original=renderTableDrawer;
+      const wrapped=function(){
+        const out=original.apply(this,arguments);
+        schedule();
+        return out;
+      };
+      wrapped.__transitionLinesV1=true;
+      wrapped.__tableLockV1=original.__tableLockV1;
+      renderTableDrawer=wrapped;
+    }catch(e){console.warn('COMBO LINES WRAP',e)}
+  }
+
+  wrapRender();
+  window.addEventListener('resize',schedule);
+  window.addEventListener('orientationchange',schedule);
+  const start=()=>{ensureButton();schedule()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
