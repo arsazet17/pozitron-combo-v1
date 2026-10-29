@@ -1,5 +1,5 @@
 {
-  "name": "COMBO · XRAY lifecycle and integration checks",
+  "name": "COMBO · integration checks",
   "on": {
     "workflow_dispatch": {},
     "pull_request": {
@@ -7,18 +7,9 @@
         "main"
       ],
       "paths": [
-        "xray-structure-engine-v4.mjs",
-        "build-xray-runtime.mjs",
-        "xray-runtime-core.mjs",
-        "validate-xray-runtime.mjs",
         "self-test-*.mjs",
-        "xray-ui-v1.js",
-        "xray-v1.css",
         "keno-payouts-v1.json",
         "combo-history-v1.json",
-        "data/xray-runtime.json",
-        "data/xray-runtime.guard.json",
-        "data/xray-recovery*.json",
         "index.html",
         "sw.js",
         "manifest.webmanifest",
@@ -26,7 +17,6 @@
         "refresh-combo-build.mjs",
         ".github/workflows/**",
         ".github/scripts/**",
-        "xray-runtime-io.mjs",
         "**/*.js",
         "**/*.mjs",
         "**/*.cjs"
@@ -37,18 +27,9 @@
         "main"
       ],
       "paths": [
-        "xray-structure-engine-v4.mjs",
-        "build-xray-runtime.mjs",
-        "xray-runtime-core.mjs",
-        "validate-xray-runtime.mjs",
         "self-test-*.mjs",
-        "xray-ui-v1.js",
-        "xray-v1.css",
         "keno-payouts-v1.json",
         "combo-history-v1.json",
-        "data/xray-runtime.json",
-        "data/xray-runtime.guard.json",
-        "data/xray-recovery*.json",
         "index.html",
         "sw.js",
         "manifest.webmanifest",
@@ -56,7 +37,6 @@
         "refresh-combo-build.mjs",
         ".github/workflows/**",
         ".github/scripts/**",
-        "xray-runtime-io.mjs",
         "**/*.js",
         "**/*.mjs",
         "**/*.cjs"
@@ -84,15 +64,8 @@
           }
         },
         {
-          "name": "Syntax, lifecycle, frozen, payouts, UI/PWA and workflow tests",
+          "name": "Syntax, workflow and data-refresh tests",
           "run": "node .github/scripts/check-stage1.mjs"
-        },
-        {
-          "name": "Validate against the previous published runtime",
-          "env": {
-            "COMBO_BASE_SHA": "${{ github.event.pull_request.base.sha || github.event.before || '' }}"
-          },
-          "run": "node .github/scripts/check-published-baseline.mjs"
         },
         {
           "name": "Install pinned browser for live UI regression",

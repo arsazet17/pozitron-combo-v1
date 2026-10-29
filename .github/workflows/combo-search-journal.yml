@@ -43,17 +43,6 @@
         {
           "name": "Reconcile current main, test, then publish",
           "run": "node .github/scripts/ci-publish.mjs journal"
-        },
-        {
-          "name": "Preserve failure diagnostics",
-          "if": "${{ failure() }}",
-          "uses": "actions/upload-artifact@v4",
-          "with": {
-            "name": "combo-journal-diagnostics",
-            "path": "data/xray-runtime.json\ndata/xray-runtime.guard.json",
-            "retention-days": 7,
-            "if-no-files-found": "ignore"
-          }
         }
       ]
     }

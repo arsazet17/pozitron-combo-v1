@@ -42,30 +42,23 @@ for (const name of names) {
     assert.equal(jobs.length, 1);
     assert.equal(jobs[0].if, "${{ github.ref == 'refs/heads/main' }}");
     const commands = jobs[0].steps.map(s => s.run || '').join('\n');
-    assert.match(commands, /node \.github\/scripts\/ci-publish\.mjs (data|runtime|app|journal)/);
-    assert(!/git (push|commit|rebase|pull)|node build-xray-runtime/.test(commands), name + ': only the authoritative publisher may write');
+    assert.match(commands, /node \.github\/scripts\/ci-publish\.mjs (data|app|journal)/);
+    assert(!/git (push|commit|rebase|pull)/.test(commands), name + ': only the authoritative publisher may write');
   }
 }
-assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 4);
+assert.equal([...workflows.values()].filter(w => w.permissions.contents === 'write').length, 3);
 assert(workflows.get('update-combo-v1.yaml').on.workflow_dispatch);
-assert.notEqual(workflows.get('update-combo-v1.yaml').concurrency.group, workflows.get('xray-ai-train.yml').concurrency.group, 'Runtime/journal requests must not replace pending official data updates');
+assert.notEqual(workflows.get('update-combo-v1.yaml').concurrency.group, workflows.get('combo-search-journal.yml').concurrency.group, 'Journal requests must not replace pending official data updates');
 assert.equal(workflows.get('update-combo-v1.yaml').on.schedule, undefined, 'Legacy loader must not have an automatic schedule');
-const rebuild = workflows.get('xray-ai-train.yml');
-for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-runtime-core.mjs', 'xray-runtime-io.mjs', 'keno-payouts-v1.json', 'combo-history-v1.json']) {
-  assert(rebuild.on.push.paths.includes(p), 'Missing runtime dependency: ' + p);
-}
-for (const p of ['data/xray-runtime.json', 'data/xray-runtime.guard.json']) assert(!rebuild.on.push.paths.includes(p), 'Runtime output must not rebuild itself');
-assert.equal(rebuild.on.workflow_dispatch.inputs.resume_live_after_gap.type, 'boolean');
-assert.equal(rebuild.on.workflow_dispatch.inputs.resume_live_after_gap.default, false);
 const app = workflows.get('combo-auto-app-build.yml');
-for (const p of ['xray-structure-engine-v4.mjs', 'xray-ui-v1.js', 'xray-v1.css']) assert(app.on.push.paths.includes(p));
-for (const p of ['combo-history-v1.json', 'combo-status-v1.json', 'data/xray-runtime.json']) assert(!app.on.push.paths.includes(p));
+for (const p of ['index.html', 'combo-search-v1.js', 'refresh-combo-build.mjs']) assert(app.on.push.paths.includes(p));
+for (const p of ['combo-history-v1.json', 'combo-status-v1.json']) assert(!app.on.push.paths.includes(p));
 const checks = workflows.get('combo-stage1-checks.yml');
 assert.equal(checks.permissions.contents, 'read');
-for (const p of ['xray-structure-engine-v4.mjs', 'build-xray-runtime.mjs', 'xray-ui-v1.js', 'xray-v1.css', 'keno-payouts-v1.json', 'combo-history-v1.json', 'data/xray-runtime.json']) {
+for (const p of ['index.html', 'keno-payouts-v1.json', 'combo-history-v1.json']) {
   assert(checks.on.push.paths.includes(p), 'Missing check dependency: ' + p);
 }
-console.log('PASS workflow YAML/JSON sanity, writer concurrency, dependencies, retired installers and no runtime trigger cycle');
+console.log('PASS workflow YAML/JSON sanity, writer concurrency, dependencies and retired installers');
 
 function scenario({ headChangesBeforeCommit = false, rejectedPush = false, noChanges = false, anomaly = false, uncertainSuccess = false } = {}) {
   let attempt = 0;
@@ -124,12 +117,11 @@ assert.deepEqual(dueTarget(new Date('2026-09-10T21:05:00Z')), { date: '11.09.26'
 assert(Number.isNaN(publicationStamp({ date: '31.02.26', time: '00:02' })));
 console.log('PASS stale HEAD retry, rejected push recomputation, uncertain push verification, no-op, anomaly diagnostics and publication grace');
 
-// Data/runtime/journal runs cannot regenerate or stage application outputs.
+// Data/journal runs cannot regenerate or stage application outputs.
 const stageSource=await fs.readFile('.github/scripts/ci-stage.mjs','utf8');
 assert(stageSource.includes("if (mode === 'app') node('refresh-combo-build.mjs')"));
 const publisherSource=await fs.readFile('.github/scripts/ci-publish.mjs','utf8');
 assert(publisherSource.includes("...(mode === 'app' ? ['app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'] : [])"));
-for(const p of ['xray-runtime-core.mjs','xray-runtime-io.mjs','build-xray-runtime.mjs'])assert(app.on.push.paths.includes(p));
 console.log('PASS data writers cannot regenerate or stage application releases');
 
 // A verified new draw must be published even when the official feed trails the clock.

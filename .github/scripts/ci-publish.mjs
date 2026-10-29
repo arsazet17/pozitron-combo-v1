@@ -22,8 +22,8 @@ export async function publishFresh(io, attempts = 4) {
 }
 
 export async function main() {
-  const mode = process.argv[2] || 'runtime';
-  if (!['data', 'runtime', 'app', 'journal'].includes(mode)) throw new Error('Unknown update mode');
+  const mode = process.argv[2] || '';
+  if (!['data', 'app', 'journal'].includes(mode)) throw new Error('Unknown update mode');
   const workspace = process.env.GITHUB_WORKSPACE;
   if (process.env.GITHUB_ACTIONS !== 'true' || process.env.GITHUB_REF !== 'refs/heads/main' ||
       !workspace || path.resolve(workspace) !== path.resolve(process.cwd())) {
@@ -32,13 +32,10 @@ export async function main() {
   const sourcePath = fileURLToPath(import.meta.url);
   const loadedPublisher = await fs.readFile(sourcePath, 'utf8');
   const scratch = await fs.mkdtemp(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'combo-publish-'));
-  const baseline = path.join(scratch, 'runtime.json');
-  const baselineGuard = path.join(scratch, 'runtime-guard.json');
   const due = dueTarget();
   const env = { ...process.env, COMBO_DUE_DATE: due.date, COMBO_DUE_TIME: due.time };
   const allowedPaths = [
     'combo-history-v1.json', 'combo-status-v1.json', 'combo-search-log-v1.json',
-    'data/xray-runtime.json', 'data/xray-runtime.guard.json',
     ...(mode === 'app' ? ['app-version.json', 'index.html', 'manifest.webmanifest', 'sw.js'] : [])
   ];
   function git(args, { capture = false, allowFailure = false } = {}) {
@@ -63,15 +60,12 @@ export async function main() {
         if (await fs.readFile(sourcePath, 'utf8') !== loadedPublisher) {
           throw new Error('Publisher changed on main; rerun with its current version');
         }
-        await fs.copyFile('data/xray-runtime.json', baseline);
-        await fs.copyFile('data/xray-runtime.guard.json', baselineGuard);
         return git(['rev-parse', 'HEAD'], { capture: true });
       },
       async reconcile() {
-        return node('.github/scripts/ci-stage.mjs', [mode, baseline, baselineGuard], [0, 2]);
+        return node('.github/scripts/ci-stage.mjs', [mode]);
       },
       async verify() {
-        node('validate-xray-runtime.mjs', ['--baseline', baseline, '--baseline-guard', baselineGuard]);
         const changed = git(['diff', '--name-only'], { capture: true }).split('\n').filter(Boolean);
         if (changed.some(file => !allowedPaths.includes(file))) throw new Error('Unexpected source changes in generated update');
         git(['diff', '--check']);
@@ -85,7 +79,7 @@ export async function main() {
       },
       async commit() {
         git(['add', '--', ...allowedPaths]);
-        git(['commit', '-m', 'COMBO: reconcile verified data, immutable XRAY runtime and app build']);
+        git(['commit', '-m', 'COMBO: reconcile verified data, search journal and app build']);
         return git(['rev-parse', 'HEAD'], { capture: true });
       },
       async push() { return git(['push', 'origin', 'HEAD:main'], { allowFailure: true }) === 0; },
@@ -95,7 +89,6 @@ export async function main() {
       }
     });
     console.log(result.published ? 'PUBLISH PASS' : 'PUBLISH: no generated changes');
-    if (result.status === 2) console.error('XRAY is paused; the preserved pending and anomaly diagnostics have been published');
     process.exitCode = result.status;
   } finally {
     // scratch is created by mkdtemp under the runner temporary directory only.

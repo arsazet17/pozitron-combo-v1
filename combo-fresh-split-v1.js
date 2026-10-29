@@ -1,7 +1,6 @@
 /* COMBO KENO · История свежих · Supabase + УДЛ v14 · 03.10.2026
    Основная история хранится в Supabase и одинакова на всех устройствах.
    Модуль «3 БЛОКА» удалён полностью; здесь остаётся история свежих.
-   Подключает XRAY archive tools: ОТС, УДЛ, столбы и порядок чисел.
 */
 (() => {
   'use strict';
@@ -70,17 +69,7 @@
     document.head.appendChild(s);
   }
 
-  function loadXrayArchiveTools(){
-    if(window.__xrayArchiveToolsV1)return;
-    const currentSrc=document.currentScript&&document.currentScript.src;
-    const url=new URL('xray-archive-tools-v1.js?v=20261003-xat1',currentSrc||location.href);
-    const s=document.createElement('script');
-    s.src=url.href;
-    s.onerror=()=>console.error('XRAY archive tools load failed');
-    document.head.appendChild(s);
-  }
-
-  function afterCloud(){loadBase();loadXrayArchiveTools()}
+  function afterCloud(){loadBase()}
 
   function ensureCloud(){
     if(window.ComboCloudHistory&&window.ComboCloudFresh){

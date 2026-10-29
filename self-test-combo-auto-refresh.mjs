@@ -17,7 +17,7 @@ const env={
  console:{warn(){},error(){}},
  document:{hidden:false,addEventListener:(name,fn)=>{events[name]=fn}},
  setTimeout:(fn,ms)=>{const id=++nextTimer;timeouts.set(id,{fn,ms});return id},clearTimeout:id=>timeouts.delete(id),
- openIntervalHistory(){},updateDbLine(){},renderFields(){},refreshOpenHistory(){},notifyComboXray(){notifications++},
+ openIntervalHistory(){},updateDbLine(){},renderFields(){},refreshOpenHistory(){notifications++},
  renderGroups(){},renderCombos(){},renderPick(){},renderTableDrawer(){},$:()=>({textContent:'',classList:{contains:()=>true}}),
  fetch:async(url,options)=>{
   requests.push({url,options});

@@ -19,19 +19,10 @@
         "keno-payouts-v1.json",
         "refresh-combo-build.mjs",
         "self-test-workflows.mjs",
-        "xray-engine-v1.js",
-        "xray-structure-engine-v4.mjs",
-        "xray-ui-v1.js",
-        "xray-archive-tools-v1.js",
-        "xray-analog-columns-v1.js",
-        "xray-v1.css",
         "icon-192.png",
         "icon-512.png",
         ".github/workflows/combo-auto-app-build.yml",
         ".github/workflows/install-*.yml",
-        "xray-runtime-core.mjs",
-        "xray-runtime-io.mjs",
-        "build-xray-runtime.mjs",
         "k7-interval-builder.html"
       ]
     }
@@ -65,17 +56,6 @@
         {
           "name": "Reconcile current main, test, then publish",
           "run": "node .github/scripts/ci-publish.mjs app"
-        },
-        {
-          "name": "Preserve failure diagnostics",
-          "if": "${{ failure() }}",
-          "uses": "actions/upload-artifact@v4",
-          "with": {
-            "name": "combo-app-diagnostics",
-            "path": "data/xray-runtime.json\ndata/xray-runtime.guard.json",
-            "retention-days": 7,
-            "if-no-files-found": "ignore"
-          }
         }
       ]
     }
