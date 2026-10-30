@@ -4,572 +4,219 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<title>K7 · Интервалы → комбы</title>
+<title>K7 · Ядро</title>
 <style>
-:root{--bg:#04111e;--p:#0c2135;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--gold:#ffbd23;--blue:#35a9ff;--red:#ff5c58}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0b2842 0,#04111e 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
-.app{max-width:780px;margin:auto;padding:12px 10px 88px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between}.top h1{font-size:21px;margin:0}
-.ver{font-size:11px;color:#7fd8ff;border:1px solid var(--line);border-radius:8px;padding:4px 7px}.card{background:linear-gradient(180deg,rgba(15,39,62,.98),rgba(7,24,39,.98));border:1px solid var(--line);border-radius:15px;padding:12px;margin:10px 0}
-.muted{font-size:12px;color:var(--muted);line-height:1.4}.notice{font-size:11px;color:#ffd78b;background:#28200d;border:1px solid #6f5717;border-radius:10px;padding:8px;margin-top:8px}
-button,select,input{font:inherit}button{border:1px solid #315677;border-radius:11px;background:#132e48;color:#fff;font-weight:850;padding:10px;cursor:pointer}.primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}.ghost{background:#0a1c2d}.gold{background:#45350b;border-color:#876916;color:#ffe08a}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.controls label{font-size:11px;color:var(--muted)}select,input{width:100%;margin-top:4px;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.stat{background:#081827;border:1px solid #294b66;border-radius:10px;padding:8px;text-align:center}.stat b{display:block;color:var(--green);font-size:18px}.stat span{font-size:10px;color:var(--muted)}
-.rules{display:grid;gap:7px;margin-top:9px}.rule{border:1px solid #294b66;background:#081827;border-radius:10px;padding:9px}.rule b{color:#dceeff}.rule strong{color:var(--gold)}
-.rank{display:grid;gap:5px;margin-top:8px}.rrow{display:grid;grid-template-columns:38px 42px 48px 1fr;gap:5px;align-items:center;padding:8px;border:1px solid #24445e;border-radius:10px;background:#071827;font-size:11px}.rnum{font-size:17px;font-weight:950}.rscore{font-weight:950;color:var(--gold)}.meta{color:#a8bdce;line-height:1.3}.signal{font-weight:950}.signal.h{color:#7ff158}.signal.m{color:#ffd15d}.signal.l{color:#8fa4b7}
-.combos{display:grid;gap:8px;margin-top:9px}.combo{border:1px solid #294b66;background:#081827;border-radius:12px;padding:9px}.comboTop{display:flex;justify-content:space-between;gap:8px;align-items:center}.nums{display:flex;gap:5px;flex-wrap:wrap}.n{padding:6px 7px;border-radius:8px;background:#26752d;border:1px solid #67c93f;font-weight:950;font-size:13px}.badge{font-size:10px;color:#a9c0d2}.detail{font-size:10px;color:#9fb4c5;line-height:1.5;margin-top:7px}.comboBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.k7input{display:grid;grid-template-columns:1fr auto;gap:7px}.occ{display:grid;gap:6px;margin-top:8px}.occRow{display:grid;grid-template-columns:74px 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid #294b66;border-radius:10px;background:#081827;font-size:11px}.occDraw{font-weight:950}.occMeta{color:#b8c9d8;line-height:1.3}.occGap{color:var(--gold);font-weight:950;text-align:right}
-.matrixBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.matrixBtns button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876}
-.matrixWrap{overflow:auto;border:1px solid #24445e;border-radius:10px;margin-top:8px}.matrix{border-collapse:collapse;min-width:740px;width:100%;font-size:10px}.matrix th,.matrix td{border:1px solid #24445e;padding:5px;text-align:center}.matrix th{background:#0f2a43;color:#cfe4f3;position:sticky;top:0}.matrix td.hot{background:#174c36;color:#fff;font-weight:900}.matrix td.warm{background:#3d3513;color:#ffe59a}
-.footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px}.footerIn{max-width:780px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}.err{color:#ffb6b6}.ok{color:#9af274}
-@media(max-width:520px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.rrow{grid-template-columns:34px 40px 44px 1fr}.comboBtns{grid-template-columns:1fr}.k7input{grid-template-columns:1fr}.occRow{grid-template-columns:68px 1fr auto}}
-
-.checkCard{scroll-margin-top:12px}.selectedK7{display:none;margin:9px 0;padding:9px;border:1px solid #4f7da0;border-radius:10px;background:#0a2135}.selectedK7.on{display:block}.selectedK7 b{display:block;margin-bottom:5px}.occSummary{padding:10px;border:1px solid #2c5675;border-radius:11px;background:#0b2032;font-size:12px;line-height:1.4}.occCard{border:1px solid #294b66;background:#081827;border-radius:12px;padding:10px}.occHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.occDraw{font-weight:950;font-size:16px}.occWhen{color:#b8c9d8;font-size:11px;line-height:1.35;margin-top:2px}.occGap{color:var(--gold);font-weight:950;text-align:right;font-size:12px;white-space:nowrap}.matchLine{margin-top:8px;font-size:11px;color:#cfe0ed}.ballRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.ball{min-width:29px;text-align:center;padding:4px 5px;border-radius:7px;background:#0d2538;border:1px solid #294b66;color:#bcd0df;font-size:11px;font-weight:800}.ball.k7{background:linear-gradient(180deg,#4a9e26,#236d22);border-color:#7ade5a;color:#fff}.ball.extra{background:linear-gradient(180deg,#a37b11,#6b4e08);border-color:#e2bd42;color:#fff}.expandBox{margin-top:8px;padding:7px 8px;border-radius:9px;background:#0a1c2d;border:1px solid #294b66;font-size:11px;line-height:1.45;color:#c7d8e5}.expandBox strong{color:var(--gold)}
-
-.savedArchive{display:grid;gap:9px;margin-top:10px}.savedEmpty{padding:11px;border:1px dashed #3a5d77;border-radius:11px;color:#9fb4c5;font-size:12px}.savedItem{border:1px solid #315775;background:#071827;border-radius:13px;padding:10px}.savedTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.savedTitle{font-size:16px;font-weight:950}.savedMeta{font-size:10px;color:#9fb4c5;line-height:1.45;margin-top:3px}.savedStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}.savedStat{background:#0a2134;border:1px solid #294b66;border-radius:9px;padding:7px;text-align:center}.savedStat b{display:block;font-size:16px;color:#7ff158}.savedStat span{font-size:9px;color:#9fb4c5}.hitDist{margin-top:8px;padding:7px 8px;border-radius:9px;background:#0a1b2b;border:1px solid #284a65;font-size:10px;color:#c9d8e4;line-height:1.5}.savedActions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.danger{background:#35131a;border-color:#7b3544;color:#ffc0c8}.saveBtn.saved{background:#153a22;border-color:#3b8850;color:#9af274}.wins{margin-top:8px}.wins summary{cursor:pointer;font-weight:900;color:#ffd15d}.winRow{display:grid;grid-template-columns:52px 1fr auto;gap:6px;padding:7px 0;border-top:1px solid #1d3b52;font-size:10px}.winRow:first-of-type{margin-top:5px}.winHit{font-weight:950;color:#7ff158}.winMoney{font-weight:950;color:#ffd15d;white-space:nowrap}.full7tag{display:inline-block;margin-left:5px;padding:1px 5px;border-radius:6px;background:#4c2b08;border:1px solid #9b6b1a;color:#ffe29b;font-size:9px}.savedNums{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}.savedNums .n{padding:5px 6px}
-
-.sectionToggle{float:right;margin:-2px 0 8px 8px;padding:7px 9px;border-radius:9px;background:#0a1c2d;border:1px solid #355a76;color:#d9e8f3;font-size:10px;font-weight:900;line-height:1;white-space:nowrap}
-.card.collapsed{padding-bottom:10px}
-.card.collapsed > *:not(.sectionToggle):not(.sectionTitleKeep){display:none!important}
-.card.collapsed .sectionToggle{margin-bottom:0}
-.sectionTitleKeep{display:inline-block;max-width:70%}
-@media(max-width:520px){.sectionToggle{font-size:9px;padding:7px 8px}.sectionTitleKeep{max-width:64%}}
-
-.matrixWrap{max-height:480px;overflow:auto;overscroll-behavior:contain;position:relative;-webkit-overflow-scrolling:touch}
-.matrix{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;min-width:0;font-size:14px}
-.matrix th,.matrix td{min-width:56px;width:56px;height:44px;padding:8px;border-width:0 1px 1px 0}
-.matrix thead th{position:sticky;top:0;z-index:3;background:#123752}
-.matrix tbody th{position:sticky;left:0;top:auto;z-index:2;background:#102a43}
-.matrix th:first-child{min-width:104px;width:104px}
-.matrix thead th:first-child{left:0;z-index:4}
-.matrix td.hot{background:#236936;box-shadow:inset 0 0 0 2px #74cf61;color:#fff}
-.matrix td.warm{background:#443813;color:#ffe59a}
-.matrix td.current{outline:2px solid #57bfff;outline-offset:-3px}
-.exitState{font-size:14px;line-height:1.65;padding:10px;margin-top:8px;background:#071827;border:1px solid #315775;border-radius:10px}
-.exitState strong{color:#ffe08a}.exitState .muted{margin-top:7px}.backtestWrap{overflow:auto;margin-top:8px}.backtestTable{border-collapse:collapse;white-space:nowrap;font-size:13px}.backtestTable th,.backtestTable td{padding:8px;border:1px solid #315775;text-align:right}
-.cloudBar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}.cloudBar button{padding:8px 10px}.cloudStatus{font-size:10px;color:#9fb4c5}.cloudStatus.ok{color:#9af274}.cloudStatus.warn{color:#ffd78b}.cloudStatus.err{color:#ffb6b6}
+:root{--bg:#04111e;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--gold:#ffbd23;--red:#ff7a76}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#0b2842 0,#04111e 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+.app{max-width:780px;margin:auto;padding:12px 10px 92px}
+.top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.top h1{font-size:22px;margin:0}
+.ver{font-size:11px;color:#7fd8ff;border:1px solid var(--line);border-radius:8px;padding:4px 7px;white-space:nowrap}
+.card{background:linear-gradient(180deg,rgba(15,39,62,.98),rgba(7,24,39,.98));border:1px solid var(--line);border-radius:15px;padding:12px;margin:10px 0}
+.card h2{font-size:16px;margin:0 0 6px;line-height:1.3}
+.muted{font-size:12px;color:var(--muted);line-height:1.45}
+.note{font-size:12px;color:#ffd78b;background:#28200d;border:1px solid #6f5717;border-radius:10px;padding:9px;margin-top:8px;line-height:1.45}
+.good{font-size:12px;color:#c9f7b4;background:#10301b;border:1px solid #2f7a3f;border-radius:10px;padding:9px;margin-top:8px;line-height:1.45}
+button,input{font:inherit}
+button{border:1px solid #315677;border-radius:11px;background:#132e48;color:#fff;font-weight:850;padding:10px;cursor:pointer}
+button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876}
+.primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}
+.ghost{background:#0a1c2d}
+input{width:100%;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px;font-size:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.coreRow{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px;align-items:center}
+.coreRow[hidden]{display:none}
+.tickets{display:grid;gap:7px;margin-top:10px}
+.ticket{display:grid;grid-template-columns:48px 1fr 42px;gap:6px;align-items:center;border:1px solid #294b66;background:#081827;border-radius:12px;padding:8px}
+.ticket b{font-size:12px;color:#cfe0ed}
+.nums{display:flex;gap:4px;flex-wrap:wrap}
+.n{min-width:30px;text-align:center;padding:5px 5px;border-radius:8px;background:#26752d;border:1px solid #67c93f;font-weight:950;font-size:13px}
+.n.core{background:linear-gradient(180deg,#b88710,#7a5606);border-color:#ffd25e;color:#fff}
+.hist{padding:7px 0;font-size:16px;background:#0a1c2d;width:42px}
+.tools{display:grid;grid-template-columns:1fr;gap:7px;margin-top:9px}
+.periods{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
+.periods button{padding:9px 4px;font-size:12px}
+.tableWrap{overflow-x:auto;margin-top:9px;border:1px solid #24445e;border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border-bottom:1px solid #1d3b52;padding:8px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{background:#0f2a43;color:#cfe4f3;font-weight:800}
+tr.main td{background:#0d2a1b;font-weight:850}
+.plus{color:#8ff06a}.minus{color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:9px}
+.stat{background:#081827;border:1px solid #294b66;border-radius:10px;padding:9px;text-align:center}
+.stat b{display:block;color:var(--green);font-size:20px}
+.stat span{font-size:11px;color:var(--muted)}
+.stat b.minus{color:var(--red)}.stat b.plus{color:#8ff06a}
+.log td:nth-child(2){text-align:left}
+details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
+.footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px calc(7px + env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) calc(7px + env(safe-area-inset-left))}
+.footerIn{max-width:780px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.err{color:#ffb6b6}
+@media(max-width:420px){.ticket{grid-template-columns:40px 1fr 40px;padding:7px}.ticket b{font-size:11px}.n{min-width:28px;padding:5px 3px;font-size:12px}.hist{width:40px}.periods button{font-size:11px}th,td{padding:7px 5px}}
 </style>
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🔁 K7 · Интервалы → комбы</h1><div class="muted" id="db">Загрузка архива…</div></div><div class="ver">LAB v1.9.2</div></div>
+ <div class="top"><div><h1>🎯 K7 · Ядро</h1><div class="muted" id="db">Загрузка архива…</div></div><span class="ver" id="ver">COMBO</span></div>
 
  <div class="card">
-  <b>Правильная логика интервалов</b>
-  <div class="rules">
-   <div class="rule"><b>Строгий режим</b><div class="muted">Считает только соседние появления числа: 1→2, 2→3, 3→4. Интервал <strong>0</strong> — число вышло в двух соседних тиражах.</div></div>
-   <div class="rule"><b>Мягкий режим</b><div class="muted">Считает <strong>все пары появлений</strong>: кроме соседних добавляет 1→3, 1→4, 2→4 и т.д. Это не «±1», а плотная картина общего ритма числа.</div></div>
-   <div class="rule"><b>Фильтр частоты</b><div class="muted">Интервальный сигнал усиливается, если число само по себе достаточно часто встречалось в выбранном архивном окне.</div></div>
+  <h2 id="nextTitle">K7 на следующий тираж</h2>
+  <div class="muted">10 комбинаций по 7 чисел. Одно число — <b style="color:#ffd25e">ядро</b> — стоит во всех десяти, остальные 60 чисел разные, без повторов. Ставка 100 ₽ за K7, за тираж 1 000 ₽.</div>
+  <div class="seg">
+   <button id="modeAuto" type="button">🔄 Ядро по кругу</button>
+   <button id="modePin" type="button">📌 Своё ядро</button>
   </div>
-  <div class="notice">Это отдельная лабораторная страница. В основное приложение COMBO ничего не встроено и его файлы интерфейса не меняются.</div>
- </div>
-
- <div class="card">
-  <b id="nextK7Title">K7 НА СЛЕДУЮЩИЙ ТИРАЖ</b>
-  <div class="muted">Расчёт делается только по известным тиражам до следующего тиража. Основной параметр — текущий пропуск числа и его исторические совпадения в строгой/мягкой матрице.</div>
-  <div class="controls">
-   <label>Глубина архива<input id="window" type="number" inputmode="numeric" min="1" step="1" value="400" placeholder="Например 137"><span id="windowHint" class="muted" style="display:block;margin-top:4px">Можно указать любое число тиражей</span></label>
-   <label>Пул кандидатов<input id="pool" type="number" inputmode="numeric" min="7" max="80" step="1" value="18" placeholder="Например 18"><span class="muted" style="display:block;margin-top:4px">Свободно: от 7 до 80 чисел. Чем больше пул, тем шире выбор генератора.</span></label>
-   <label>Режим генератора<select id="mode"><option value="strict">R1 · Строгий + частота</option><option value="soft">R2 · Мягкий + частота</option><option value="combo" selected>R3 · Строгий + мягкий + частота</option><option value="balance">R4 · Комбо + пары + столбы</option></select></label>
-   <label>Сколько K7<input id="count" type="number" inputmode="numeric" min="1" step="1" value="10" placeholder="Например 23"><span class="muted" style="display:block;margin-top:4px">Свободное количество: 1, 2, 3, 10, 23…</span></label>
+  <div class="coreRow" id="coreRow" hidden>
+   <input id="coreInput" type="number" inputmode="numeric" min="1" max="80" step="1" aria-label="Ядро, число от 1 до 80">
+   <button id="coreApply" type="button" class="primary">Применить</button>
   </div>
-  <button id="build" class="primary" style="width:100%;margin-top:9px">СФОРМИРОВАТЬ K7</button>
-  <div id="summary" class="stats"></div>
+  <div class="muted" id="modeHint" style="margin-top:7px"></div>
+  <div class="tickets" id="tickets"></div>
+  <div class="tools"><button id="copyAll" type="button" class="ghost">📋 Скопировать все 10 K7</button></div>
  </div>
 
  <div class="card">
-  <b>🔥 Рейтинг чисел сейчас</b>
-  <div class="muted">Тек. инт. — сколько тиражей пропущено после последнего появления. «Стр.» — сколько раз этот интервал закрывался между соседними появлениями. «Мяг.» — сколько раз он встречался среди всех пар.</div>
-  <div id="rank" class="rank"></div>
-  <h3>Состояние числа → следующий выход</h3>
-  <label>Число для анализа<select id="exitNumber" aria-label="Число для анализа интервального выхода"></select></label>
-  <div id="exitState" class="exitState"></div>
+  <h2>Проверка на архиве</h2>
+  <div class="muted">Для каждого прошлого тиража набор строится тем же правилом, что и сейчас. Правило зависит только от номера тиража или от выбранного ядра, но не от выпавших чисел, поэтому заглянуть в будущее оно не может. Для сравнения на тех же тиражах играют обычные 10 случайных K7 и старый способ (10 K7 из пула 18 чисел).</div>
+  <div class="periods" id="periods"></div>
+  <div class="stats" id="mainStats"></div>
+  <div class="tableWrap"><table id="cmp"></table></div>
+  <div class="note" id="honest"></div>
  </div>
 
  <div class="card">
-  <b id="readyK7Title">🎯 ГОТОВЫЕ K7 НА СЛЕДУЮЩИЙ ТИРАЖ</b>
-  <div class="muted">Готовая K7 ещё не имеет истории. Для наблюдения вперёд нажмите <b>«СОХРАНИТЬ K7»</b>. Только после сохранения комбинация попадёт в архив, и отсчёт начнётся со следующего тиража.</div>
-  <div id="combos" class="combos"></div>
- </div>
-
-
- <div class="card" id="savedCard">
-  <b>📚 Архив сохранённых K7</b>
-  <div class="muted">Сюда попадают <b>только K7, которые вы сами сохранили</b>. Отсчёт начинается со следующего тиража после сохранения. При каждом обновлении архива карточка сама пересчитывает новые тиражи, выигрыши и повторные 7/7.</div>
-  <div class="notice">Основная копия сохранённых K7 хранится в Supabase. Телефон используется только как локальный кэш. После обновления или смены телефона архив восстанавливается автоматически.</div>
-  <div class="cloudBar"><button id="cloudSetup" class="ghost">☁ Supabase: подключён</button><span id="cloudStatus" class="cloudStatus">Supabase: подготовка архива…</span></div>
-  <div class="savedActions" style="margin:12px 0"><button type="button" id="clearSavedK7" class="danger">🗑 УДАЛИТЬ ВСЕ КОМБЫ K7</button></div>
-  <div id="savedArchive" class="savedArchive"></div>
- </div>
-
- <div class="card checkCard" id="checkCard">
-  <b>🔎 История K7 — что реально совпало</b>
-  <div class="muted">Этот блок предназначен только для ручной проверки своей K7. Сохранённые комбинации открываются из «Архива сохранённых K7».</div>
-  <div id="selectedK7" class="selectedK7"></div>
-  <div class="k7input" style="margin-top:8px"><input id="k7" placeholder="Например: 05 16 20 28 48 65 80"><button id="checkK7" class="gold">🔎 ПРОВЕРИТЬ</button></div>
-  <div id="occ" class="occ"><div class="muted">Результат появится здесь: 7/7, № тиража, дата, время, столб, интервал и дополнительные совпавшие числа.</div></div>
+  <h2>Последние тиражи этого набора</h2>
+  <div class="muted">Выплата за тираж при ставке 1 000 ₽: зелёным — вернулось не меньше ставки, красным — меньше половины.</div><div class="tableWrap"><table class="log" id="log"></table></div>
  </div>
 
  <div class="card">
-  <b>📊 Матрица интервалов</b>
-  <div class="matrixBtns"><button id="mStrict" class="active">СТРОГАЯ</button><button id="mSoft">МЯГКАЯ</button></div>
-  <div class="muted" id="matrixInfo" style="margin-top:7px">Строгая: только соседние появления.</div>
-  <div class="muted">Листайте по горизонтали →. Зелёный — максимум в столбце, жёлтый — не менее половины максимума (от 2 случаев), синяя рамка — текущий пропуск. Яркость показывает число случаев, а не вероятность выигрыша.</div>
-  <div id="matrix" class="matrixWrap" tabindex="0" role="region" aria-label="Матрица интервалов, горизонтальная и вертикальная прокрутка"></div>
+  <details>
+   <summary>Почему алгоритм устроен так</summary>
+   <div class="muted" style="margin-top:8px">
+    <p><b>1. Угадать числа по истории нельзя.</b> Перед созданием раздела проверен 21 признак: пропуски и интервалы, частоты на 5–400 тиражах, связи с прошлым тиражом, соседние и зеркальные числа, столбы, цифровые корни. Модель училась на одной части архива и проверялась на другой. Результат — уровень случая: «лучшие» числа выпадают так же часто, как любые.</p>
+    <p><b>2. Средняя отдача у любого набора K7 одинаковая — около 70%.</b> На дистанции это минус примерно 30% от ставок, и выбор чисел это не меняет.</p>
+    <p><b>3. Меняется только то, как часто возвращаются деньги.</b> В таблице выплат 0 из 7 платит 150 ₽, больше ставки. Схема «одно общее ядро + по 6 своих чисел» чаще даёт билеты с нулём и чаще возвращает хотя бы половину ставки за тираж. Эту схему компьютер дважды нашёл сам, перебирая наборы, а проверка на реальных тиражах её подтвердила.</p>
+   </div>
+  </details>
  </div>
 </div>
-<div class="app"><div class="card" id="intervalBacktest"><b>Проверка интервального выхода на истории</b><div class="notice">Интервальный вариант не внедрён в генератор: выплаты ниже у R3 и R4. Анализ состояния числа доступен выше; формирование K7 осталось прежним.</div><div class="muted">Фиксированный срез №327414–327613: 200 следующих тиражей, перед каждым — только 400 предыдущих. Пул 18, по 10 K7, стоимость 100 ₽. Одинаковый сборщик комбинаций и действующая таблица выплат. Настройки не подбирались по результату.</div><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты</th><th>После затрат</th></tr></thead><tbody><tr><th>R3</th><td>262</td><td>607</td><td>666</td><td>342</td><td>100</td><td>20</td><td>3</td><td>0</td><td>147 500 ₽</td><td>-52 500 ₽</td></tr><tr><th>R3 + выход</th><td>241</td><td>619</td><td>657</td><td>361</td><td>103</td><td>18</td><td>1</td><td>0</td><td>124 450 ₽</td><td>-75 550 ₽</td></tr><tr><th>R4</th><td>246</td><td>642</td><td>652</td><td>330</td><td>110</td><td>16</td><td>4</td><td>0</td><td>151 100 ₽</td><td>-48 900 ₽</td></tr><tr><th>R4 + выход</th><td>227</td><td>616</td><td>672</td><td>378</td><td>95</td><td>10</td><td>2</td><td>0</td><td>122 850 ₽</td><td>-77 150 ₽</td></tr></tbody></table></div><details><summary>Контроль: последние 100 тиражей</summary><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты</th><th>После затрат</th></tr></thead><tbody><tr><th>R3</th><td>160</td><td>318</td><td>313</td><td>157</td><td>40</td><td>9</td><td>3</td><td>0</td><td>88 500 ₽</td><td>-11 500 ₽</td></tr><tr><th>R3 + выход</th><td>133</td><td>331</td><td>312</td><td>169</td><td>47</td><td>7</td><td>1</td><td>0</td><td>64 650 ₽</td><td>-35 350 ₽</td></tr><tr><th>R4</th><td>145</td><td>323</td><td>331</td><td>148</td><td>43</td><td>7</td><td>3</td><td>0</td><td>83 550 ₽</td><td>-16 450 ₽</td></tr><tr><th>R4 + выход</th><td>124</td><td>332</td><td>315</td><td>175</td><td>47</td><td>5</td><td>2</td><td>0</td><td>71 500 ₽</td><td>-28 500 ₽</td></tr></tbody></table></div></details><div class="muted">R3: выплаты 147 500 → 124 450 ₽ (−15,6%). R4: 151 100 → 122 850 ₽ (−18,7%). Небольшой рост средних попаданий не дал роста выплат. Это короткий исторический тест, не подтверждение будущей доходности.</div><div class="exitState"><b>Почему 5/20 может дать 0 ₽ у K7</b><br>По таблице выплат 1/7 и 2/7 не оплачиваются; 0/7 оплачивается 150 ₽. Среди 45 завершённых frozen с 5/20: у 59 из 90 K7A/K7B было 1/7 или 2/7. Это отдельная диагностика frozen, а не выдача генератора Интервалов.<br>У исходного R3 1/7–2/7: 1273 из 2000 K7; среднее пересечение двух билетов — 3,34 числа. Сборщик учитывает рейтинг, сырую частоту пар, столбы и разнообразие пропусков; напрямую распределение выплат не оптимизирует. Проверенный слой повысил попадания пула 18 чисел с 4,56 до 4,69, но проиграл по выплатам K7.</div></div></div>
-<div class="app"><div class="card" id="layoutBacktest"><b>Компоновка того же frozen-пула: 3 варианта</b><div class="notice">Устойчивого улучшения над текущими R3/R4 нет. Сборщик не заменён.</div><div class="muted">161 прогноз; один заранее сохранённый пул из 20 чисел и две K7 для каждой схемы. Связи — только по 400 предыдущим тиражам. Выбор на первых 111, контроль — последние 50.</div><div class="backtestWrap"><table class="backtestTable"><thead><tr><th>Схема</th><th>0/7</th><th>1/7</th><th>2/7</th><th>3/7</th><th>4/7</th><th>5/7</th><th>6/7</th><th>7/7</th><th>Выплаты ₽</th><th>Контроль ₽</th></tr></thead><tbody><tr><th>Сохранённые frozen A/B</th><td>43</td><td>101</td><td>96</td><td>65</td><td>16</td><td>1</td><td>0</td><td>0</td><td>17 350</td><td>5 850</td></tr><tr><th>Текущий R3</th><td>45</td><td>96</td><td>106</td><td>39</td><td>33</td><td>3</td><td>0</td><td>0</td><td>20 850</td><td>6 900</td></tr><tr><th>Текущий R4</th><td>45</td><td>98</td><td>106</td><td>41</td><td>27</td><td>5</td><td>0</td><td>0</td><td>22 250</td><td>7 200</td></tr><tr><th>Концентрация связей</th><td>45</td><td>102</td><td>107</td><td>48</td><td>16</td><td>4</td><td>0</td><td>0</td><td>19 550</td><td>5 050</td></tr><tr><th>Два отдельных кластера</th><td>38</td><td>111</td><td>104</td><td>51</td><td>15</td><td>3</td><td>0</td><td>0</td><td>17 400</td><td>5 150</td></tr><tr><th>Общее ядро из 3 чисел</th><td>45</td><td>100</td><td>104</td><td>54</td><td>15</td><td>4</td><td>0</td><td>0</td><td>19 950</td><td>6 000</td></tr></tbody></table></div><div class="muted">Выбрана по первым 111 «концентрация»: контроль 5 050 ₽ против 7 200 ₽ у R4 (−29,9%). Общее ядро не заменяет её после просмотра контроля. В frozen ограничение пересечения семёрок — 2 числа; 87 из 225 попаданий пула в случаях ровно 5/20 вообще не вошли в семёрки.</div><p><a href="./K7_LAYOUT_BACKTEST_RU.md">Полный диагноз и разбивка 5/20, 6/20, 7/20+</a></p></div></div>
-<div class="footer"><div class="footerIn"><button id="back" class="ghost">← COMBO</button><button id="refresh" class="primary">↻ ОБНОВИТЬ</button></div></div>
+<div class="footer"><div class="footerIn"><button id="back" class="ghost" type="button">← COMBO</button><button id="refresh" class="primary" type="button">↻ ОБНОВИТЬ</button></div></div>
 
 <script>
 'use strict';
-const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
-const K7_LEGACY_KEY='k7IntervalLabSavedV1',K7_DB_NAME='k7IntervalLabDB',K7_DB_STORE='savedK7';
-const K7_CLOUD_FILE='data/k7-saved-cloud.json',K7_CLOUD_REPO='arsazet17/pozitron-combo-v1',K7_CLOUD_WORKFLOW='k7-cloud-store.yml',K7_CLOUD_TOKEN_KEY='k7GithubActionsTokenV1';
-let SAVED_CACHE=[],CLOUD_STATE={items:[],deleted:[],updatedAt:null};
-let DRAWS=[],STATS=[],CURRENT_DRAWS=[],MATRIX_MODE='strict',PAYOUT7={0:150,3:100,4:200,5:1200,6:10000,7:250000};
-function uniq(a){return [...new Set(a)]}
-function colOf(n){return((Number(n)-1)%10)+1}
-function drawCol(d){const c=Number(d?.column);return Number.isInteger(c)&&c>=1&&c<=10?c:'—'}
-function nextKenoDrawInfo(last){
- const draw=Number(last?.draw||0)+1;
- const m=String(last?.time||'').match(/^(\d{1,2}):(\d{2})$/);
- if(!m)return {draw,time:'—'};
- let h=Number(m[1]),min=Number(m[2]);
- if(min<17)min=17;
- else if(min<32)min=32;
- else{min=2;h=(h+1)%24}
- return {draw,time:String(h).padStart(2,'0')+':'+String(min).padStart(2,'0')};
-}
-function updateNextK7Title(last){
- const el=$('nextK7Title');if(!el)return;
- const n=nextKenoDrawInfo(last);
- const label=`K7 НА СЛЕДУЮЩИЙ ТИРАЖ №${n.draw} · ${n.time}`;
- el.textContent=label;
- const ready=$('readyK7Title');if(ready)ready.textContent=`🎯 ГОТОВЫЕ K7 НА СЛЕДУЮЩИЙ ТИРАЖ №${n.draw} · ${n.time}`;
-}
-function countsOf(a){const o={};for(const x of a)o[x]=(o[x]||0)+1;return o}
-function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-async function fetchJSON(name){const r=await fetch(name+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(name+' HTTP '+r.status);return r.json()}
-
-// Only observed next-draw outcomes; the final (unknown) next draw is excluded.
-function intervalExitState(positions,length,freq){
- const cur=positions.length?length-1-positions.at(-1):length;
- const gaps=positions.slice(1).map((p,i)=>p-positions[i]-1);
- const previous=gaps.at(-1)??null;
- let trials=0,hits=0,stateTrials=0,stateHits=0;
- const nextGaps={};
- for(let i=0;i<positions.length;i++){
-   const next=positions[i+1]??Infinity,t=positions[i]+cur;
-   const same=previous!==null&&i>0&&gaps[i-1]===previous;
-   if(same&&Number.isFinite(next)){const gap=next-positions[i]-1;nextGaps[gap]=(nextGaps[gap]||0)+1}
-   if(t>=length-1||t>=next)continue;
-   const hit=Number(t+1===next);trials++;hits+=hit;
-   if(same){stateTrials++;stateHits+=hit}
+// ===== K7 · Ядро: алгоритм (без DOM — тот же код проверяется отдельно) =====
+const K7=(()=>{
+ const TICKETS=10,STAKE=100;
+ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+ function shuffled(list,seed){const a=list.slice(),r=mulberry32(seed);for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+ const ALL=Array.from({length:80},(_,i)=>i+1);
+ function autoCore(draw){return((Number(draw)-1)%80+80)%80+1}
+ // Ядро во всех 10 K7 + 60 разных чисел по 6 в каждой K7.
+ function coreSet(draw,pinned){
+  const core=pinned?Number(pinned):autoCore(draw),seed=pinned?100003+core:Number(draw);
+  const rest=shuffled(ALL.filter(n=>n!==core),seed);
+  const tickets=[];for(let i=0;i<TICKETS;i++)tickets.push([core,...rest.slice(i*6,i*6+6)].sort((a,b)=>a-b));
+  return {core,tickets};
  }
- const ageRate=(hits+12*freq)/(trials+12);
- const exitRate=(stateHits+12*ageRate)/(stateTrials+12);
- return {cur,previous,trials,hits,stateTrials,stateHits,ageRate,exitRate,nextGaps};
-}
-
-function buildNumberStats(draws){
- const pos=Array.from({length:81},()=>[]);
- draws.forEach((d,i)=>(d.balls||[]).forEach(v=>{const n=Number(v);if(n>=1&&n<=80)pos[n].push(i)}));
- const out=[];
- for(let n=1;n<=80;n++){
-   const p=pos[n],strict=[],soft=[];
-   for(let i=1;i<p.length;i++)strict.push(p[i]-p[i-1]-1);
-   for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++)soft.push(p[j]-p[i]-1);
-   const sc=countsOf(strict),mc=countsOf(soft),cur=p.length?draws.length-1-p[p.length-1]:draws.length;
-   const last=p.length?draws[p[p.length-1]]:null;
-   const freq=draws.length?p.length/draws.length:0;
-   const strictRate=(sc[cur]||0)/Math.max(1,strict.length);
-   const expectedStrict=freq>0?freq*Math.pow(1-freq,cur):0;
-   const strictLift=expectedStrict>0?strictRate/expectedStrict:0;
-   out.push({
-     n,cur,last,occ:p.length,freq,exit:intervalExitState(p,draws.length,freq),
-     strict,soft,strictCounts:sc,softCounts:mc,
-     strictHits:sc[cur]||0,softHits:mc[cur]||0,
-     strictRate,strictLift,expectedStrict,
-     softRate:(mc[cur]||0)/Math.max(1,soft.length),
-     repeat0:sc[0]||0,score:0
-   });
+ // Сравнение: 10 независимых случайных K7.
+ function randomSet(draw){const r=mulberry32(Number(draw)*7+1),t=[];for(let i=0;i<TICKETS;i++){const a=ALL.slice();for(let k=0;k<7;k++){const j=k+Math.floor(r()*(80-k));[a[k],a[j]]=[a[j],a[k]]}t.push(a.slice(0,7).sort((x,y)=>x-y))}return t}
+ // Сравнение: старый способ — 10 K7 из пула 18 чисел.
+ function pool18Set(draw){const r=mulberry32(Number(draw)*13+5),p=ALL.slice();for(let k=0;k<18;k++){const j=k+Math.floor(r()*(80-k));[p[k],p[j]]=[p[j],p[k]]}const pool=p.slice(0,18),t=[];for(let i=0;i<TICKETS;i++){const a=pool.slice();for(let k=0;k<7;k++){const j=k+Math.floor(r()*(18-k));[a[k],a[j]]=[a[j],a[k]]}t.push(a.slice(0,7).sort((x,y)=>x-y))}return t}
+ function playDraw(tickets,balls,pay){const on=new Uint8Array(81);for(const b of balls)on[Number(b)]=1;let total=0,best=0;const hits=tickets.map(t=>{let h=0;for(const n of t)h+=on[n];total+=Number(pay[h]||0);if(h>best)best=h;return h});return {total,best,hits}}
+ function summarize(rows){
+  const n=rows.length,cost=n*TICKETS*STAKE;let paid=0,half=0,empty=0,plus=0,six=0,seven=0;
+  for(const r of rows){paid+=r.total;if(r.total>=TICKETS*STAKE/2)half++;if(r.total===0)empty++;if(r.total>TICKETS*STAKE)plus++;for(const h of r.hits){if(h===6)six++;if(h===7)seven++}}
+  return {n,cost,paid,net:paid-cost,ret:cost?paid/cost:0,half:n?half/n:0,empty:n?empty/n:0,plus:n?plus/n:0,six,seven};
  }
- return out;
-}
-
-function scoreStats(stats,mode){
- const ml=Math.max(.000001,...stats.map(s=>Math.min(4,s.strictLift||0)));
- const ms=Math.max(.000001,...stats.map(s=>s.strictRate));
- const mm=Math.max(.000001,...stats.map(s=>s.softRate));
- const mf=Math.max(.000001,...stats.map(s=>s.freq));
- for(const s of stats){
-   const nl=Math.min(4,s.strictLift||0)/ml,ns=s.strictRate/ms,nm=s.softRate/mm,nf=s.freq/mf;
-   let v=0;
-   if(mode==='strict')v=.70*nl+.15*ns+.15*nf;
-   else if(mode==='soft')v=.55*nm+.25*nl+.20*nf;
-   else v=.40*nl+.20*ns+.20*nm+.20*nf;
-   const support=clamp(s.occ/80,.65,1);
-   s.score=100*v*support;
- }
- stats.sort((a,b)=>b.score-a.score||b.strictLift-a.strictLift||b.strictHits-a.strictHits||b.softHits-a.softHits||b.freq-a.freq||a.n-b.n);
- return stats;
-}
-
-function pairMatrix(draws){
- const m=Array.from({length:81},()=>new Uint16Array(81));
- for(const d of draws){
-   const b=uniq((d.balls||[]).map(Number).filter(n=>n>=1&&n<=80));
-   for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){m[b[i]][b[j]]++;m[b[j]][b[i]]++}
- }
- return m;
-}
-
-function generateCombos(stats,draws,mode,poolN,count){
- const pool=stats.slice(0,poolN).map(s=>s.n),by=Object.fromEntries(stats.map(s=>[s.n,s])),pair=pairMatrix(draws),used=new Map(),out=[];
- const poolCurCounts={};pool.forEach(n=>{const g=by[n].cur;poolCurCounts[g]=(poolCurCounts[g]||0)+1});
- const use=n=>used.get(n)||0;
- for(let k=0;k<count;k++){
-   const chosen=[pool[(k*3)%pool.length]];
-   while(chosen.length<7){
-     let best=null,bv=-1e9;
-     for(const n of pool){
-       if(chosen.includes(n))continue;
-       let compat=0;for(const x of chosen)compat+=pair[n][x]/Math.max(1,draws.length);compat/=chosen.length;
-       const newCol=chosen.some(x=>colOf(x)===colOf(n))?0:1;
-       const sameInt=chosen.filter(x=>by[x].cur===by[n].cur).length;
-       const intervalShare=(poolCurCounts[by[n].cur]||1)/Math.max(1,pool.length);
-       const intervalBalance=(sameInt===0?7:0)-sameInt*(1.8+intervalShare*4);
-       let v=by[n].score*.76+compat*100*.12+newCol*6+intervalBalance-use(n)*2.2;
-       if(mode==='balance')v=by[n].score*.64+compat*100*.20+newCol*12+intervalBalance-use(n)*2.2;
-       v+=((n*17+k*11)%13)/1000;
-       if(v>bv){bv=v;best=n}
-     }
-     if(best==null)break;chosen.push(best);
-   }
-   const nums=[...chosen].sort((a,b)=>a-b),key=nums.join('-');
-   if(out.some(x=>x.key===key)){pool.push(pool.shift());k--;continue}
-   let pairSum=0,pairs=0;for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){pairSum+=pair[nums[i]][nums[j]]/Math.max(1,draws.length);pairs++}
-   const avgScore=nums.reduce((a,n)=>a+by[n].score,0)/nums.length;
-   out.push({key,nums,avgScore,pairPct:pairs?pairSum/pairs:0,cols:new Set(nums.map(colOf)).size});
-   nums.forEach(n=>used.set(n,use(n)+1));
- }
- return out;
-}
-
-function signal(score){return score>=70?['СИЛЬНО','h']:score>=40?['СРЕДНЕ','m']:['СЛАБО','l']}
-
-function renderRank(){
- $('rank').innerHTML=STATS.slice(0,20).map((s,i)=>{
-   const [lab,cl]=signal(s.score),l=s.last;
-   return `<div class="rrow"><div>#${i+1}</div><div class="rnum">${fmt(s.n)}</div><div class="rscore">${s.score.toFixed(0)}</div><div class="meta"><span class="signal ${cl}">${lab}</span> · инт <b>${s.cur}</b> · Стр. <b>${s.strictHits}</b> · Мяг. <b>${s.softHits}</b> · lift <b>${(s.strictLift||0).toFixed(2)}×</b> · част. ${(s.freq*100).toFixed(1)}% · 0:${s.repeat0}<br>${l?`посл. №${l.draw} · ${l.date} ${l.time} · ст${drawCol(l)}`:'не было'}</div></div>`
- }).join('');
-}
-
-function copyText(t){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(t);const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove();return Promise.resolve()}
-
-let LAST_COMBOS=[];
-
-function openSavedDB(){
- return new Promise((resolve,reject)=>{
-   const req=indexedDB.open(K7_DB_NAME,1);
-   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(K7_DB_STORE))db.createObjectStore(K7_DB_STORE,{keyPath:'key'})};
-   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB open failed'));
- });
-}
-async function loadSavedDB(){
- try{
-   const db=await openSavedDB();
-   const rows=await new Promise((resolve,reject)=>{const tx=db.transaction(K7_DB_STORE,'readonly'),r=tx.objectStore(K7_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)});
-   SAVED_CACHE=rows.sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
-   let legacy=[];
-   try{const v=JSON.parse(localStorage.getItem(K7_LEGACY_KEY)||'[]');if(Array.isArray(v))legacy=v}catch{}
-   if(legacy.length){
-     const by=new Map(SAVED_CACHE.map(x=>[x.key,x]));legacy.forEach(x=>{if(x&&x.key&&!by.has(x.key))by.set(x.key,x)});
-     SAVED_CACHE=[...by.values()].sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
-     await writeSaved(SAVED_CACHE);
-   }
-   try{localStorage.removeItem(K7_LEGACY_KEY)}catch{}
-   db.close();
- }catch(e){console.error('IndexedDB load:',e);SAVED_CACHE=[]}
-}
-function readSaved(){return SAVED_CACHE}
-async function writeSaved(a){
- SAVED_CACHE=[...(a||[])];
- const db=await openSavedDB();
- await new Promise((resolve,reject)=>{
-   const tx=db.transaction(K7_DB_STORE,'readwrite'),st=tx.objectStore(K7_DB_STORE);st.clear();SAVED_CACHE.forEach(x=>st.put(x));
-   tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('IndexedDB write failed'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB write aborted'));
- });
- db.close();
-}
-function cloudToken(){try{return String(localStorage.getItem(K7_CLOUD_TOKEN_KEY)||'').trim()}catch{return ''}}
-function setCloudStatus(text,kind=''){const el=$('cloudStatus');if(!el)return;el.textContent=text;el.className='cloudStatus '+kind;const b=$('cloudSetup');if(b)b.textContent=cloudToken()?'☁ GitHub: подключён':'☁ GitHub: подключить'}
-async function readCloudArchive(){
- const r=await fetch(K7_CLOUD_FILE+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('GitHub archive HTTP '+r.status);
- const v=await r.json();return {items:Array.isArray(v?.items)?v.items:[],deleted:Array.isArray(v?.deleted)?v.deleted:[],updatedAt:v?.updatedAt||null};
-}
-async function loadCloudArchive(){
- try{
-   CLOUD_STATE=await readCloudArchive();
-   const by=new Map(readSaved().filter(x=>x&&x.key).map(x=>[x.key,x]));
-   CLOUD_STATE.items.filter(x=>x&&x.key).forEach(x=>by.set(x.key,x));
-   new Set(CLOUD_STATE.deleted.map(x=>x?.key).filter(Boolean)).forEach(k=>by.delete(k));
-   await writeSaved([...by.values()].sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0)));
-   setCloudStatus('GitHub: '+CLOUD_STATE.items.length+' сохранено'+(cloudToken()?' · запись включена':' · нужна авторизация'),'ok');
- }catch(e){console.error('K7 cloud load:',e);setCloudStatus('GitHub недоступен · используется локальный кэш','warn')}
-}
-async function dispatchCloud(op,payload,token=cloudToken()){
- if(!token)throw new Error('GitHub token не задан');
- const r=await fetch('https://api.github.com/repos/'+K7_CLOUD_REPO+'/actions/workflows/'+K7_CLOUD_WORKFLOW+'/dispatches',{method:'POST',headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:JSON.stringify({ref:'main',inputs:{op,record:JSON.stringify(payload)}})});
- if(r.status!==204){let t='';try{t=await r.text()}catch{};throw new Error('GitHub '+r.status+(t?' · '+t.slice(0,180):''))}
- return true;
-}
-async function ensureCloudToken(syncLocal=false){
- let token=cloudToken();
- if(!token){
-   token=String(prompt('Для постоянного архива нужен fine-grained GitHub token только для репозитория '+K7_CLOUD_REPO+'.\nРазрешение: Actions → Read and write.\nВставьте token:')||'').trim();
-   if(!token)return '';
-   try{localStorage.setItem(K7_CLOUD_TOKEN_KEY,token)}catch{}
- }
- try{
-   if(syncLocal&&readSaved().length){
-     const chunks=[];for(let i=0;i<readSaved().length;i+=40)chunks.push(readSaved().slice(i,i+40));
-     for(const part of chunks)await dispatchCloud('merge',part,token);
-   }else if(syncLocal)await dispatchCloud('merge',[],token);
-   setCloudStatus(syncLocal?'GitHub: синхронизация отправлена':'GitHub: запись включена','ok');
-   return token;
- }catch(e){
-   try{localStorage.removeItem(K7_CLOUD_TOKEN_KEY)}catch{}
-   setCloudStatus('Ошибка авторизации GitHub','err');
-   alert('GitHub не принял token. Проверьте: выбран только репозиторий '+K7_CLOUD_REPO+' и Actions = Read and write.');
-   console.error(e);return '';
- }
-}
-async function setupCloud(){
- if(cloudToken()){
-   try{await ensureCloudToken(true);alert('Сохранённые K7 отправлены на синхронизацию с GitHub.')}catch(e){console.error(e)}
-   return;
- }
- const token=await ensureCloudToken(true);if(token)alert('GitHub подключён. Теперь сохранение и удаление K7 отправляется в репозиторий, а телефон используется только как кэш.');
-}
-async function cloudSave(item){
- const token=await ensureCloudToken(false);if(!token)return false;
- try{setCloudStatus('Сохраняю в GitHub…','warn');await dispatchCloud('save',item,token);setCloudStatus('Сохранение отправлено в GitHub','ok');return true}catch(e){console.error(e);setCloudStatus('Не удалось сохранить в GitHub','err');alert('K7 не сохранена: GitHub не принял запрос.');return false}
-}
-async function cloudDelete(key){
- const token=await ensureCloudToken(false);if(!token)return false;
- try{setCloudStatus('Удаляю из GitHub…','warn');await dispatchCloud('delete',{key},token);setCloudStatus('Удаление отправлено в GitHub','ok');return true}catch(e){console.error(e);setCloudStatus('Не удалось удалить из GitHub','err');alert('Удаление отменено: GitHub не принял запрос.');return false}
-}
-function savedKey(nums){return [...nums].sort((a,b)=>a-b).join('-')}
-function isSaved(nums){const k=savedKey(nums);return readSaved().some(x=>x.key===k)}
-function modeCode(mode){return mode==='strict'?'R1':mode==='soft'?'R2':mode==='combo'?'R3':'R4'}
-function savedItem(nums){const k=savedKey(nums);return readSaved().find(x=>x.key===k)||null}
-function liveSavedStats(item){
- if(!item)return '';
- const idx=DRAWS.findIndex(d=>Number(d.draw)===Number(item.savedDraw));
- const future=idx>=0?DRAWS.slice(idx+1):DRAWS.filter(d=>Number(d.draw)>Number(item.savedDraw));
- const dist=Array(8).fill(0);let wins=0,sum=0;
- future.forEach(d=>{const h=hitCount(item.nums,d);dist[h]++;const pay=Number(PAYOUT7[h]||0);if(pay>0){wins++;sum+=pay}});
- return `<div class="hitDist" style="margin-top:10px"><b>Тиражей после сохранения:</b> ${future.length}<br>💰 <b>Выигрышных:</b> ${wins} / ${future.length}<br>🔥 <b>Сумма выигрышей:</b> ${rub(sum)}<br>${dist.map((v,h)=>`${h}/7: ${v}`).join(' · ')}</div>`;
-}
-async function saveK7(nums,meta={}){
- const a=readSaved(),key=savedKey(nums);if(a.some(x=>x.key===key))return false;
- const last=DRAWS[DRAWS.length-1];if(!last)return false;
- const item={key,nums:[...nums].sort((a,b)=>a-b),savedDraw:Number(last.draw),savedDate:last.date||'',savedTime:last.time||'',savedColumn:drawCol(last),savedAt:Date.now(),k7Index:Number(meta.k7Index)||null,mode:meta.mode||$('mode').value,modeCode:modeCode(meta.mode||$('mode').value),window:Number(meta.window)||CURRENT_DRAWS.length,pool:Number(meta.pool)||Number($('pool').value)};
- if(!(await cloudSave(item)))return false;
- a.unshift(item);await writeSaved(a);renderSavedArchive();renderCombos(LAST_COMBOS);return true;
-}
-async function removeSaved(key){
- if(!(await cloudDelete(key)))return false;
- await writeSaved(readSaved().filter(x=>x.key!==key));renderSavedArchive();renderCombos(LAST_COMBOS);return true;
-}
-let K7_CLEAR_BUSY=false;
-async function clearAllSavedK7(){
- if(K7_CLEAR_BUSY)return;
- const items=[...readSaved()];
- if(!items.length){alert('Архив K7 уже пуст.');return;}
- if(!confirm('Удалить ВСЕ '+items.length+' сохранённых K7 из Supabase и с телефона? Действие необратимо. Архив тиражей COMBO не затрагивается.'))return;
- K7_CLEAR_BUSY=true;
- const button=$('clearSavedK7');
- if(button){button.disabled=true;button.textContent='Удаляю K7: 0/'+items.length;}
- let deleted=0;
- try{
-  for(const item of items){
-   if(!(await cloudDelete(item.key)))break;
-   await writeSaved(readSaved().filter(x=>x.key!==item.key));
-   deleted++;
-   if(button)button.textContent='Удаляю K7: '+deleted+'/'+items.length;
+ function backtest(draws,pinned,pay,from=1){
+  const rows={core:[],random:[],pool18:[]};
+  for(let i=Math.max(1,from);i<draws.length;i++){
+   const d=draws[i],balls=d.balls||[];
+   const c=coreSet(d.draw,pinned);
+   rows.core.push({draw:d.draw,date:d.date,time:d.time,core:c.core,...playDraw(c.tickets,balls,pay)});
+   rows.random.push(playDraw(randomSet(d.draw),balls,pay));
+   rows.pool18.push(playDraw(pool18Set(d.draw),balls,pay));
   }
-  renderSavedArchive();renderCombos(LAST_COMBOS);
-  if(deleted===items.length)alert('Архив сохранённых K7 очищен в Supabase и на телефоне. Можно сохранять новые комбинации.');
-  else alert('Удалено '+deleted+' из '+items.length+'. Остальные сохранены; проверьте соединение и повторите.');
- }catch(e){
-  console.error('K7 bulk delete:',e);
-  alert('Очистка прервана после '+deleted+' из '+items.length+'. Остальные K7 сохранены. '+String(e.message||e));
- }finally{
-  K7_CLEAR_BUSY=false;
-  if(button){button.disabled=false;button.textContent='🗑 УДАЛИТЬ ВСЕ КОМБЫ K7';}
+  return rows;
  }
-}
-function hitCount(nums,d){const set=new Set((d.balls||[]).map(Number));return nums.reduce((a,n)=>a+(set.has(n)?1:0),0)}
-function rub(n){return Number(n||0).toLocaleString('ru-RU')+' ₽'}
-function renderSavedArchive(){
- const box=$('savedArchive');if(!box)return;
- const saved=readSaved();
- if(!saved.length){box.innerHTML='<div class="savedEmpty">Пока ничего не сохранено. Нажмите «💾 СОХРАНИТЬ K7» у нужной комбинации.</div>';return}
- box.innerHTML=saved.map(item=>{
-   const idx=DRAWS.findIndex(d=>Number(d.draw)===Number(item.savedDraw));
-   const future=idx>=0?DRAWS.slice(idx+1):DRAWS.filter(d=>Number(d.draw)>Number(item.savedDraw));
-   const dist=Array(8).fill(0),wins=[];
-   future.forEach((d,j)=>{const h=hitCount(item.nums,d);dist[h]++;const pay=Number(PAYOUT7[h]||0);if(pay>0)wins.push({d,h,pay,after:j+1})});
-   const sum=wins.reduce((a,x)=>a+x.pay,0),full7=wins.filter(x=>x.h===7);
-   const distText=dist.map((v,h)=>`${h}/7: ${v}`).join(' · ');
-   const winRows=wins.length?wins.slice().reverse().map(w=>`<div class="winRow"><div class="winHit">+${w.after}</div><div>№${w.d.draw} · ${w.d.date} <b>${w.d.time}</b> · ст${drawCol(w.d)} · <b>${w.h}/7</b>${w.h===7?'<span class="full7tag">7/7</span>':''}</div><div class="winMoney">${rub(w.pay)}</div></div>`).join(''):'<div class="muted" style="margin-top:6px">После сохранения выигрышных тиражей пока нет.</div>';
-   return `<div class="savedItem"><div class="savedTop"><div><div class="savedTitle">${item.k7Index?`K7-${item.k7Index} · `:''}${item.modeCode||modeCode(item.mode||'combo')} · T${item.window||'?'} · P${item.pool||'?'}</div><div class="savedTitle" style="margin-top:6px">${item.nums.map(fmt).join(' ')}</div><div class="savedMeta">Сохранена после №${item.savedDraw} · ${item.savedDate} ${item.savedTime} · ст${item.savedColumn}. Отсчёт — со следующего тиража.</div></div></div><div class="savedNums">${item.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="savedStats"><div class="savedStat"><b>${future.length}</b><span>ТИРАЖЕЙ ПОСЛЕ</span></div><div class="savedStat"><b>${wins.length}</b><span>ВЫИГРЫШНЫХ</span></div><div class="savedStat"><b>${full7.length}</b><span>ПОЛНЫХ 7/7</span></div></div><div class="hitDist">${distText}<br><b>Сумма выигрышей:</b> ${rub(sum)}</div><details class="wins"><summary>🔥 Выигрышные выходы (${wins.length})</summary>${winRows}</details><div class="savedActions"><button data-saved-check="${item.key}" class="gold">🔎 ПРОВЕРИТЬ ЭТУ K7</button><button data-remove-saved="${item.key}" class="danger">✕ УДАЛИТЬ</button></div></div>`
- }).join('');
- document.querySelectorAll('[data-remove-saved]').forEach(b=>b.onclick=()=>removeSaved(b.dataset.removeSaved));
- document.querySelectorAll('[data-saved-check]').forEach(b=>b.onclick=()=>{const item=readSaved().find(x=>x.key===b.dataset.savedCheck);if(item)openK7History(item.nums)});
-}
+ return {TICKETS,STAKE,mulberry32,autoCore,coreSet,randomSet,pool18Set,playDraw,summarize,backtest};
+})();
+if(typeof module==='object'&&module.exports)module.exports=K7;
 
-function renderCombos(combos){
- LAST_COMBOS=combos||[];
- const mode=$('mode').value,rc=modeCode(mode),t=CURRENT_DRAWS.length,p=Math.max(7,Math.min(80,Math.floor(Number($('pool').value)||18)));
- $('combos').innerHTML=LAST_COMBOS.map((c,i)=>{
-   const saved=isSaved(c.nums);
-   return `<div class="combo"><div class="comboTop"><div><b>K7-${i+1} · ${rc} · T${t} · P${p}</b></div></div><div class="nums" style="margin-top:9px">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="comboBtns"><button data-save="${c.key}" data-k7-index="${i+1}" class="ghost saveBtn ${saved?'saved':''}" ${saved?'disabled':''}>${saved?'✅ СОХРАНЕНА':'💾 СОХРАНИТЬ K7'}</button></div></div>`
- }).join('');
- document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const nums=b.dataset.save.split('-').map(Number);saveK7(nums,{k7Index:Number(b.dataset.k7Index),mode:$('mode').value,window:CURRENT_DRAWS.length,pool:Number($('pool').value)})});
-}
+// ===== Страница =====
+if(typeof document!=='undefined'){
+const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
+const rub=n=>Math.round(Number(n)||0).toLocaleString('ru-RU')+' ₽',pct=x=>(100*x).toFixed(1).replace('.',',')+'%';
+const PAY_DEFAULT={0:150,3:100,4:200,5:1200,6:10000,7:250000};
+const PERIODS=[{key:66,label:'≈ сутки'},{key:462,label:'≈ неделя'},{key:1980,label:'≈ месяц'},{key:0,label:'весь архив'}];
+let DRAWS=[],PAY=PAY_DEFAULT,ROWS=null,PERIOD=0,MODE='auto',PIN=null;
+const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+// Убрать следы старого раздела «Интервалы» с телефона (в том числе сохранённый GitHub-токен).
+try{['k7GithubActionsTokenV1','k7IntervalLabSavedV1'].forEach(k=>localStorage.removeItem(k))}catch{}
+try{indexedDB.deleteDatabase('k7IntervalLabDB')}catch{}
 
-function build(){
- let w=Math.floor(Number($('window').value));let pool=Math.floor(Number($('pool').value)),count=Math.floor(Number($('count').value));const mode=$('mode').value;
- if(!Number.isFinite(pool)||pool<7)pool=7;pool=Math.min(80,pool);$('pool').value=String(pool);
- if(!Number.isFinite(count)||count<1)count=1;count=Math.min(100,count);$('count').value=String(count);
- if(!Number.isFinite(w)||w<1)w=1;
- w=Math.min(w,DRAWS.length);
- $('window').value=String(w);
- CURRENT_DRAWS=DRAWS.slice(-w);
- STATS=scoreStats(buildNumberStats(CURRENT_DRAWS),mode);
- const combos=generateCombos(STATS,CURRENT_DRAWS,mode,pool,count);
- renderRank();renderExitAnalysis();renderCombos(combos);renderSavedArchive();renderMatrix();
- const topStrong=STATS.filter(s=>s.score>=70).length,topMatch=STATS.filter(s=>s.strictHits>0&&s.softHits>0).length,zero=STATS.filter(s=>s.cur===0).length;
- $('summary').innerHTML=`<div class="stat"><b>${CURRENT_DRAWS.length}</b><span>ТИРАЖЕЙ</span></div><div class="stat"><b>${topStrong}</b><span>СИЛЬНЫХ</span></div><div class="stat"><b>${topMatch}</b><span>СТР.+МЯГ. СОВПАЛИ</span></div><div class="stat"><b>${zero}</b><span>ТЕК. ИНТЕРВАЛ 0</span></div>`;
+async function fetchJSON(name){const r=await fetch(name+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(name+' HTTP '+r.status);return r.json()}
+function nextDraw(){
+ const last=DRAWS.at(-1),times=[...new Set(DRAWS.slice(-2000).map(d=>String(d.time||'').slice(0,5)).filter(t=>/^\d\d:\d\d$/.test(t)))].sort();
+ const t=String(last.time||'').slice(0,5);const next=times.find(x=>x>t)||times[0]||'—';
+ return {draw:Number(last.draw)+1,time:next};
 }
-
-function renderExitAnalysis(){
- const select=$('exitNumber'),old=Number(select.value);
- select.innerHTML=[...STATS].sort((a,b)=>a.n-b.n).map(s=>`<option value="${s.n}">${fmt(s.n)}</option>`).join('');
- select.value=String(old||STATS[0]?.n||1);select.onchange=renderExitState;renderExitState();
+function pinned(){return MODE==='pin'&&PIN?PIN:null}
+function renderTickets(){
+ const nd=nextDraw(),set=K7.coreSet(nd.draw,pinned());
+ $('nextTitle').textContent=`K7 на следующий тираж №${nd.draw} · ${nd.time}`;
+ $('modeAuto').classList.toggle('active',MODE==='auto');$('modePin').classList.toggle('active',MODE==='pin');
+ $('modeAuto').setAttribute('aria-pressed',String(MODE==='auto'));$('modePin').setAttribute('aria-pressed',String(MODE==='pin'));
+ $('coreRow').hidden=MODE!=='pin';
+ $('modeHint').innerHTML=MODE==='auto'?`Ядро меняется каждый тираж по кругу 1 → 80. Сейчас ядро <b>${fmt(set.core)}</b>.`:`Ядро <b>${fmt(set.core)}</b> закреплено, набор не меняется от тиража к тиражу.`;
+ $('tickets').innerHTML=set.tickets.map((t,i)=>`<div class="ticket"><b>K7-${i+1}</b><div class="nums">${t.map(n=>`<span class="n${n===set.core?' core':''}">${fmt(n)}</span>`).join('')}</div><button type="button" class="hist" data-hist="${t.join('-')}" aria-label="История K7-${i+1}" title="Когда эта K7 выигрывала">🔎</button></div>`).join('');
+ document.querySelectorAll('[data-hist]').forEach(b=>b.onclick=()=>{const u=new URL('./index.html',location.href);u.searchParams.set('intervalK7',b.dataset.hist);u.hash='history';location.href=u.href});
+ $('copyAll').onclick=async()=>{const text=set.tickets.map((t,i)=>`K7-${i+1}: ${t.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('copyAll').textContent='✅ Скопировано'}catch{$('copyAll').textContent='Не удалось скопировать'}setTimeout(()=>$('copyAll').textContent='📋 Скопировать все 10 K7',1600)};
 }
-function renderExitState(){
- const s=STATS.find(s=>s.n===Number($('exitNumber').value));if(!s)return;
- const e=s.exit,pct=n=>(100*n).toFixed(1)+'%';
- const typical=counts=>Object.entries(counts).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0])).slice(0,3).map(([gap,count])=>gap+' ('+count+' раз)').join(', ')||'нет завершённых наблюдений';
- $('exitState').innerHTML=`<b>Число ${fmt(s.n)}</b><br>Последний завершённый интервал: <strong>${e.previous??'нет'}</strong> → текущий пропуск: <strong>${s.cur}</strong> → выход в следующем тираже после такого состояния: <strong>${e.stateHits} / ${e.stateTrials}</strong> наблюдений.<br>Оценка со сглаживанием: <strong>${pct(e.exitRate)}</strong>; частота самого числа: ${pct(s.freq)}.<br>Без условия предыдущего интервала, при пропуске ${s.cur}: ${e.hits} / ${e.trials}.<br>После интервала ${e.previous??'—'} следующие завершённые интервалы чаще были: ${typical(e.nextGaps)}.<br>Строгие интервалы: ${typical(s.strictCounts)}.<br>Мягкие, все пары: ${typical(s.softCounts)}.<div class="muted">Интервал 0 — два соседних тиража. Учитываются только случаи, где следующий тираж уже известен; текущий незавершённый исход не считается. При малой выборке оценка сглаживается к частоте выхода при этом пропуске, затем к частоте числа (вес 12). Мягкая матрица содержит зависимые пары и не является вероятностью следующего выхода. ${e.stateTrials<20?'Мало наблюдений этого состояния.':''} Это анализ, а не отдельный сигнал изменения K7.</div>`;
+function slice(a){return PERIOD?a.slice(-PERIOD):a}
+function renderStats(){
+ $('periods').innerHTML=PERIODS.map(p=>`<button type="button" data-period="${p.key}" class="${PERIOD===p.key?'active':''}" aria-pressed="${PERIOD===p.key}">${p.label}</button>`).join('');
+ document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{PERIOD=Number(b.dataset.period);renderStats()});
+ if(!ROWS){$('mainStats').innerHTML='<div class="muted">Считаю…</div>';return}
+ const S={core:K7.summarize(slice(ROWS.core)),random:K7.summarize(slice(ROWS.random)),pool18:K7.summarize(slice(ROWS.pool18))},c=S.core;
+ $('mainStats').innerHTML=`<div class="stat"><b>${pct(c.half)}</b><span>тиражей вернули ≥ 500 ₽</span></div><div class="stat"><b>${pct(c.ret)}</b><span>отдача (${rub(c.paid)} из ${rub(c.cost)})</span></div><div class="stat"><b>${c.n.toLocaleString('ru-RU')}</b><span>тиражей проверено</span></div><div class="stat"><b class="${c.net>=0?'plus':'minus'}">${c.net>=0?'+':''}${rub(c.net)}</b><span>итог</span></div>`;
+ const row=(name,s,main)=>`<tr class="${main?'main':''}"><td>${name}</td><td>${pct(s.half)}</td><td>${pct(s.empty)}</td><td>${pct(s.plus)}</td><td>${pct(s.ret)}</td><td>${s.seven}</td></tr>`;
+ $('cmp').innerHTML=`<thead><tr><th>Набор</th><th>≥ 500 ₽</th><th>Пусто</th><th>&gt; 1 000 ₽</th><th>Отдача</th><th>7/7</th></tr></thead><tbody>${row('🎯 Ядро',c,true)}${row('10 случайных',S.random)}${row('Пул 18 (старый)',S.pool18)}</tbody>`;
+ const word=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'выигрыш':a>=2&&a<=4&&(b<12||b>14)?'выигрыша':'выигрышей'};
+ const jack=c.seven?` Сюда входит ${c.seven} ${word(c.seven)} 7/7 по 250 000 ₽ — они сильно поднимают отдачу на коротком отрезке.`:'';
+ $('honest').innerHTML=`Отдача у всех наборов около 70% — это заложено в таблицу выплат.${jack} Ядро не делает игру выгодной, оно делает её ровнее: чаще возвращается хотя бы половина ставки. На коротких отрезках (сутки, неделя) цифры сильно скачут — смотрите на весь архив.`;
+ renderLog();
 }
-function matrixCountsFor(s){return MATRIX_MODE==='strict'?s.strictCounts:s.softCounts}
-function renderMatrix(){
- const top=[...STATS].sort((a,b)=>a.n-b.n),maxInt=Math.max(25,...top.map(s=>s.cur));
- $('mStrict').classList.toggle('active',MATRIX_MODE==='strict');$('mSoft').classList.toggle('active',MATRIX_MODE==='soft');
- $('matrixInfo').textContent=MATRIX_MODE==='strict'?'Строгая: только соседние появления; число случаев по каждому интервалу.':'Мягкая: все пары появлений; число случаев, не вероятность следующего выхода.';
- const peak=new Map(top.map(s=>[s.n,Math.max(0,...Object.values(matrixCountsFor(s)))]));
- let h='<table class="matrix"><thead><tr><th scope="col">Интервал</th>'+top.map(s=>`<th scope="col">${fmt(s.n)}</th>`).join('')+'</tr></thead><tbody>';
- for(let g=0;g<=maxInt;g++)h+=`<tr><th scope="row">${g}</th>`+top.map(s=>{const v=matrixCountsFor(s)[g]||0,p=peak.get(s.n),cl=v>0&&v===p?'hot':v>=2&&v>=p/2?'warm':'';return `<td class="${cl} ${g===s.cur?'current':''}" title="Число ${fmt(s.n)}, пропуск ${g}: ${v} случаев${g===s.cur?'; текущий пропуск':''}">${v||'·'}</td>`}).join('')+'</tr>';
- $('matrix').innerHTML=h+'</tbody></table>';
+function renderLog(){
+ const last=ROWS.core.slice(-20).reverse();
+ $('log').innerHTML=`<thead><tr><th>Тираж</th><th>Время</th><th>Ядро</th><th>Лучшая</th><th>Выплата</th></tr></thead><tbody>${last.map(r=>`<tr><td>№${r.draw}</td><td>${String(r.date||'').slice(0,5)} ${String(r.time||'').slice(0,5)}</td><td>${fmt(r.core)}</td><td>${r.best}/7</td><td class="${r.total>=1000?'plus':r.total>=500?'':'minus'}">${rub(r.total)}</td></tr>`).join('')}</tbody>`;
 }
-
-function parseK7(){
- const a=uniq(($('k7').value.match(/\d+/g)||[]).map(Number).filter(n=>n>=1&&n<=80));
- if(a.length!==7){$('occ').innerHTML='<div class="notice err">Нужно ровно 7 разных чисел.</div>';return null}return a.sort((a,b)=>a-b);
-}
-
-function ballsHTML(d,nums,extraNums=[]){
- const k7=new Set(nums),extra=new Set(extraNums),balls=(d.balls||[]).map(Number);
- return `<div class="ballRow">${balls.map(n=>`<span class="ball ${k7.has(n)?'k7':extra.has(n)?'extra':''}">${fmt(n)}</span>`).join('')}</div>`;
-}
-
-function openK7History(nums){
- const url=new URL('./index.html',location.href);
- url.searchParams.set('intervalK7',nums.join('-'));
- url.hash='history';
- location.href=url.href;
-}
-function checkK7(nums){openK7History(nums)}
-function checkK7FullMatches(nums){
- const draws=CURRENT_DRAWS.length?CURRENT_DRAWS:DRAWS;
- const setNums=new Set(nums);
- const selected=$('selectedK7');
- selected.classList.add('on');
- selected.innerHTML=`<b>Проверяем K7:</b><div class="nums">${nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div>`;
- const hits=draws.filter(d=>nums.every(n=>(d.balls||[]).map(Number).includes(n)));
- if(!hits.length){
-   $('occ').innerHTML=`<div class="occSummary"><b>Полных 7/7: 0</b> из ${draws.length} тиражей.<br><span class="muted">Все семь выбранных чисел одновременно в одном тираже в этом окне не встречались.</span></div>`;
-   return;
- }
- const cards=hits.map((d,i)=>{
-   let gapText='Первый полный выход',compare='Первое появление этой K7 в выбранном окне.',extraNums=[];
-   if(i>0){
-     const prev=hits[i-1];
-     const idxA=draws.findIndex(x=>Number(x.draw)===Number(prev.draw)),idxB=draws.findIndex(x=>Number(x.draw)===Number(d.draw));
-     const gap=idxB-idxA;
-     const prevSet=new Set((prev.balls||[]).map(Number));
-     const common=uniq((d.balls||[]).map(Number).filter(n=>prevSet.has(n)));
-     extraNums=common.filter(n=>!setNums.has(n)).sort((a,b)=>a-b);
-     gapText=`Повтор через ${gap} тир.`;
-     compare=extraNums.length
-       ? `Между №${prev.draw} и №${d.draw} совпало <strong>${common.length} из 20</strong>: сама K7 = <strong>7/7</strong> + расширение <strong>+${extraNums.length}</strong>: ${extraNums.map(fmt).join(' ')}`
-       : `Между №${prev.draw} и №${d.draw}: сама K7 совпала <strong>7/7</strong>, дополнительных общих чисел нет — простой повтор.`;
-   }
-   return `<div class="occCard">
-     <div class="occHead"><div><div class="occDraw">№${d.draw}</div><div class="occWhen">${d.date} · <b>${d.time}</b> · <b>столб ${drawCol(d)}</b></div></div><div class="occGap">${gapText}</div></div>
-     <div class="matchLine"><b>Совпали 7/7:</b></div><div class="ballRow">${nums.map(n=>`<span class="ball k7">${fmt(n)}</span>`).join('')}</div>
-     <div class="matchLine"><b>Все 20 чисел тиража:</b> зелёные = K7${extraNums.length?', жёлтые = дополнительное расширение':''}</div>${ballsHTML(d,nums,extraNums)}
-     <div class="expandBox">${compare}</div>
-   </div>`;
- }).join('');
- $('occ').innerHTML=`<div class="occSummary"><b>Найдено полных 7/7: ${hits.length}</b> из ${draws.length} тиражей.<br><span class="muted">Ниже по каждому выходу видно: какие 7 чисел совпали, все 20 чисел тиража, время, столб и расширение относительно предыдущего полного выхода.</span></div>${cards}`;
-}
-
+function compute(){ROWS=null;renderStats();setTimeout(()=>{ROWS=K7.backtest(DRAWS,pinned(),PAY);renderStats()},30)}
+function setMode(m){MODE=m;store.set('k7CoreMode',m);renderTickets();compute()}
 async function load(){
  try{
-   try{const pp=await fetchJSON('keno-payouts-v1.json');if(pp?.combination?.['7'])PAYOUT7=pp.combination['7']}catch{}
-   DRAWS=await fetchJSON('combo-history-v1.json');
-   if(!Array.isArray(DRAWS)||!DRAWS.length)throw new Error('Архив пуст');
-   DRAWS.sort((a,b)=>Number(a.draw)-Number(b.draw));
-   const last=DRAWS[DRAWS.length-1];
-   updateNextK7Title(last);
-   $('db').textContent=`База: ${DRAWS.length} тиров · последний №${last.draw} · ${last.date} ${last.time} · ст${drawCol(last)}`;
-   $('window').max=String(DRAWS.length);
-   if($('windowHint'))$('windowHint').textContent=`Любая глубина от 1 до ${DRAWS.length} тиражей`;
-   if(Number($('window').value)>DRAWS.length)$('window').value=String(DRAWS.length);
-   await loadSavedDB();
-   await loadCloudArchive();
-   build();
+  try{const v=await fetchJSON('app-version.json');if(v?.version)$('ver').textContent='v'+v.version}catch{}
+  try{const p=await fetchJSON('keno-payouts-v1.json');if(p?.combination?.['7'])PAY=p.combination['7']}catch{}
+  DRAWS=await fetchJSON('combo-history-v1.json');
+  if(!Array.isArray(DRAWS)||!DRAWS.length)throw new Error('архив пуст');
+  DRAWS=DRAWS.filter(d=>Array.isArray(d.balls)&&d.balls.length===20).sort((a,b)=>Number(a.draw)-Number(b.draw));
+  const last=DRAWS.at(-1);
+  $('db').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} тиражей · последний №${last.draw} · ${last.date} ${last.time}`;
+  const savedPin=Number(store.get('k7CorePin'));if(savedPin>=1&&savedPin<=80)PIN=savedPin;
+  MODE=store.get('k7CoreMode')==='pin'&&PIN?'pin':'auto';
+  $('coreInput').value=String(PIN||K7.autoCore(nextDraw().draw));
+  renderTickets();compute();
  }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
 }
-function initSectionToggles(){
- document.querySelectorAll('.card').forEach(card=>{
-   if(card.querySelector(':scope > .sectionToggle'))return;
-   const title=card.firstElementChild;
-   if(!title)return;
-   title.classList.add('sectionTitleKeep');
-   const btn=document.createElement('button');
-   btn.type='button';btn.className='sectionToggle';btn.textContent='− СВЕРНУТЬ';
-   btn.addEventListener('click',()=>{
-     const collapsed=card.classList.toggle('collapsed');
-     btn.textContent=collapsed?'＋ РАЗВЕРНУТЬ':'− СВЕРНУТЬ';
-   });
-   card.insertBefore(btn,title.nextSibling);
- });
-}
-initSectionToggles();
-$('build').onclick=build;$('checkK7').onclick=()=>{const n=parseK7();if(n)checkK7(n)};
-$('mStrict').onclick=()=>{MATRIX_MODE='strict';renderMatrix()};$('mSoft').onclick=()=>{MATRIX_MODE='soft';renderMatrix()};
-$('refresh').onclick=()=>location.replace(location.pathname+'?v='+Date.now());$('back').onclick=()=>location.href='./';
-$('cloudSetup').onclick=setupCloud;$('clearSavedK7').onclick=clearAllSavedK7;
+$('modeAuto').onclick=()=>setMode('auto');
+$('modePin').onclick=()=>{if(!PIN)PIN=Math.min(80,Math.max(1,Math.floor(Number($('coreInput').value))||K7.autoCore(nextDraw().draw)));store.set('k7CorePin',String(PIN));$('coreInput').value=String(PIN);setMode('pin')};
+$('coreApply').onclick=()=>{const v=Math.floor(Number($('coreInput').value));if(!(v>=1&&v<=80)){$('coreInput').value=String(PIN||1);return}PIN=v;store.set('k7CorePin',String(v));setMode('pin')};
+$('back').onclick=()=>location.href='./';
+$('refresh').onclick=()=>location.replace(location.pathname+'?v='+Date.now());
 load();
+}
 </script>
-<script src="./k7-supabase-cloud-v19.js?v=4"></script>
 </body>
 </html>

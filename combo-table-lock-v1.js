@@ -275,7 +275,7 @@
 
   function patchedOrderSwitchHTML(){
     const back=new URLSearchParams(location.search).has('intervalK7')
-      ? '<a href="./k7-interval-builder.html">← Сохранённые K7 · Интервалы</a>'
+      ? '<a href="./k7-interval-builder.html">← K7 · Ядро</a>'
       : '';
     return `${back}<div class="historyTools historyToolsThree">
       <button type="button" data-history-order="asc" class="${historyOrder==='asc'?'active':''}" aria-pressed="${historyOrder==='asc'}">➡️ Возрастание</button>
