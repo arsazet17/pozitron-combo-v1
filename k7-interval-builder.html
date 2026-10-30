@@ -23,7 +23,24 @@ button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#5
 .primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}
 .ghost{background:#0a1c2d}
 input{width:100%;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px;font-size:16px}
-.sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.switch{padding:9px}
+[hidden]{display:none!important}
+.kcMethods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.kcMethods button{padding:9px 4px;font-size:12px;line-height:1.2}
+.kcCtl{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:6px;margin-top:9px;align-items:end}
+.kcCtl label{font-size:11px;color:var(--muted)}
+.kcCtl input{margin-top:3px;padding:8px;text-align:center}
+.kc{border:1px solid #294b66;background:#081827;border-radius:12px;padding:9px}
+.kcHead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}
+.kcHead b{font-size:13px}
+.kcHead span{font-size:11px;color:var(--muted)}
+.hod{display:grid;gap:4px;margin-top:8px}
+.hodCell{border:1px solid #24445e;border-radius:8px;padding:5px 2px;text-align:center;font-size:11px;background:#0a1b2b;line-height:1.25}
+.hodCell small{display:block;color:var(--muted);font-size:10px}
+.hodCell.now{border-color:#ffd25e;color:#ffe08a}
+.hodCell.win{background:#123a20;border-color:#3b8850}
+.cellTag{display:inline-block;padding:2px 6px;border-radius:6px;background:#3d3513;border:1px solid #876916;color:#ffe08a;font-size:11px;font-weight:900}
 .sizes button{padding:9px 4px;line-height:1.2}
 .sizes button small{display:block;font-size:10px;font-weight:700;color:#a9c0d2;margin-top:2px}
 .sizes button.active small{color:#d9f7cc}
@@ -76,16 +93,17 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
 .footer{position:fixed;left:0;right:0;bottom:0;background:rgba(4,17,30,.97);border-top:1px solid #274863;padding:7px calc(7px + env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) calc(7px + env(safe-area-inset-left))}
 .footerIn{max-width:780px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .err{color:#ffb6b6}
-@media(max-width:420px){.ticket{grid-template-columns:40px 1fr;padding:7px}.ticket b{font-size:11px}.n{min-width:28px;padding:5px 3px;font-size:12px}.periods button{font-size:11px}th,td{padding:7px 5px}.dRow{grid-template-columns:34px 1fr 66px}.m{min-width:23px}}
+@media(max-width:420px){.kcCtl{grid-template-columns:repeat(3,1fr)}.kcCtl button{grid-column:1/-1}.ticket{grid-template-columns:40px 1fr;padding:7px}.ticket b{font-size:11px}.n{min-width:28px;padding:5px 3px;font-size:12px}.periods button{font-size:11px}th,td{padding:7px 5px}.dRow{grid-template-columns:34px 1fr 66px}.m{min-width:23px}}
 </style>
 </head>
 <body>
 <div class="app">
  <div class="top"><div><h1>🎯 K7 · K4 · K3</h1><div class="muted" id="db">Загрузка архива…</div></div><span class="ver" id="ver">COMBO</span></div>
 
- <div class="card">
+ <div class="card switch"><div class="sizes" id="sizes"></div></div>
+
+ <div class="card kOnly">
   <h2 id="nextTitle">Комбинации на следующий тираж</h2>
-  <div class="sizes" id="sizes"></div>
   <div class="muted" id="sizeInfo" style="margin-top:9px"></div>
   <div class="seg" id="coreSeg">
    <button id="modeAuto" type="button">🔄 Ядро по кругу</button>
@@ -100,15 +118,15 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
   <div class="tools"><button id="copyAll" type="button" class="ghost">📋 Скопировать все 10</button></div>
  </div>
 
- <div class="card">
+ <div class="card kOnly">
   <h2>Сравнение K7 · K4 · K3 на архиве</h2>
   <div class="muted">На каждом прошлом тираже играют все три набора по своему правилу: 10 билетов по 100 ₽, за тираж 1 000 ₽. Правила зависят только от номера тиража, поэтому заглянуть в будущее не могут.</div>
-  <div class="periods" id="periods"></div>
+  <div class="periods" data-periods></div>
   <div class="tableWrap"><table id="sizeCmp"></table></div>
   <div class="note" id="sizeNote"></div>
  </div>
 
- <div class="card">
+ <div class="card kOnly">
   <h2 id="algoTitle">Проверка набора на архиве</h2>
   <div class="muted" id="algoInfo"></div>
   <div class="stats" id="mainStats"></div>
@@ -116,11 +134,50 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
   <div class="note" id="honest"></div>
  </div>
 
- <div class="card">
+ <div class="card kOnly">
   <h2 id="logTitle">Последние тиражи этого набора</h2>
   <div class="muted">Нажмите на тираж — откроются все 10 комбинаций этого тиража и что в них угадано. Выплата при ставке 1 000 ₽: зелёным — вернулось не меньше ставки, красным — меньше половины.</div>
   <div class="tableWrap"><table class="log" id="log"></table></div>
   <button type="button" id="logMore" class="ghost" style="width:100%;margin-top:8px">Показать ещё 20 тиражей</button>
+ </div>
+
+
+ <div class="card cOnly" hidden>
+  <h2 id="kcTitle">Комбы концентрации</h2>
+  <div class="muted">Числа берутся из клеток концентрации (цифровой корень 1–9), как в матрице КОНЦ. Каждая комба держится несколько тиражей подряд — так виден её ход.</div>
+  <div class="kcMethods" id="kcMethods"></div>
+  <div class="muted" id="kcMethodInfo" style="margin-top:8px"></div>
+  <div class="kcCtl">
+   <label>Чисел в комбе<input id="kcK" type="number" inputmode="numeric" min="1" max="10" step="1"></label>
+   <label>Сколько комб<input id="kcN" type="number" inputmode="numeric" min="1" max="9" step="1"></label>
+   <label>Держать тир.<input id="kcH" type="number" inputmode="numeric" min="1" max="5" step="1"></label>
+   <button id="kcApply" type="button" class="primary">Применить</button>
+  </div>
+  <div class="muted" id="kcAnchor" style="margin-top:9px"></div>
+  <div class="tickets" id="kcCombos"></div>
+  <div class="tools"><button id="kcCopy" type="button" class="ghost">📋 Скопировать комбы</button></div>
+ </div>
+
+ <div class="card cOnly" hidden>
+  <h2>Сравнение способов на архиве</h2>
+  <div class="muted" id="kcCmpInfo"></div>
+  <div class="periods" data-periods></div>
+  <div class="tableWrap"><table id="kcCmp"></table></div>
+  <div class="note" id="kcNote"></div>
+ </div>
+
+ <div class="card cOnly" hidden>
+  <h2 id="kcHodTitle">Ход по тиражам удержания</h2>
+  <div class="muted">Сколько возвращается в 1-м, 2-м … тираже после построения комб. Если способ «ловит» концентрацию, отдача в первых тиражах была бы выше.</div>
+  <div class="stats" id="kcStats"></div>
+  <div class="tableWrap"><table id="kcHod"></table></div>
+ </div>
+
+ <div class="card cOnly" hidden>
+  <h2 id="kcLogTitle">Последние тиражи · КОНЦ</h2>
+  <div class="muted">Нажмите на тираж — откроются комбы этого тиража и что в них угадано.</div>
+  <div class="tableWrap"><table class="log" id="kcLog"></table></div>
+  <button type="button" id="kcLogMore" class="ghost" style="width:100%;margin-top:8px">Показать ещё 20 тиражей</button>
  </div>
 
  <div class="card">
@@ -128,7 +185,7 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
    <summary>Почему алгоритмы устроены так</summary>
    <div class="muted" style="margin-top:8px">
     <p><b>1. Угадать числа по истории нельзя.</b> Перед созданием раздела проверен 21 признак: пропуски и интервалы, частоты на 5–400 тиражах, связи с прошлым тиражом, соседние и зеркальные числа, столбы, цифровые корни. Модель училась на одной части архива и проверялась на другой. Результат — уровень случая: «лучшие» числа выпадают так же часто, как любые.</p>
-    <p><b>2. Отдачу задаёт таблица выплат</b>, а не выбор чисел: у K7 около 70%, у K3 около 62%, у K4 около 44%.</p>
+    <p><b>2. Отдачу задаёт таблица выплат</b>, а не выбор чисел: у K7 около 70%, у K3 около 62%, у K4 около 44%. Для комб концентрации — по таблице выбранного количества чисел.</p>
     <p><b>3. Меняется только то, как часто возвращаются деньги.</b> Для каждого размера компьютер перебирал разные формы набора из 10 билетов и искал ту, что чаще возвращает хотя бы половину ставки. Для K7 лучшая форма — общее ядро + по 6 своих чисел, для K3 — 30 разных чисел без повторов, для K4 — «кольцо» из 20 чисел, где каждое число стоит в двух соседних билетах. Все три формы подтверждены на обеих половинах реального архива.</p>
    </div>
   </details>
@@ -190,13 +247,91 @@ const K7=(()=>{
 })();
 if(typeof module==='object'&&module.exports)module.exports=K7;
 
+// ===== Комбы концентрации: 3 способа, k чисел, N комб, удержание H тиражей =====
+const KC=(()=>{
+ const W=10;
+ const root=n=>1+(Number(n)-1)%9;
+ const CELL=Array.from({length:10},(_,r)=>r?Array.from({length:80},(_,i)=>i+1).filter(n=>root(n)===r):[]);
+ // Та же концентрация, что в матрице Комбо: клетка с наибольшим числом шаров; при ничьей — та, что набрала максимум раньше по порядку выпадения.
+ function concOf(balls){const b=(balls||[]).map(Number);if(!b.length)return null;const c=Array(10).fill(0);b.forEach(v=>c[root(v)]++);const m=Math.max(...c),run=Array(10).fill(0);for(const v of b){const k=root(v);run[k]++;if(c[k]===m&&run[k]===m)return k}return null}
+ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+ const METHODS={
+  repeat:{label:'Повторы в клетке',short:'повторы'},
+  last:{label:'Клетка прошлой концентрации',short:'прошлая конц.'},
+  emerge:{label:'Переход · зарождение',short:'зарождение'}
+ };
+ // Статистика окна W последних тиражей до idx включительно.
+ function windowStats(draws,idx){
+  const cnt=new Int16Array(81),last=new Int16Array(81).fill(999),sets=[];
+  for(let j=0;j<W&&idx-j>=0;j++){const b=draws[idx-j].balls.map(Number);sets.push(b);for(const n of b){cnt[n]++;if(last[n]===999)last[n]=j}}
+  const order=r=>CELL[r].slice().sort((a,b)=>cnt[b]-cnt[a]||last[a]-last[b]||a-b);
+  const repeatScore=r=>{let s=0,t=0;for(const n of CELL[r]){s+=Math.max(0,cnt[n]-1);t+=cnt[n]}return s*100+t};
+  return {cnt,last,sets,order,repeatScore};
+ }
+ function rankCells(draws,idx,method,S){
+  const cells=[1,2,3,4,5,6,7,8,9],out=[],lead={};
+  if(method==='repeat'){
+   cells.sort((a,b)=>S.repeatScore(b)-S.repeatScore(a)||a-b);
+   for(const r of cells){out.push(r);lead[r]=S.order(r)}
+  }else if(method==='last'){
+   for(let j=0;idx-j>=0&&out.length<9&&j<400;j++){const d=draws[idx-j],r=concOf(d.balls);if(r&&!out.includes(r)){out.push(r);const inCell=d.balls.map(Number).filter(n=>root(n)===r).sort((a,b)=>a-b);lead[r]=[...inCell,...S.order(r).filter(n=>!inCell.includes(n))]}}
+   for(const r of cells.slice().sort((a,b)=>S.repeatScore(b)-S.repeatScore(a)||a-b))if(!out.includes(r)){out.push(r);lead[r]=S.order(r)}
+  }else{
+   const cur=concOf(draws[idx].balls),score={};
+   for(const r of cells){
+    const pc=new Map(),inv=new Map();
+    for(const b of S.sets){const s=b.filter(n=>root(n)===r).sort((x,y)=>x-y);for(let i=0;i<s.length;i++)for(let j=i+1;j<s.length;j++){const key=s[i]*100+s[j];pc.set(key,(pc.get(key)||0)+1)}}
+    let sc=0;for(const [key,v] of pc)if(v>1){sc+=v-1;const a=Math.floor(key/100),b=key%100;inv.set(a,(inv.get(a)||0)+v-1);inv.set(b,(inv.get(b)||0)+v-1)}
+    score[r]=sc*10000+S.repeatScore(r);
+    const base=S.order(r);lead[r]=[...base.filter(n=>inv.has(n)).sort((a,b)=>inv.get(b)-inv.get(a)||base.indexOf(a)-base.indexOf(b)),...base.filter(n=>!inv.has(n))];
+   }
+   cells.sort((a,b)=>(a===cur)-(b===cur)||score[b]-score[a]||a-b);
+   for(const r of cells)out.push(r);
+  }
+  return {cells:out,lead};
+ }
+ // N комб по k чисел: комба i — из клетки i в рейтинге; если в клетке меньше k чисел, добор из следующих клеток.
+ function build(draws,idx,method,k,N){
+  const S=windowStats(draws,idx),{cells,lead}=rankCells(draws,idx,method,S),combos=[];
+  for(let i=0;i<Math.min(N,9);i++){
+   const c=[];for(let j=i;j<i+9&&c.length<k;j++){for(const n of lead[cells[j%9]]){if(c.length>=k)break;if(!c.includes(n))c.push(n)}}
+   combos.push({cell:cells[i],nums:c.sort((a,b)=>a-b)});
+  }
+  return {anchorIdx:idx,anchorDraw:draws[idx].draw,conc:concOf(draws[idx].balls),combos};
+ }
+ function randomBuild(anchorDraw,k,N){const r=mulberry32(Number(anchorDraw)*97+k*11+N),out=[];for(let i=0;i<N;i++){const a=Array.from({length:80},(_,x)=>x+1);for(let x=0;x<k;x++){const j=x+Math.floor(r()*(80-x));[a[x],a[j]]=[a[j],a[x]]}out.push({cell:null,nums:a.slice(0,k).sort((p,q)=>p-q)})}return {anchorDraw,combos:out}}
+ const anchorIdxFor=(draws,i,H)=>i-1-((Number(draws[i-1].draw))%H); // для тиража i: последний якорь не позже i-1
+ function play(nums,on,pay){let h=0;for(const n of nums)h+=on[n];return {h,p:Number(pay[h]||0)}}
+ function backtest(draws,method,k,N,H,pay,from=W){
+  const rows=[],rnd=[];let cache=null,rcache=null;
+  for(let i=Math.max(from,W);i<draws.length;i++){
+   const a=anchorIdxFor(draws,i,H);if(a<W-1)continue;
+   if(!cache||cache.anchorIdx!==a){cache=build(draws,a,method,k,N);rcache=randomBuild(draws[a].draw,k,N)}
+   const on=new Uint8Array(81);for(const b of draws[i].balls)on[Number(b)]=1;
+   const pos=i-a;let tot=0,best=0;const hits=cache.combos.map(c=>{const r=play(c.nums,on,pay);tot+=r.p;if(r.h>best)best=r.h;return r.h});
+   let rt=0;const rh=rcache.combos.map(c=>{const r=play(c.nums,on,pay);rt+=r.p;return r.h});
+   rows.push({i,draw:draws[i].draw,date:draws[i].date,time:draws[i].time,anchor:draws[a].draw,pos,total:tot,best,hits});
+   rnd.push({total:rt,hits:rh,pos});
+  }
+  return {rows,rnd};
+ }
+ function summarize(rows,N,k,H){
+  const n=rows.length,stake=N*100,cost=n*stake;let paid=0,half=0,full=0,zero=0,hitSum=0,tickets=0;const byPos=Array(H+1).fill(0).map(()=>[0,0]);
+  for(const r of rows){paid+=r.total;if(r.total>=stake/2)half++;if(r.total>=stake)full++;if(r.total===0)zero++;for(const h of r.hits){hitSum+=h;tickets++}byPos[r.pos][0]+=r.total;byPos[r.pos][1]+=stake}
+  return {n,cost,paid,net:paid-cost,ret:cost?paid/cost:0,half:n?half/n:0,full:n?full/n:0,zero:n?zero/n:0,avgHits:tickets?hitSum/tickets:0,expHits:k/4,byPos:byPos.slice(1).map(([p,c])=>c?p/c:0)};
+ }
+ return {W,root,CELL,concOf,METHODS,build,randomBuild,backtest,summarize,anchorIdxFor};
+})();
+
+
 // ===== Страница =====
 if(typeof document!=='undefined'){
 const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
 const rub=n=>Math.round(Number(n)||0).toLocaleString('ru-RU')+' ₽',pct=x=>(100*x).toFixed(1).replace('.',',')+'%';
 const PAY_DEFAULT={7:{0:150,3:100,4:200,5:1200,6:10000,7:250000},4:{2:100,3:300,4:3300},3:{2:300,3:1500}};
 const PERIODS=[{key:66,label:'≈ сутки'},{key:462,label:'≈ неделя'},{key:1980,label:'≈ месяц'},{key:0,label:'весь архив'}];
-let DRAWS=[],PAYS=PAY_DEFAULT,ROWS=null,PERIOD=0,MODE='auto',PIN=null,SIZE=7,OPEN_DRAW=null,LOG_N=20;
+let DRAWS=[],PAYS=PAY_DEFAULT,PAYALL={},ROWS=null,PERIOD=0,MODE='auto',PIN=null,SIZE=7,OPEN_DRAW=null,LOG_N=20;
+let KCS={method:'emerge',k:4,N:3,H:5},KCR=null,KC_JOB=0,KC_OPEN=null,KC_LOG_N=20;
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 // Убрать следы старого раздела «Интервалы» с телефона (в том числе сохранённый GitHub-токен).
 try{['k7GithubActionsTokenV1','k7IntervalLabSavedV1'].forEach(k=>localStorage.removeItem(k))}catch{}
@@ -211,11 +346,15 @@ function nextDraw(){
 const S_=()=>K7.SIZES[SIZE],L=()=>S_().label;
 function pinned(){return SIZE===7&&MODE==='pin'&&PIN?PIN:null}
 function setFor(draw){return S_().build(draw,pinned())}
+function renderSwitch(){
+ $('sizes').innerHTML=[7,4,3].map(k=>`<button type="button" data-size="${k}" class="${SIZE===k?'active':''}" aria-pressed="${SIZE===k}">${K7.SIZES[k].label}<small>${K7.SIZES[k].name}</small></button>`).join('')+`<button type="button" data-size="C" class="${SIZE==='C'?'active':''}" aria-pressed="${SIZE==='C'}">КОНЦ<small>концентрация</small></button>`;
+ document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>setSize(b.dataset.size==='C'?'C':Number(b.dataset.size)));
+ document.querySelectorAll('.kOnly').forEach(e=>e.hidden=SIZE==='C');document.querySelectorAll('.cOnly').forEach(e=>e.hidden=SIZE!=='C');
+}
 function renderTickets(){
+ renderSwitch();if(SIZE==='C'){renderConc();return}
  const nd=nextDraw(),set=setFor(nd.draw);
  $('nextTitle').textContent=`${L()} на следующий тираж №${nd.draw} · ${nd.time}`;
- $('sizes').innerHTML=[7,4,3].map(k=>`<button type="button" data-size="${k}" class="${SIZE===k?'active':''}" aria-pressed="${SIZE===k}">${K7.SIZES[k].label}<small>${K7.SIZES[k].name}</small></button>`).join('');
- document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>setSize(Number(b.dataset.size)));
  $('sizeInfo').innerHTML=S_().info+' Ставка 100 ₽ за билет, за тираж 1 000 ₽.';
  $('coreSeg').hidden=SIZE!==7;
  $('modeAuto').classList.toggle('active',MODE==='auto');$('modePin').classList.toggle('active',MODE==='pin');
@@ -227,10 +366,10 @@ function renderTickets(){
  $('copyAll').onclick=async()=>{const text=set.tickets.map((t,i)=>`${L()}-${i+1}: ${t.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('copyAll').textContent='✅ Скопировано'}catch{$('copyAll').textContent='Не удалось скопировать'}setTimeout(()=>$('copyAll').textContent=`📋 Скопировать все 10 ${L()}`,1600)};
 }
 function slice(a){return PERIOD?a.slice(-PERIOD):a}
+function renderPeriods(){document.querySelectorAll('[data-periods]').forEach(box=>{box.innerHTML=PERIODS.map(p=>`<button type="button" data-period="${p.key}" class="${PERIOD===p.key?'active':''}" aria-pressed="${PERIOD===p.key}">${p.label}</button>`).join('')});document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{PERIOD=Number(b.dataset.period);if(SIZE==='C')computeConc();else renderStats()})}
 const word=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'выигрыш':a>=2&&a<=4&&(b<12||b>14)?'выигрыша':'выигрышей'};
 function renderStats(){
- $('periods').innerHTML=PERIODS.map(p=>`<button type="button" data-period="${p.key}" class="${PERIOD===p.key?'active':''}" aria-pressed="${PERIOD===p.key}">${p.label}</button>`).join('');
- document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{PERIOD=Number(b.dataset.period);renderStats()});
+ renderPeriods();if(SIZE==='C'){renderConcStats();return}
  $('algoTitle').textContent=`Проверка ${L()} · ${S_().name} на архиве`;
  $('logTitle').textContent=`Последние тиражи · ${L()} · ${S_().name}`;
  if(!ROWS){$('sizeCmp').innerHTML='<tbody><tr><td>Считаю…</td></tr></tbody>';$('mainStats').innerHTML='';$('cmp').innerHTML='';return}
@@ -268,11 +407,11 @@ function renderLog(){
 }
 function compute(){ROWS=null;renderStats();setTimeout(()=>{ROWS=K7.backtest(DRAWS,MODE==='pin'&&PIN?PIN:null,PAYS);renderStats()},30)}
 function setMode(m){MODE=m;OPEN_DRAW=null;store.set('k7CoreMode',m);renderTickets();compute()}
-function setSize(k){if(!K7.SIZES[k]||k===SIZE)return;SIZE=k;OPEN_DRAW=null;LOG_N=20;store.set('kSetSize',String(k));renderTickets();if(ROWS)renderStats();else compute()}
+function setSize(k){if((k!=='C'&&!K7.SIZES[k])||k===SIZE)return;SIZE=k;OPEN_DRAW=null;LOG_N=20;store.set('kSetSize',String(k));renderTickets();if(SIZE==='C'){computeConc();return}if(ROWS)renderStats();else compute()}
 async function load(){
  try{
   try{const v=await fetchJSON('app-version.json');if(v?.version)$('ver').textContent='v'+v.version}catch{}
-  try{const p=await fetchJSON('keno-payouts-v1.json');const c=p?.combination;if(c?.['7']&&c?.['4']&&c?.['3'])PAYS={7:c['7'],4:c['4'],3:c['3']}}catch{}
+  try{const p=await fetchJSON('keno-payouts-v1.json');const c=p?.combination;if(c?.['7']&&c?.['4']&&c?.['3'])PAYS={7:c['7'],4:c['4'],3:c['3']};if(c)PAYALL=c}catch{}
   DRAWS=await fetchJSON('combo-history-v1.json');
   if(!Array.isArray(DRAWS)||!DRAWS.length)throw new Error('архив пуст');
   DRAWS=DRAWS.filter(d=>Array.isArray(d.balls)&&d.balls.length===20).sort((a,b)=>Number(a.draw)-Number(b.draw));
@@ -280,11 +419,86 @@ async function load(){
   $('db').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} тиражей · последний №${last.draw} · ${last.date} ${last.time}`;
   const savedPin=Number(store.get('k7CorePin'));if(savedPin>=1&&savedPin<=80)PIN=savedPin;
   MODE=store.get('k7CoreMode')==='pin'&&PIN?'pin':'auto';
-  const savedSize=Number(store.get('kSetSize'));if(K7.SIZES[savedSize])SIZE=savedSize;
+  const ss=store.get('kSetSize');if(ss==='C')SIZE='C';else if(K7.SIZES[Number(ss)])SIZE=Number(ss);
+  try{const v=JSON.parse(store.get('kcState')||'{}');if(KC.METHODS[v.method])KCS.method=v.method;['k','N','H'].forEach(x=>{if(Number.isInteger(v[x]))KCS[x]=v[x]})}catch{}
   $('coreInput').value=String(PIN||K7.autoCore(nextDraw().draw));
-  renderTickets();compute();
+  renderTickets();compute();if(SIZE==='C')computeConc();
  }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
 }
+
+// ===== Вкладка КОНЦ =====
+const C_LIM={k:[1,10],N:[1,9],H:[1,5]};
+const PAYK=k=>PAYALL[String(k)]||{};
+function evK(k){const C=(n,r)=>{let x=1;for(let i=0;i<r;i++)x=x*(n-i)/(i+1);return x};let e=0;for(let h=0;h<=k;h++)e+=C(20,h)*C(60,k-h)/C(80,k)*Number(PAYK(k)[h]||0);return e/100}
+function concAnchorIdx(){const L=DRAWS.length-1;return L-(Number(DRAWS[L].draw)%KCS.H)}
+function renderConc(){
+ const nd=nextDraw(),a=concAnchorIdx(),A=DRAWS[a],set=KC.build(DRAWS,a,KCS.method,KCS.k,KCS.N),pay=PAYK(KCS.k);
+ $('kcTitle').textContent=`Комбы концентрации на тираж №${nd.draw} · ${nd.time}`;
+ $('kcMethods').innerHTML=Object.entries(KC.METHODS).map(([key,m])=>`<button type="button" data-kcm="${key}" class="${KCS.method===key?'active':''}" aria-pressed="${KCS.method===key}">${m.label}</button>`).join('');
+ document.querySelectorAll('[data-kcm]').forEach(b=>b.onclick=()=>{KCS.method=b.dataset.kcm;saveKC();renderConc();computeConc()});
+ const info={repeat:'Клетки, где за последние 10 тиражей больше всего чисел выпадало повторно. Из клетки берутся самые частые числа.',last:'Клетка, которая была жёлтой (концентрацией) в последнем тираже, затем — в предыдущих. Первыми берутся числа, выпавшие в ней в тот тираж.',emerge:'Клетка, где за последние 10 тиражей одни и те же пары чисел выпадали вместе снова (как 3·30 → 3·30·48·66). Текущая жёлтая клетка идёт последней — ищется, куда концентрация может перейти, не обязательно в соседнюю.'};
+ $('kcMethodInfo').textContent=info[KCS.method];
+ $('kcK').value=KCS.k;$('kcN').value=KCS.N;$('kcH').value=KCS.H;
+ const played=DRAWS.length-1-a;
+ $('kcAnchor').innerHTML=`Построены после №${A.draw} (${A.date} ${A.time}), жёлтая клетка того тиража — <span class="cellTag">${set.conc}</span>. Держатся ${KCS.H} тир.: №${A.draw+1}–№${A.draw+KCS.H}. Сейчас ${played+1}-й из ${KCS.H}. Ставка ${KCS.N} × 100 ₽ = ${rub(KCS.N*100)} за тираж.`;
+ $('kcCombos').innerHTML=set.combos.map((c,i)=>{
+  const cells=[];for(let p=1;p<=KCS.H;p++){const idx=a+p,d=DRAWS[idx];
+   if(d){const on=new Set(d.balls.map(Number)),h=c.nums.filter(n=>on.has(n)).length,pp=Number(pay[h]||0);cells.push(`<div class="hodCell${pp>=100?' win':''}"><small>№${d.draw}</small>${h}/${KCS.k}<small>${pp?rub(pp):'0 ₽'}</small></div>`)}
+   else cells.push(`<div class="hodCell${p===played+1?' now':''}"><small>№${A.draw+p}</small>${p===played+1?'▶ сейчас':'·'}<small>&nbsp;</small></div>`)}
+  return `<div class="kc"><div class="kcHead"><b>КОНЦ-${i+1}</b><span>клетка <span class="cellTag">${c.cell}</span></span></div><div class="nums">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="hod" style="grid-template-columns:repeat(${KCS.H},1fr)">${cells.join('')}</div></div>`}).join('');
+ $('kcCopy').onclick=async()=>{const text=set.combos.map((c,i)=>`КОНЦ-${i+1} (клетка ${c.cell}): ${c.nums.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('kcCopy').textContent='✅ Скопировано'}catch{$('kcCopy').textContent='Не удалось скопировать'}setTimeout(()=>$('kcCopy').textContent='📋 Скопировать комбы',1600)};
+}
+function saveKC(){store.set('kcState',JSON.stringify(KCS))}
+function readKC(){for(const [x,el] of [['k','kcK'],['N','kcN'],['H','kcH']]){let v=Math.floor(Number($(el).value));const [lo,hi]=C_LIM[x];if(!(v>=lo&&v<=hi))v=Math.min(hi,Math.max(lo,Number.isFinite(v)?v:KCS[x]));KCS[x]=v}saveKC()}
+// Проверка на архиве — по частям, чтобы телефон не зависал.
+function computeConc(){
+ const job=++KC_JOB,methods=Object.keys(KC.METHODS),from=PERIOD?Math.max(KC.W,DRAWS.length-PERIOD):KC.W,pay=PAYK(KCS.k),key=[KCS.k,KCS.N,KCS.H,PERIOD,DRAWS.length].join('|');
+ if(KCR&&KCR.key===key&&KCR.done){renderConcStats();return}
+ KCR={key,done:false,progress:0,res:{},rnd:null};renderConcStats();
+ const total=(DRAWS.length-from)*methods.length,CH=1500;let mi=0,pos=from,acc={rows:[],rnd:[]},doneCnt=0;
+ const step=()=>{if(job!==KC_JOB)return;
+  const m=methods[mi],to=Math.min(DRAWS.length,pos+CH);
+  const part=KC.backtest(DRAWS.slice(0,to),m,KCS.k,KCS.N,KCS.H,pay,pos);
+  acc.rows.push(...part.rows);acc.rnd.push(...part.rnd);doneCnt+=to-pos;pos=to;
+  if(pos>=DRAWS.length){KCR.res[m]=acc.rows;if(!KCR.rnd)KCR.rnd=acc.rnd;mi++;pos=from;acc={rows:[],rnd:[]}}
+  KCR.progress=doneCnt/total;
+  if(mi>=methods.length){KCR.done=true;renderConcStats();return}
+  renderConcProgress();setTimeout(step,0)};
+ setTimeout(step,20);
+}
+function renderConcProgress(){$('kcCmp').innerHTML=`<tbody><tr><td>Считаю на архиве… ${Math.round(100*(KCR?.progress||0))}%</td></tr></tbody>`}
+function renderConcStats(){
+ renderPeriods();
+ const k=KCS.k,N=KCS.N,H=KCS.H,ev=evK(k),M=KC.METHODS;
+ $('kcCmpInfo').textContent=`Каждый способ сыгран на прошлых тиражах с теми же настройками: ${N} ${N===1?'комба':N<5?'комбы':'комб'} по ${k} ${k===1?'числу':'числа'}${k>4?'':''}, держим ${H} тир. Комбы строятся только по уже прошедшим тиражам. Для сравнения — случайные комбы того же размера.`;
+ $('kcHodTitle').textContent=`Ход по тиражам удержания · ${M[KCS.method].label}`;
+ $('kcLogTitle').textContent=`Последние тиражи · ${M[KCS.method].label}`;
+ if(!KCR||!KCR.done){renderConcProgress();$('kcStats').innerHTML='';$('kcHod').innerHTML='';$('kcLog').innerHTML='';$('kcNote').textContent='';return}
+ const S={};for(const m in M)S[m]=KC.summarize(KCR.res[m],N,k,H);const R=KC.summarize(KCR.rnd,N,k,H);
+ const row=(name,s,main)=>`<tr class="${main?'main':''}"><td>${name}</td><td>${s.avgHits.toFixed(2).replace('.',',')}</td><td>${pct(s.half)}</td><td>${pct(s.full)}</td><td>${pct(s.zero)}</td><td>${pct(s.ret)}</td></tr>`;
+ $('kcCmp').innerHTML=`<thead><tr><th>Способ</th><th>Совп.</th><th>≥ ½</th><th>≥ ставки</th><th>Ноль</th><th>Отдача</th></tr></thead><tbody>${Object.keys(M).map(m=>row(M[m].label,S[m],m===KCS.method)).join('')}${row('Случайные',R)}</tbody>`;
+ $('kcNote').innerHTML=`«Совп.» — сколько чисел в среднем угадывает одна комба; у случайных ожидается <b>${(k/4).toFixed(2).replace('.',',')}</b> (каждое число выпадает в 25% тиражей). Отдачу задаёт таблица выплат для ${k} ${k===1?'числа':'чисел'}: в среднем <b>${pct(ev)}</b>. Если способ на самом деле ловит концентрацию, его «Совп.» будет заметно выше случайных на «весь архив».`;
+ const s=S[KCS.method];
+ $('kcStats').innerHTML=`<div class="stat"><b>${s.avgHits.toFixed(3).replace('.',',')}</b><span>совп. на комбу (случай ${(k/4).toFixed(3).replace('.',',')})</span></div><div class="stat"><b>${pct(s.ret)}</b><span>отдача · ${s.n.toLocaleString('ru-RU')} тир.</span></div>`;
+ const pos=[...Array(H)].map((_,i)=>i);
+ $('kcHod').innerHTML=`<thead><tr><th>Тираж удержания</th>${pos.map(i=>`<th>${i+1}-й</th>`).join('')}</tr></thead><tbody><tr class="main"><td>${M[KCS.method].short}</td>${pos.map(i=>`<td>${pct(s.byPos[i])}</td>`).join('')}</tr><tr><td>случайные</td>${pos.map(i=>`<td>${pct(R.byPos[i])}</td>`).join('')}</tr></tbody>`;
+ renderConcLog();
+}
+function concDetail(r){
+ const a=DRAWS.findIndex(x=>Number(x.draw)===Number(r.anchor)),d=DRAWS[r.i];if(a<0||!d)return '';
+ const set=KC.build(DRAWS,a,KCS.method,KCS.k,KCS.N),on=new Set(d.balls.map(Number)),inSet=new Set(set.combos.flatMap(c=>c.nums)),pay=PAYK(KCS.k);
+ const balls=d.balls.map(Number).slice().sort((x,y)=>x-y).map(n=>`<span class="b${inSet.has(n)?' in':''}">${fmt(n)}</span>`).join('');
+ let total=0;const rows=set.combos.map((c,i)=>{const h=c.nums.filter(n=>on.has(n)).length,p=Number(pay[h]||0);total+=p;return `<div class="dRow"><b>К-${i+1}<br><span class="cellTag">${c.cell}</span></b><div class="dNums">${c.nums.map(n=>`<span class="m${on.has(n)?' hit':''}">${fmt(n)}</span>`).join('')}</div><div class="dPay ${p>=100?'plus':p?'':'minus'}">${h}/${KCS.k}<small>${p?rub(p):'0 ₽'}</small></div></div>`}).join('');
+ const stake=KCS.N*100;
+ return `<div class="dLabel">Выпало в №${d.draw} · ${d.date} ${d.time} — ${r.pos}-й тираж удержания комб, построенных после №${r.anchor}; жёлтая клетка этого тиража — <span class="cellTag">${KC.concOf(d.balls)}</span></div><div class="balls">${balls}</div>${rows}<div class="dTotal"><span>Ставка ${rub(stake)}</span><span class="${total>=stake?'plus':total>=stake/2?'':'minus'}">выплата ${rub(total)} · итог ${total-stake>=0?'+':''}${rub(total-stake)}</span></div>`;
+}
+function renderConcLog(){
+ const all=KCR.res[KCS.method],last=all.slice(-KC_LOG_N).reverse(),stake=KCS.N*100;
+ $('kcLog').innerHTML=`<thead><tr><th>Тираж</th><th>Время</th><th>Ход</th><th>Лучшая</th><th>Выплата</th></tr></thead><tbody>${last.map(r=>{const open=Number(r.draw)===KC_OPEN;return `<tr class="row${open?' open':''}" data-kcdraw="${r.draw}" role="button" tabindex="0" aria-expanded="${open}"><td>№${r.draw}</td><td>${String(r.date||'').slice(0,5)} ${String(r.time||'').slice(0,5)}</td><td>${r.pos}/${KCS.H}</td><td>${r.best}/${KCS.k}</td><td class="${r.total>=stake?'plus':r.total>=stake/2?'':'minus'}">${rub(r.total)}</td></tr>`+(open?`<tr class="det"><td colspan="5">${concDetail(r)}</td></tr>`:'')}).join('')}</tbody>`;
+ const more=$('kcLogMore');more.hidden=KC_LOG_N>=all.length;more.onclick=()=>{KC_LOG_N+=20;renderConcLog()};
+ document.querySelectorAll('#kcLog tr.row').forEach(tr=>{const go=()=>{const id=Number(tr.dataset.kcdraw);KC_OPEN=KC_OPEN===id?null:id;renderConcLog();if(KC_OPEN)document.querySelector(`#kcLog tr.row[data-kcdraw="${id}"]`)?.scrollIntoView({block:'nearest',behavior:'smooth'})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+}
+$('kcApply').onclick=()=>{readKC();KC_OPEN=null;KC_LOG_N=20;renderConc();computeConc()};
 $('modeAuto').onclick=()=>setMode('auto');
 $('modePin').onclick=()=>{if(!PIN)PIN=Math.min(80,Math.max(1,Math.floor(Number($('coreInput').value))||K7.autoCore(nextDraw().draw)));store.set('k7CorePin',String(PIN));$('coreInput').value=String(PIN);setMode('pin')};
 $('coreApply').onclick=()=>{const v=Math.floor(Number($('coreInput').value));if(!(v>=1&&v<=80)){$('coreInput').value=String(PIN||1);return}PIN=v;store.set('k7CorePin',String(v));setMode('pin')};
