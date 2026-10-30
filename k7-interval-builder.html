@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061321">
-<title>K7 · Ядро</title>
+<title>K7 · K4 · K3</title>
 <style>
 :root{--bg:#04111e;--line:#274863;--text:#f3f8fc;--muted:#9eb0c1;--green:#6fd33f;--gold:#ffbd23;--red:#ff7a76}
 *{box-sizing:border-box}
@@ -17,22 +17,26 @@ body{margin:0;background:radial-gradient(circle at top,#0b2842 0,#04111e 38%);co
 .card h2{font-size:16px;margin:0 0 6px;line-height:1.3}
 .muted{font-size:12px;color:var(--muted);line-height:1.45}
 .note{font-size:12px;color:#ffd78b;background:#28200d;border:1px solid #6f5717;border-radius:10px;padding:9px;margin-top:8px;line-height:1.45}
-.good{font-size:12px;color:#c9f7b4;background:#10301b;border:1px solid #2f7a3f;border-radius:10px;padding:9px;margin-top:8px;line-height:1.45}
 button,input{font:inherit}
 button{border:1px solid #315677;border-radius:11px;background:#132e48;color:#fff;font-weight:850;padding:10px;cursor:pointer}
 button.active{background:linear-gradient(180deg,#2c7d40,#1e5b32);border-color:#55c876}
 .primary{background:linear-gradient(180deg,#58c62b,#319020);border-color:#66dd38}
 .ghost{background:#0a1c2d}
 input{width:100%;background:#061421;color:#fff;border:1px solid #2e526d;border-radius:9px;padding:9px;font-size:16px}
+.sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.sizes button{padding:9px 4px;line-height:1.2}
+.sizes button small{display:block;font-size:10px;font-weight:700;color:#a9c0d2;margin-top:2px}
+.sizes button.active small{color:#d9f7cc}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.seg[hidden],.coreRow[hidden]{display:none}
 .coreRow{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px;align-items:center}
-.coreRow[hidden]{display:none}
 .tickets{display:grid;gap:7px;margin-top:10px}
 .ticket{display:grid;grid-template-columns:48px 1fr;gap:6px;align-items:center;border:1px solid #294b66;background:#081827;border-radius:12px;padding:8px}
 .ticket b{font-size:12px;color:#cfe0ed}
 .nums{display:flex;gap:4px;flex-wrap:wrap}
 .n{min-width:30px;text-align:center;padding:5px 5px;border-radius:8px;background:#26752d;border:1px solid #67c93f;font-weight:950;font-size:13px}
 .n.core{background:linear-gradient(180deg,#b88710,#7a5606);border-color:#ffd25e;color:#fff}
+.kName{display:block;font-size:10px;font-weight:700;color:var(--muted)}
 .tools{display:grid;grid-template-columns:1fr;gap:7px;margin-top:9px}
 .periods{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
 .periods button{padding:9px 4px;font-size:12px}
@@ -77,12 +81,13 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
 </head>
 <body>
 <div class="app">
- <div class="top"><div><h1>🎯 K7 · Ядро</h1><div class="muted" id="db">Загрузка архива…</div></div><span class="ver" id="ver">COMBO</span></div>
+ <div class="top"><div><h1>🎯 K7 · K4 · K3</h1><div class="muted" id="db">Загрузка архива…</div></div><span class="ver" id="ver">COMBO</span></div>
 
  <div class="card">
-  <h2 id="nextTitle">K7 на следующий тираж</h2>
-  <div class="muted">10 комбинаций по 7 чисел. Одно число — <b style="color:#ffd25e">ядро</b> — стоит во всех десяти, остальные 60 чисел разные, без повторов. Ставка 100 ₽ за K7, за тираж 1 000 ₽.</div>
-  <div class="seg">
+  <h2 id="nextTitle">Комбинации на следующий тираж</h2>
+  <div class="sizes" id="sizes"></div>
+  <div class="muted" id="sizeInfo" style="margin-top:9px"></div>
+  <div class="seg" id="coreSeg">
    <button id="modeAuto" type="button">🔄 Ядро по кругу</button>
    <button id="modePin" type="button">📌 Своё ядро</button>
   </div>
@@ -92,30 +97,39 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
   </div>
   <div class="muted" id="modeHint" style="margin-top:7px"></div>
   <div class="tickets" id="tickets"></div>
-  <div class="tools"><button id="copyAll" type="button" class="ghost">📋 Скопировать все 10 K7</button></div>
+  <div class="tools"><button id="copyAll" type="button" class="ghost">📋 Скопировать все 10</button></div>
  </div>
 
  <div class="card">
-  <h2>Проверка на архиве</h2>
-  <div class="muted">Для каждого прошлого тиража набор строится тем же правилом, что и сейчас. Правило зависит только от номера тиража или от выбранного ядра, но не от выпавших чисел, поэтому заглянуть в будущее оно не может. Для сравнения на тех же тиражах играют обычные 10 случайных K7 и старый способ (10 K7 из пула 18 чисел).</div>
+  <h2>Сравнение K7 · K4 · K3 на архиве</h2>
+  <div class="muted">На каждом прошлом тираже играют все три набора по своему правилу: 10 билетов по 100 ₽, за тираж 1 000 ₽. Правила зависят только от номера тиража, поэтому заглянуть в будущее не могут.</div>
   <div class="periods" id="periods"></div>
+  <div class="tableWrap"><table id="sizeCmp"></table></div>
+  <div class="note" id="sizeNote"></div>
+ </div>
+
+ <div class="card">
+  <h2 id="algoTitle">Проверка набора на архиве</h2>
+  <div class="muted" id="algoInfo"></div>
   <div class="stats" id="mainStats"></div>
   <div class="tableWrap"><table id="cmp"></table></div>
   <div class="note" id="honest"></div>
  </div>
 
  <div class="card">
-  <h2>Последние тиражи этого набора</h2>
-  <div class="muted">Нажмите на тираж — откроются все 10 K7 этого тиража и что в них угадано. Выплата при ставке 1 000 ₽: зелёным — вернулось не меньше ставки, красным — меньше половины.</div><div class="tableWrap"><table class="log" id="log"></table></div><button type="button" id="logMore" class="ghost" style="width:100%;margin-top:8px">Показать ещё 20 тиражей</button>
+  <h2 id="logTitle">Последние тиражи этого набора</h2>
+  <div class="muted">Нажмите на тираж — откроются все 10 комбинаций этого тиража и что в них угадано. Выплата при ставке 1 000 ₽: зелёным — вернулось не меньше ставки, красным — меньше половины.</div>
+  <div class="tableWrap"><table class="log" id="log"></table></div>
+  <button type="button" id="logMore" class="ghost" style="width:100%;margin-top:8px">Показать ещё 20 тиражей</button>
  </div>
 
  <div class="card">
   <details>
-   <summary>Почему алгоритм устроен так</summary>
+   <summary>Почему алгоритмы устроены так</summary>
    <div class="muted" style="margin-top:8px">
     <p><b>1. Угадать числа по истории нельзя.</b> Перед созданием раздела проверен 21 признак: пропуски и интервалы, частоты на 5–400 тиражах, связи с прошлым тиражом, соседние и зеркальные числа, столбы, цифровые корни. Модель училась на одной части архива и проверялась на другой. Результат — уровень случая: «лучшие» числа выпадают так же часто, как любые.</p>
-    <p><b>2. Средняя отдача у любого набора K7 одинаковая — около 70%.</b> На дистанции это минус примерно 30% от ставок, и выбор чисел это не меняет.</p>
-    <p><b>3. Меняется только то, как часто возвращаются деньги.</b> В таблице выплат 0 из 7 платит 150 ₽, больше ставки. Схема «одно общее ядро + по 6 своих чисел» чаще даёт билеты с нулём и чаще возвращает хотя бы половину ставки за тираж. Эту схему компьютер дважды нашёл сам, перебирая наборы, а проверка на реальных тиражах её подтвердила.</p>
+    <p><b>2. Отдачу задаёт таблица выплат</b>, а не выбор чисел: у K7 около 70%, у K3 около 62%, у K4 около 44%.</p>
+    <p><b>3. Меняется только то, как часто возвращаются деньги.</b> Для каждого размера компьютер перебирал разные формы набора из 10 билетов и искал ту, что чаще возвращает хотя бы половину ставки. Для K7 лучшая форма — общее ядро + по 6 своих чисел, для K3 — 30 разных чисел без повторов, для K4 — «кольцо» из 20 чисел, где каждое число стоит в двух соседних билетах. Все три формы подтверждены на обеих половинах реального архива.</p>
    </div>
   </details>
  </div>
@@ -124,42 +138,55 @@ details summary{cursor:pointer;font-weight:900;color:#ffd15d;margin-top:4px}
 
 <script>
 'use strict';
-// ===== K7 · Ядро: алгоритм (без DOM — тот же код проверяется отдельно) =====
+// ===== Алгоритмы K7 · K4 · K3 (без DOM — тот же код проверяется отдельно) =====
 const K7=(()=>{
  const TICKETS=10,STAKE=100;
  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
  function shuffled(list,seed){const a=list.slice(),r=mulberry32(seed);for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
  const ALL=Array.from({length:80},(_,i)=>i+1);
+ const sortT=t=>t.slice().sort((a,b)=>a-b);
  function autoCore(draw){return((Number(draw)-1)%80+80)%80+1}
- // Ядро во всех 10 K7 + 60 разных чисел по 6 в каждой K7.
+ // K7: ядро во всех 10 K7 + 60 разных чисел по 6 в каждой.
  function coreSet(draw,pinned){
   const core=pinned?Number(pinned):autoCore(draw),seed=pinned?100003+core:Number(draw);
   const rest=shuffled(ALL.filter(n=>n!==core),seed);
-  const tickets=[];for(let i=0;i<TICKETS;i++)tickets.push([core,...rest.slice(i*6,i*6+6)].sort((a,b)=>a-b));
+  const tickets=[];for(let i=0;i<TICKETS;i++)tickets.push(sortT([core,...rest.slice(i*6,i*6+6)]));
   return {core,tickets};
  }
- // Сравнение: 10 независимых случайных K7.
- function randomSet(draw){const r=mulberry32(Number(draw)*7+1),t=[];for(let i=0;i<TICKETS;i++){const a=ALL.slice();for(let k=0;k<7;k++){const j=k+Math.floor(r()*(80-k));[a[k],a[j]]=[a[j],a[k]]}t.push(a.slice(0,7).sort((x,y)=>x-y))}return t}
- // Сравнение: старый способ — 10 K7 из пула 18 чисел.
- function pool18Set(draw){const r=mulberry32(Number(draw)*13+5),p=ALL.slice();for(let k=0;k<18;k++){const j=k+Math.floor(r()*(80-k));[p[k],p[j]]=[p[j],p[k]]}const pool=p.slice(0,18),t=[];for(let i=0;i<TICKETS;i++){const a=pool.slice();for(let k=0;k<7;k++){const j=k+Math.floor(r()*(18-k));[a[k],a[j]]=[a[j],a[k]]}t.push(a.slice(0,7).sort((x,y)=>x-y))}return t}
+ // K4: кольцо из 20 чисел — каждое число в двух соседних K4.
+ function ringSet(draw){const p=shuffled(ALL,Number(draw)*31+4).slice(0,20),tickets=[];for(let i=0;i<TICKETS;i++)tickets.push(sortT([0,1,2,3].map(j=>p[(2*i+j)%20])));return {core:null,tickets}}
+ // K3: 30 разных чисел без повторов.
+ function disjointSet(draw){const p=shuffled(ALL,Number(draw)*31+3),tickets=[];for(let i=0;i<TICKETS;i++)tickets.push(sortT(p.slice(i*3,i*3+3)));return {core:null,tickets}}
+ // Сравнение: 10 независимых случайных билетов размера k.
+ function randomSet(draw,k=7){const r=mulberry32(Number(draw)*7+k*1000+1),t=[];for(let i=0;i<TICKETS;i++){const a=ALL.slice();for(let x=0;x<k;x++){const j=x+Math.floor(r()*(80-x));[a[x],a[j]]=[a[j],a[x]]}t.push(sortT(a.slice(0,k)))}return t}
+ // Сравнение: старый способ раздела «Интервалы» — 10 K7 из пула 18 чисел.
+ function pool18Set(draw){const r=mulberry32(Number(draw)*13+5),p=ALL.slice();for(let k=0;k<18;k++){const j=k+Math.floor(r()*(80-k));[p[k],p[j]]=[p[j],p[k]]}const pool=p.slice(0,18),t=[];for(let i=0;i<TICKETS;i++){const a=pool.slice();for(let k=0;k<7;k++){const j=k+Math.floor(r()*(18-k));[a[k],a[j]]=[a[j],a[k]]}t.push(sortT(a.slice(0,7)))}return t}
+ const SIZES={
+  7:{k:7,label:'K7',name:'ядро',build:(draw,pin)=>coreSet(draw,pin),info:'10 K7 по 7 чисел. Одно число — <b style="color:#ffd25e">ядро</b> — стоит во всех десяти, остальные 60 чисел разные.'},
+  4:{k:4,label:'K4',name:'кольцо',build:draw=>ringSet(draw),info:'10 K4 по 4 числа из 20 чисел. Каждое число стоит в двух соседних K4 — <b style="color:#7fd8ff">кольцо</b>: K4-1 и K4-2 делят 2 числа, K4-2 и K4-3 — ещё 2, и так по кругу.'},
+  3:{k:3,label:'K3',name:'без повторов',build:draw=>disjointSet(draw),info:'10 K3 по 3 числа: 30 разных чисел, <b style="color:#7fd8ff">без повторов</b> между билетами.'}
+ };
  function playDraw(tickets,balls,pay){const on=new Uint8Array(81);for(const b of balls)on[Number(b)]=1;let total=0,best=0;const hits=tickets.map(t=>{let h=0;for(const n of t)h+=on[n];total+=Number(pay[h]||0);if(h>best)best=h;return h});return {total,best,hits}}
- function summarize(rows){
-  const n=rows.length,cost=n*TICKETS*STAKE;let paid=0,half=0,empty=0,plus=0,six=0,seven=0;
-  for(const r of rows){paid+=r.total;if(r.total>=TICKETS*STAKE/2)half++;if(r.total===0)empty++;if(r.total>TICKETS*STAKE)plus++;for(const h of r.hits){if(h===6)six++;if(h===7)seven++}}
-  return {n,cost,paid,net:paid-cost,ret:cost?paid/cost:0,half:n?half/n:0,empty:n?empty/n:0,plus:n?plus/n:0,six,seven};
+ function summarize(rows,k=7){
+  const n=rows.length,cost=n*TICKETS*STAKE;let paid=0,half=0,full=0,empty=0,top=0;
+  for(const r of rows){paid+=r.total;if(r.total>=TICKETS*STAKE/2)half++;if(r.total>=TICKETS*STAKE)full++;if(r.total===0)empty++;for(const h of r.hits)if(h===k)top++}
+  return {n,cost,paid,net:paid-cost,ret:cost?paid/cost:0,half:n?half/n:0,full:n?full/n:0,empty:n?empty/n:0,top};
  }
- function backtest(draws,pinned,pay,from=1){
-  const rows={core:[],random:[],pool18:[]};
+ // pays: {7:{...},4:{...},3:{...}} — таблица выплат по размеру.
+ function backtest(draws,pinned,pays,from=1){
+  const rows={main7:[],main4:[],main3:[],rand7:[],rand4:[],rand3:[],pool18:[]};
   for(let i=Math.max(1,from);i<draws.length;i++){
-   const d=draws[i],balls=d.balls||[];
-   const c=coreSet(d.draw,pinned);
-   rows.core.push({draw:d.draw,date:d.date,time:d.time,core:c.core,...playDraw(c.tickets,balls,pay)});
-   rows.random.push(playDraw(randomSet(d.draw),balls,pay));
-   rows.pool18.push(playDraw(pool18Set(d.draw),balls,pay));
+   const d=draws[i],balls=d.balls||[],meta={draw:d.draw,date:d.date,time:d.time};
+   for(const k of [7,4,3]){
+    const set=SIZES[k].build(d.draw,k===7?pinned:null);
+    rows['main'+k].push({...meta,core:set.core,...playDraw(set.tickets,balls,pays[k])});
+    rows['rand'+k].push(playDraw(randomSet(d.draw,k),balls,pays[k]));
+   }
+   rows.pool18.push(playDraw(pool18Set(d.draw),balls,pays[7]));
   }
   return rows;
  }
- return {TICKETS,STAKE,mulberry32,autoCore,coreSet,randomSet,pool18Set,playDraw,summarize,backtest};
+ return {TICKETS,STAKE,SIZES,mulberry32,autoCore,coreSet,ringSet,disjointSet,randomSet,pool18Set,playDraw,summarize,backtest};
 })();
 if(typeof module==='object'&&module.exports)module.exports=K7;
 
@@ -167,9 +194,9 @@ if(typeof module==='object'&&module.exports)module.exports=K7;
 if(typeof document!=='undefined'){
 const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
 const rub=n=>Math.round(Number(n)||0).toLocaleString('ru-RU')+' ₽',pct=x=>(100*x).toFixed(1).replace('.',',')+'%';
-const PAY_DEFAULT={0:150,3:100,4:200,5:1200,6:10000,7:250000};
+const PAY_DEFAULT={7:{0:150,3:100,4:200,5:1200,6:10000,7:250000},4:{2:100,3:300,4:3300},3:{2:300,3:1500}};
 const PERIODS=[{key:66,label:'≈ сутки'},{key:462,label:'≈ неделя'},{key:1980,label:'≈ месяц'},{key:0,label:'весь архив'}];
-let DRAWS=[],PAY=PAY_DEFAULT,ROWS=null,PERIOD=0,MODE='auto',PIN=null;
+let DRAWS=[],PAYS=PAY_DEFAULT,ROWS=null,PERIOD=0,MODE='auto',PIN=null,SIZE=7,OPEN_DRAW=null,LOG_N=20;
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 // Убрать следы старого раздела «Интервалы» с телефона (в том числе сохранённый GitHub-токен).
 try{['k7GithubActionsTokenV1','k7IntervalLabSavedV1'].forEach(k=>localStorage.removeItem(k))}catch{}
@@ -181,52 +208,71 @@ function nextDraw(){
  const t=String(last.time||'').slice(0,5);const next=times.find(x=>x>t)||times[0]||'—';
  return {draw:Number(last.draw)+1,time:next};
 }
-function pinned(){return MODE==='pin'&&PIN?PIN:null}
+const S_=()=>K7.SIZES[SIZE],L=()=>S_().label;
+function pinned(){return SIZE===7&&MODE==='pin'&&PIN?PIN:null}
+function setFor(draw){return S_().build(draw,pinned())}
 function renderTickets(){
- const nd=nextDraw(),set=K7.coreSet(nd.draw,pinned());
- $('nextTitle').textContent=`K7 на следующий тираж №${nd.draw} · ${nd.time}`;
+ const nd=nextDraw(),set=setFor(nd.draw);
+ $('nextTitle').textContent=`${L()} на следующий тираж №${nd.draw} · ${nd.time}`;
+ $('sizes').innerHTML=[7,4,3].map(k=>`<button type="button" data-size="${k}" class="${SIZE===k?'active':''}" aria-pressed="${SIZE===k}">${K7.SIZES[k].label}<small>${K7.SIZES[k].name}</small></button>`).join('');
+ document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>setSize(Number(b.dataset.size)));
+ $('sizeInfo').innerHTML=S_().info+' Ставка 100 ₽ за билет, за тираж 1 000 ₽.';
+ $('coreSeg').hidden=SIZE!==7;
  $('modeAuto').classList.toggle('active',MODE==='auto');$('modePin').classList.toggle('active',MODE==='pin');
  $('modeAuto').setAttribute('aria-pressed',String(MODE==='auto'));$('modePin').setAttribute('aria-pressed',String(MODE==='pin'));
- $('coreRow').hidden=MODE!=='pin';
- $('modeHint').innerHTML=MODE==='auto'?`Ядро меняется каждый тираж по кругу 1 → 80. Сейчас ядро <b>${fmt(set.core)}</b>.`:`Ядро <b>${fmt(set.core)}</b> закреплено, набор не меняется от тиража к тиражу.`;
- $('tickets').innerHTML=set.tickets.map((t,i)=>`<div class="ticket"><b>K7-${i+1}</b><div class="nums">${t.map(n=>`<span class="n${n===set.core?' core':''}">${fmt(n)}</span>`).join('')}</div></div>`).join('');
- $('copyAll').onclick=async()=>{const text=set.tickets.map((t,i)=>`K7-${i+1}: ${t.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('copyAll').textContent='✅ Скопировано'}catch{$('copyAll').textContent='Не удалось скопировать'}setTimeout(()=>$('copyAll').textContent='📋 Скопировать все 10 K7',1600)};
+ $('coreRow').hidden=!(SIZE===7&&MODE==='pin');
+ $('modeHint').innerHTML=SIZE!==7?'Набор меняется каждый тираж.':MODE==='auto'?`Ядро меняется каждый тираж по кругу 1 → 80. Сейчас ядро <b>${fmt(set.core)}</b>.`:`Ядро <b>${fmt(set.core)}</b> закреплено, набор не меняется от тиража к тиражу.`;
+ $('tickets').innerHTML=set.tickets.map((t,i)=>`<div class="ticket"><b>${L()}-${i+1}</b><div class="nums">${t.map(n=>`<span class="n${n===set.core?' core':''}">${fmt(n)}</span>`).join('')}</div></div>`).join('');
+ $('copyAll').textContent=`📋 Скопировать все 10 ${L()}`;
+ $('copyAll').onclick=async()=>{const text=set.tickets.map((t,i)=>`${L()}-${i+1}: ${t.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('copyAll').textContent='✅ Скопировано'}catch{$('copyAll').textContent='Не удалось скопировать'}setTimeout(()=>$('copyAll').textContent=`📋 Скопировать все 10 ${L()}`,1600)};
 }
 function slice(a){return PERIOD?a.slice(-PERIOD):a}
+const word=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'выигрыш':a>=2&&a<=4&&(b<12||b>14)?'выигрыша':'выигрышей'};
 function renderStats(){
  $('periods').innerHTML=PERIODS.map(p=>`<button type="button" data-period="${p.key}" class="${PERIOD===p.key?'active':''}" aria-pressed="${PERIOD===p.key}">${p.label}</button>`).join('');
  document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{PERIOD=Number(b.dataset.period);renderStats()});
- if(!ROWS){$('mainStats').innerHTML='<div class="muted">Считаю…</div>';return}
- const S={core:K7.summarize(slice(ROWS.core)),random:K7.summarize(slice(ROWS.random)),pool18:K7.summarize(slice(ROWS.pool18))},c=S.core;
+ $('algoTitle').textContent=`Проверка ${L()} · ${S_().name} на архиве`;
+ $('logTitle').textContent=`Последние тиражи · ${L()} · ${S_().name}`;
+ if(!ROWS){$('sizeCmp').innerHTML='<tbody><tr><td>Считаю…</td></tr></tbody>';$('mainStats').innerHTML='';$('cmp').innerHTML='';return}
+ const sum=(k,key)=>K7.summarize(slice(ROWS[key]),k);
+ const M={7:sum(7,'main7'),4:sum(4,'main4'),3:sum(3,'main3')};
+ const short=n=>{const a=Math.abs(n),sg=n<0?'−':'+';return a>=1e6?sg+(a/1e6).toFixed(1).replace('.',',')+' млн':a>=1e4?sg+Math.round(a/1e3)+' тыс':sg+rub(a)};
+ const cmpRow=(k)=>{const s=M[k];return `<tr class="${k===SIZE?'main':''}"><td>${K7.SIZES[k].label}<span class="kName">${K7.SIZES[k].name}</span></td><td>${pct(s.half)}</td><td>${pct(s.full)}</td><td>${pct(s.empty)}</td><td>${pct(s.ret)}</td><td class="${s.net>=0?'plus':'minus'}">${short(s.net)}</td></tr>`};
+ $('sizeCmp').innerHTML=`<thead><tr><th>Набор</th><th>≥ 500</th><th>≥ 1000</th><th>Ноль</th><th>Отдача</th><th>Итог ₽</th></tr></thead><tbody>${[7,4,3].map(cmpRow).join('')}</tbody>`;
+ const best=[7,4,3].sort((a,b)=>M[b].ret-M[a].ret)[0];
+ $('sizeNote').innerHTML=`≥ 500 ₽ — тиражи, где вернулась хотя бы половина ставки; ≥ 1 000 ₽ — ставка отбилась; «Ноль» — не вернулось ничего. Меньше всего теряет <b>${K7.SIZES[best].label}</b> (отдача ${pct(M[best].ret)}). У K4 таблица выплат самая невыгодная — около 44%.`;
+ const c=M[SIZE],r=sum(SIZE,'rand'+SIZE);
+ $('algoInfo').textContent=`Тот же набор ${L()}, что и сейчас, сыгран на каждом прошлом тираже. Для сравнения — 10 случайных ${L()} на тех же тиражах${SIZE===7?' и старый способ раздела «Интервалы» (10 K7 из пула 18 чисел)':''}.`;
  $('mainStats').innerHTML=`<div class="stat"><b>${pct(c.half)}</b><span>тиражей вернули ≥ 500 ₽</span></div><div class="stat"><b>${pct(c.ret)}</b><span>отдача (${rub(c.paid)} из ${rub(c.cost)})</span></div><div class="stat"><b>${c.n.toLocaleString('ru-RU')}</b><span>тиражей проверено</span></div><div class="stat"><b class="${c.net>=0?'plus':'minus'}">${c.net>=0?'+':''}${rub(c.net)}</b><span>итог</span></div>`;
- const row=(name,s,main)=>`<tr class="${main?'main':''}"><td>${name}</td><td>${pct(s.half)}</td><td>${pct(s.empty)}</td><td>${pct(s.plus)}</td><td>${pct(s.ret)}</td><td>${s.seven}</td></tr>`;
- $('cmp').innerHTML=`<thead><tr><th>Набор</th><th>≥ 500 ₽</th><th>Пусто</th><th>&gt; 1 000 ₽</th><th>Отдача</th><th>7/7</th></tr></thead><tbody>${row('🎯 Ядро',c,true)}${row('10 случайных',S.random)}${row('Пул 18 (старый)',S.pool18)}</tbody>`;
- const word=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'выигрыш':a>=2&&a<=4&&(b<12||b>14)?'выигрыша':'выигрышей'};
- const jack=c.seven?` Сюда входит ${c.seven} ${word(c.seven)} 7/7 по 250 000 ₽ — они сильно поднимают отдачу на коротком отрезке.`:'';
- $('honest').innerHTML=`Отдача у всех наборов около 70% — это заложено в таблицу выплат.${jack} Ядро не делает игру выгодной, оно делает её ровнее: чаще возвращается хотя бы половина ставки. На коротких отрезках (сутки, неделя) цифры сильно скачут — смотрите на весь архив.`;
+ const row=(name,s,main)=>`<tr class="${main?'main':''}"><td>${name}</td><td>${pct(s.half)}</td><td>${pct(s.empty)}</td><td>${pct(s.full)}</td><td>${pct(s.ret)}</td><td>${s.top}</td></tr>`;
+ $('cmp').innerHTML=`<thead><tr><th>Набор</th><th>≥ 500 ₽</th><th>Ноль</th><th>≥ 1 000 ₽</th><th>Отдача</th><th>${SIZE}/${SIZE}</th></tr></thead><tbody>${row(`🎯 ${L()} · ${S_().name}`,c,true)}${row(`10 случайных ${L()}`,r)}${SIZE===7?row('Пул 18 (старый)',K7.summarize(slice(ROWS.pool18),7)):''}</tbody>`;
+ const topPay=Number(PAYS[SIZE]?.[SIZE]||0);
+ const jack=c.top&&topPay>=10000?` Сюда входит ${c.top} ${word(c.top)} ${SIZE}/${SIZE} по ${rub(topPay)} — они сильно поднимают отдачу на коротком отрезке.`:'';
+ $('honest').innerHTML=`Отдача у любого набора ${L()} одна и та же — её задаёт таблица выплат.${jack} Форма набора не делает игру выгодной, она делает её ровнее: чаще возвращается хотя бы половина ставки. На коротких отрезках (сутки, неделя) цифры сильно скачут — смотрите на весь архив.`;
  renderLog();
 }
-let OPEN_DRAW=null,LOG_N=20;
 function detailHTML(draw){
  const d=DRAWS.find(x=>Number(x.draw)===Number(draw));if(!d)return '';
- const set=K7.coreSet(d.draw,pinned()),on=new Set(d.balls.map(Number)),inSet=new Set(set.tickets.flat());
+ const set=setFor(d.draw),on=new Set(d.balls.map(Number)),inSet=new Set(set.tickets.flat()),pay=PAYS[SIZE];
  const balls=d.balls.map(Number).slice().sort((a,b)=>a-b).map(n=>`<span class="b${n===set.core?' core':inSet.has(n)?' in':''}">${fmt(n)}</span>`).join('');
  let total=0;
- const rows=set.tickets.map((t,i)=>{const h=t.filter(n=>on.has(n)).length,pay=Number(PAY[h]||0);total+=pay;return `<div class="dRow"><b>K7-${i+1}</b><div class="dNums">${t.map(n=>`<span class="m${on.has(n)?' hit':''}${n===set.core?' core':''}">${fmt(n)}</span>`).join('')}</div><div class="dPay ${pay>=100?'plus':pay?'':'minus'}">${h}/7<small>${pay?rub(pay):'0 ₽'}</small></div></div>`}).join('');
- return `<div class="dLabel">Выпало в №${d.draw} · ${d.date} ${d.time}: зелёные — числа из ваших K7, золотое — ядро ${fmt(set.core)}${on.has(set.core)?' (выпало)':' (не выпало)'}</div><div class="balls">${balls}</div><div class="dLabel">K7 на этот тираж: зелёные — угаданные числа</div>${rows}<div class="dTotal"><span>Ставка 1 000 ₽</span><span class="${total>=1000?'plus':total>=500?'':'minus'}">выплата ${rub(total)} · итог ${total-1000>=0?'+':''}${rub(total-1000)}</span></div>`;
+ const rows=set.tickets.map((t,i)=>{const h=t.filter(n=>on.has(n)).length,p=Number(pay[h]||0);total+=p;return `<div class="dRow"><b>${L()}-${i+1}</b><div class="dNums">${t.map(n=>`<span class="m${on.has(n)?' hit':''}${n===set.core?' core':''}">${fmt(n)}</span>`).join('')}</div><div class="dPay ${p>=100?'plus':p?'':'minus'}">${h}/${SIZE}<small>${p?rub(p):'0 ₽'}</small></div></div>`}).join('');
+ const coreNote=set.core?`, золотое — ядро ${fmt(set.core)}${on.has(set.core)?' (выпало)':' (не выпало)'}`:'';
+ return `<div class="dLabel">Выпало в №${d.draw} · ${d.date} ${d.time}: зелёные — числа из ваших ${L()}${coreNote}</div><div class="balls">${balls}</div><div class="dLabel">${L()} на этот тираж: зелёные — угаданные числа</div>${rows}<div class="dTotal"><span>Ставка 1 000 ₽</span><span class="${total>=1000?'plus':total>=500?'':'minus'}">выплата ${rub(total)} · итог ${total-1000>=0?'+':''}${rub(total-1000)}</span></div>`;
 }
 function renderLog(){
- const last=ROWS.core.slice(-LOG_N).reverse();
- $('log').innerHTML=`<thead><tr><th>Тираж</th><th>Время</th><th>Ядро</th><th>Лучшая</th><th>Выплата</th></tr></thead><tbody>${last.map(r=>{const open=Number(r.draw)===OPEN_DRAW;return `<tr class="row${open?' open':''}" data-draw="${r.draw}" role="button" tabindex="0" aria-expanded="${open}"><td>№${r.draw}</td><td>${String(r.date||'').slice(0,5)} ${String(r.time||'').slice(0,5)}</td><td>${fmt(r.core)}</td><td>${r.best}/7</td><td class="${r.total>=1000?'plus':r.total>=500?'':'minus'}">${rub(r.total)}</td></tr>`+(open?`<tr class="det"><td colspan="5">${detailHTML(r.draw)}</td></tr>`:'')}).join('')}</tbody>`;
- const more=$('logMore');if(more){more.hidden=LOG_N>=ROWS.core.length;more.onclick=()=>{LOG_N+=20;renderLog()}}
+ const all=ROWS['main'+SIZE],last=all.slice(-LOG_N).reverse(),core=SIZE===7;
+ $('log').innerHTML=`<thead><tr><th>Тираж</th><th>Время</th>${core?'<th>Ядро</th>':''}<th>Лучшая</th><th>Выплата</th></tr></thead><tbody>${last.map(r=>{const open=Number(r.draw)===OPEN_DRAW;return `<tr class="row${open?' open':''}" data-draw="${r.draw}" role="button" tabindex="0" aria-expanded="${open}"><td>№${r.draw}</td><td>${String(r.date||'').slice(0,5)} ${String(r.time||'').slice(0,5)}</td>${core?`<td>${fmt(r.core)}</td>`:''}<td>${r.best}/${SIZE}</td><td class="${r.total>=1000?'plus':r.total>=500?'':'minus'}">${rub(r.total)}</td></tr>`+(open?`<tr class="det"><td colspan="${core?5:4}">${detailHTML(r.draw)}</td></tr>`:'')}).join('')}</tbody>`;
+ const more=$('logMore');more.hidden=LOG_N>=all.length;more.onclick=()=>{LOG_N+=20;renderLog()};
  document.querySelectorAll('#log tr.row').forEach(tr=>{const go=()=>{const id=Number(tr.dataset.draw);OPEN_DRAW=OPEN_DRAW===id?null:id;renderLog();if(OPEN_DRAW){const row=document.querySelector(`#log tr.row[data-draw="${id}"]`);row?.scrollIntoView({block:'nearest',behavior:'smooth'})}};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
 }
-function compute(){ROWS=null;renderStats();setTimeout(()=>{ROWS=K7.backtest(DRAWS,pinned(),PAY);renderStats()},30)}
+function compute(){ROWS=null;renderStats();setTimeout(()=>{ROWS=K7.backtest(DRAWS,MODE==='pin'&&PIN?PIN:null,PAYS);renderStats()},30)}
 function setMode(m){MODE=m;OPEN_DRAW=null;store.set('k7CoreMode',m);renderTickets();compute()}
+function setSize(k){if(!K7.SIZES[k]||k===SIZE)return;SIZE=k;OPEN_DRAW=null;LOG_N=20;store.set('kSetSize',String(k));renderTickets();if(ROWS)renderStats();else compute()}
 async function load(){
  try{
   try{const v=await fetchJSON('app-version.json');if(v?.version)$('ver').textContent='v'+v.version}catch{}
-  try{const p=await fetchJSON('keno-payouts-v1.json');if(p?.combination?.['7'])PAY=p.combination['7']}catch{}
+  try{const p=await fetchJSON('keno-payouts-v1.json');const c=p?.combination;if(c?.['7']&&c?.['4']&&c?.['3'])PAYS={7:c['7'],4:c['4'],3:c['3']}}catch{}
   DRAWS=await fetchJSON('combo-history-v1.json');
   if(!Array.isArray(DRAWS)||!DRAWS.length)throw new Error('архив пуст');
   DRAWS=DRAWS.filter(d=>Array.isArray(d.balls)&&d.balls.length===20).sort((a,b)=>Number(a.draw)-Number(b.draw));
@@ -234,6 +280,7 @@ async function load(){
   $('db').textContent=`База: ${DRAWS.length.toLocaleString('ru-RU')} тиражей · последний №${last.draw} · ${last.date} ${last.time}`;
   const savedPin=Number(store.get('k7CorePin'));if(savedPin>=1&&savedPin<=80)PIN=savedPin;
   MODE=store.get('k7CoreMode')==='pin'&&PIN?'pin':'auto';
+  const savedSize=Number(store.get('kSetSize'));if(K7.SIZES[savedSize])SIZE=savedSize;
   $('coreInput').value=String(PIN||K7.autoCore(nextDraw().draw));
   renderTickets();compute();
  }catch(e){$('db').innerHTML='<span class="err">Ошибка загрузки: '+String(e.message||e)+'</span>'}
