@@ -26,7 +26,10 @@ input{width:100%;background:#061421;color:#fff;border:1px solid #2e526d;border-r
 .sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .switch{padding:9px}
 [hidden]{display:none!important}
-.kcMethods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.kcMethods{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:9px}
+.why{margin-top:7px;padding:7px 8px;border-radius:9px;background:#0a1b2b;border:1px solid #284a65;font-size:11px;color:#c9d8e4;line-height:1.5}
+.why b{color:#ffe08a}
+.why .ok{color:#8ff06a}
 .kcMethods button{padding:9px 4px;font-size:12px;line-height:1.2}
 .kcCtl{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:6px;margin-top:9px;align-items:end}
 .kcCtl label{font-size:11px;color:var(--muted)}
@@ -258,7 +261,8 @@ const KC=(()=>{
  const METHODS={
   repeat:{label:'Повторы в клетке',short:'повторы'},
   last:{label:'Клетка прошлой концентрации',short:'прошлая конц.'},
-  emerge:{label:'Переход · зарождение',short:'зарождение'}
+  emerge:{label:'Переход · зарождение',short:'зарождение'},
+  transform:{label:'Преобразование',short:'преобразование'}
  };
  // Статистика окна W последних тиражей до idx включительно.
  function windowStats(draws,idx){
@@ -291,7 +295,46 @@ const KC=(()=>{
   return {cells:out,lead};
  }
  // N комб по k чисел: комба i — из клетки i в рейтинге; если в клетке меньше k чисел, добор из следующих клеток.
+
+ // ===== Преобразование: числа любой клетки переходят в другую клетку сдвигом единиц или десятков =====
+ // 11 → 21, 29 → 30, 45 → 35, 27 → 26, 1 → 4: цифровой корень меняется, число попадает в другую концентрацию.
+ function oneDigit(n,r2){const d=((r2-root(n))%9+9)%9;if(!d)return [];return [...new Set([n+d,n+d-9,n+10*d,n+10*(d-9)])].filter(m=>m>=1&&m<=80&&m!==n&&root(m)===r2)}
+ const SRC_BACK=2,SEEN_BACK=3;
+ function transformPairs(draws,idx){
+  const pairs=[];
+  for(let back=0;back<SRC_BACK&&idx-back>=0;back++){
+   const sd=draws[idx-back],sb=sd.balls.map(Number);
+   for(let r=1;r<=9;r++){
+    const S=sb.filter(n=>root(n)===r).sort((a,b)=>a-b);if(S.length<2)continue;
+    for(let r2=1;r2<=9;r2++){if(r2===r)continue;
+     const map=new Map();for(const n of S)for(const m of oneDigit(n,r2)){if(!map.has(m))map.set(m,[]);map.get(m).push(n)}
+     const T=[...map.keys()];if(!T.length)continue;
+     // где переход уже виден: преобразованные числа выпадали в клетке-цели в последних тиражах
+     const seen=[];let score=0,after=0;
+     for(let j=Math.max(0,idx-back-SEEN_BACK);j<=idx;j++){if(j===idx-back)continue;const hit=draws[j].balls.map(Number).filter(n=>map.has(n)).sort((a,b)=>a-b);if(hit.length){seen.push({draw:draws[j].draw,nums:hit,after:j>idx-back});score+=hit.length*(j>idx-back?2:1);if(j>idx-back)after+=hit.length}}
+     const same=sb.filter(n=>map.has(n));if(same.length){seen.push({draw:sd.draw,nums:same.sort((a,b)=>a-b),same:true});score+=same.length}
+     pairs.push({from:{draw:sd.draw,cell:r,nums:S},cell:r2,map,seen,score,after,back});
+    }
+   }
+  }
+  pairs.sort((a,b)=>b.score-a.score||b.after-a.after||b.from.nums.length-a.from.nums.length||a.back-b.back||a.cell-b.cell);
+  return pairs;
+ }
+ function buildTransform(draws,idx,k,N){
+  const pairs=transformPairs(draws,idx),combos=[],usedCells=new Set();
+  const seenCnt=p=>{const c=new Map();for(const s of p.seen)for(const n of s.nums)c.set(n,(c.get(n)||0)+1);return c};
+  for(const p of pairs){if(combos.length>=Math.min(N,9))break;if(usedCells.has(p.cell))continue;
+   const sc=seenCnt(p),order=[...p.map.keys()].sort((a,b)=>p.map.get(b).length-p.map.get(a).length||(sc.get(b)||0)-(sc.get(a)||0)||a-b);
+   let nums=order.slice(0,k);
+   if(nums.length<k){for(const m of CELL[p.cell]){if(nums.length>=k)break;if(!nums.includes(m)&&!p.from.nums.includes(m))nums.push(m)}}
+   if(nums.length<k){for(const m of CELL[1+p.cell%9]){if(nums.length>=k)break;if(!nums.includes(m))nums.push(m)}}
+   usedCells.add(p.cell);
+   combos.push({cell:p.cell,nums:nums.sort((a,b)=>a-b),why:{from:p.from,links:order.slice(0,k).map(m=>[p.map.get(m).join('/'),m]),seen:p.seen}});
+  }
+  return {anchorIdx:idx,anchorDraw:draws[idx].draw,conc:concOf(draws[idx].balls),combos};
+ }
  function build(draws,idx,method,k,N){
+  if(method==='transform')return buildTransform(draws,idx,k,N);
   const S=windowStats(draws,idx),{cells,lead}=rankCells(draws,idx,method,S),combos=[];
   for(let i=0;i<Math.min(N,9);i++){
    const c=[];for(let j=i;j<i+9&&c.length<k;j++){for(const n of lead[cells[j%9]]){if(c.length>=k)break;if(!c.includes(n))c.push(n)}}
@@ -320,7 +363,7 @@ const KC=(()=>{
   for(const r of rows){paid+=r.total;if(r.total>=stake/2)half++;if(r.total>=stake)full++;if(r.total===0)zero++;for(const h of r.hits){hitSum+=h;tickets++}byPos[r.pos][0]+=r.total;byPos[r.pos][1]+=stake}
   return {n,cost,paid,net:paid-cost,ret:cost?paid/cost:0,half:n?half/n:0,full:n?full/n:0,zero:n?zero/n:0,avgHits:tickets?hitSum/tickets:0,expHits:k/4,byPos:byPos.slice(1).map(([p,c])=>c?p/c:0)};
  }
- return {W,root,CELL,concOf,METHODS,build,randomBuild,backtest,summarize,anchorIdxFor};
+ return {W,root,CELL,concOf,METHODS,oneDigit,build,randomBuild,backtest,summarize,anchorIdxFor};
 })();
 
 
@@ -431,12 +474,13 @@ const C_LIM={k:[1,10],N:[1,9],H:[1,5]};
 const PAYK=k=>PAYALL[String(k)]||{};
 function evK(k){const C=(n,r)=>{let x=1;for(let i=0;i<r;i++)x=x*(n-i)/(i+1);return x};let e=0;for(let h=0;h<=k;h++)e+=C(20,h)*C(60,k-h)/C(80,k)*Number(PAYK(k)[h]||0);return e/100}
 function concAnchorIdx(){const L=DRAWS.length-1;return L-(Number(DRAWS[L].draw)%KCS.H)}
+function whyHTML(c){const w=c.why;if(!w)return '';const seen=w.seen.filter(x=>x.nums.length).slice(-3).map(x=>`<span class="ok">№${x.draw}${x.same?' (тот же тираж)':''}: ${x.nums.map(fmt).join(' ')}</span>`).join(' · ');return `<div class="why">🔍 Откуда: №${w.from.draw}, клетка <b>${w.from.cell}</b>: ${w.from.nums.map(fmt).join(' ')} → клетка <b>${c.cell}</b>: ${w.links.map(([a,b])=>`${a.split('/').map(x=>fmt(+x)).join('/')}→${fmt(b)}`).join(', ')}${seen?`<br>Переход уже виден: ${seen}`:''}</div>`}
 function renderConc(){
  const nd=nextDraw(),a=concAnchorIdx(),A=DRAWS[a],set=KC.build(DRAWS,a,KCS.method,KCS.k,KCS.N),pay=PAYK(KCS.k);
  $('kcTitle').textContent=`Комбы концентрации на тираж №${nd.draw} · ${nd.time}`;
  $('kcMethods').innerHTML=Object.entries(KC.METHODS).map(([key,m])=>`<button type="button" data-kcm="${key}" class="${KCS.method===key?'active':''}" aria-pressed="${KCS.method===key}">${m.label}</button>`).join('');
  document.querySelectorAll('[data-kcm]').forEach(b=>b.onclick=()=>{KCS.method=b.dataset.kcm;saveKC();renderConc();computeConc()});
- const info={repeat:'Клетки, где за последние 10 тиражей больше всего чисел выпадало повторно. Из клетки берутся самые частые числа.',last:'Клетка, которая была жёлтой (концентрацией) в последнем тираже, затем — в предыдущих. Первыми берутся числа, выпавшие в ней в тот тираж.',emerge:'Клетка, где за последние 10 тиражей одни и те же пары чисел выпадали вместе снова (как 3·30 → 3·30·48·66). Текущая жёлтая клетка идёт последней — ищется, куда концентрация может перейти, не обязательно в соседнюю.'};
+ const info={repeat:'Клетки, где за последние 10 тиражей больше всего чисел выпадало повторно. Из клетки берутся самые частые числа.',last:'Клетка, которая была жёлтой (концентрацией) в последнем тираже, затем — в предыдущих. Первыми берутся числа, выпавшие в ней в тот тираж.',emerge:'Клетка, где за последние 10 тиражей одни и те же пары чисел выпадали вместе снова (как 3·30 → 3·30·48·66). Текущая жёлтая клетка идёт последней — ищется, куда концентрация может перейти, не обязательно в соседнюю.',transform:'Числа любой клетки последних 2 тиражей переводятся в другую клетку сдвигом единиц или десятков (11 → 21, 29 → 30, 45 → 35, 27 → 26, 1 → 4). Ставятся не сами числа, а их преобразования. Клетка-цель — где такой переход уже виден в соседних тиражах (как 11 29 56 65 → 21 30 57 66). Строка «откуда» под комбой показывает, из чего она собрана.'};
  $('kcMethodInfo').textContent=info[KCS.method];
  $('kcK').value=KCS.k;$('kcN').value=KCS.N;$('kcH').value=KCS.H;
  const played=DRAWS.length-1-a;
@@ -445,8 +489,8 @@ function renderConc(){
   const cells=[];for(let p=1;p<=KCS.H;p++){const idx=a+p,d=DRAWS[idx];
    if(d){const on=new Set(d.balls.map(Number)),h=c.nums.filter(n=>on.has(n)).length,pp=Number(pay[h]||0);cells.push(`<div class="hodCell${pp>=100?' win':''}"><small>№${d.draw}</small>${h}/${KCS.k}<small>${pp?rub(pp):'0 ₽'}</small></div>`)}
    else cells.push(`<div class="hodCell${p===played+1?' now':''}"><small>№${A.draw+p}</small>${p===played+1?'▶ сейчас':'·'}<small>&nbsp;</small></div>`)}
-  return `<div class="kc"><div class="kcHead"><b>КОНЦ-${i+1}</b><span>клетка <span class="cellTag">${c.cell}</span></span></div><div class="nums">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div><div class="hod" style="grid-template-columns:repeat(${KCS.H},1fr)">${cells.join('')}</div></div>`}).join('');
- $('kcCopy').onclick=async()=>{const text=set.combos.map((c,i)=>`КОНЦ-${i+1} (клетка ${c.cell}): ${c.nums.map(fmt).join(' ')}`).join('\n');try{await navigator.clipboard.writeText(text);$('kcCopy').textContent='✅ Скопировано'}catch{$('kcCopy').textContent='Не удалось скопировать'}setTimeout(()=>$('kcCopy').textContent='📋 Скопировать комбы',1600)};
+  return `<div class="kc"><div class="kcHead"><b>КОНЦ-${i+1}</b><span>клетка <span class="cellTag">${c.cell}</span></span></div><div class="nums">${c.nums.map(n=>`<span class="n">${fmt(n)}</span>`).join('')}</div>${whyHTML(c)}<div class="hod" style="grid-template-columns:repeat(${KCS.H},1fr)">${cells.join('')}</div></div>`}).join('');
+ $('kcCopy').onclick=async()=>{const text=set.combos.map((c,i)=>`КОНЦ-${i+1} (клетка ${c.cell}): ${c.nums.map(fmt).join(' ')}${c.why?` ← №${c.why.from.draw} клетка ${c.why.from.cell}: ${c.why.from.nums.map(fmt).join(' ')}`:''}`).join('\n');try{await navigator.clipboard.writeText(text);$('kcCopy').textContent='✅ Скопировано'}catch{$('kcCopy').textContent='Не удалось скопировать'}setTimeout(()=>$('kcCopy').textContent='📋 Скопировать комбы',1600)};
 }
 function saveKC(){store.set('kcState',JSON.stringify(KCS))}
 function readKC(){for(const [x,el] of [['k','kcK'],['N','kcN'],['H','kcH']]){let v=Math.floor(Number($(el).value));const [lo,hi]=C_LIM[x];if(!(v>=lo&&v<=hi))v=Math.min(hi,Math.max(lo,Number.isFinite(v)?v:KCS[x]));KCS[x]=v}saveKC()}
@@ -488,7 +532,7 @@ function concDetail(r){
  const a=DRAWS.findIndex(x=>Number(x.draw)===Number(r.anchor)),d=DRAWS[r.i];if(a<0||!d)return '';
  const set=KC.build(DRAWS,a,KCS.method,KCS.k,KCS.N),on=new Set(d.balls.map(Number)),inSet=new Set(set.combos.flatMap(c=>c.nums)),pay=PAYK(KCS.k);
  const balls=d.balls.map(Number).slice().sort((x,y)=>x-y).map(n=>`<span class="b${inSet.has(n)?' in':''}">${fmt(n)}</span>`).join('');
- let total=0;const rows=set.combos.map((c,i)=>{const h=c.nums.filter(n=>on.has(n)).length,p=Number(pay[h]||0);total+=p;return `<div class="dRow"><b>К-${i+1}<br><span class="cellTag">${c.cell}</span></b><div class="dNums">${c.nums.map(n=>`<span class="m${on.has(n)?' hit':''}">${fmt(n)}</span>`).join('')}</div><div class="dPay ${p>=100?'plus':p?'':'minus'}">${h}/${KCS.k}<small>${p?rub(p):'0 ₽'}</small></div></div>`}).join('');
+ let total=0;const rows=set.combos.map((c,i)=>{const h=c.nums.filter(n=>on.has(n)).length,p=Number(pay[h]||0);total+=p;return `<div class="dRow"><b>К-${i+1}<br><span class="cellTag">${c.cell}</span></b><div class="dNums">${c.nums.map(n=>`<span class="m${on.has(n)?' hit':''}">${fmt(n)}</span>`).join('')}${c.why?`<div class="dLabel" style="width:100%;margin:3px 0 0">← №${c.why.from.draw}, клетка ${c.why.from.cell}: ${c.why.from.nums.map(fmt).join(' ')}</div>`:''}</div><div class="dPay ${p>=100?'plus':p?'':'minus'}">${h}/${KCS.k}<small>${p?rub(p):'0 ₽'}</small></div></div>`}).join('');
  const stake=KCS.N*100;
  return `<div class="dLabel">Выпало в №${d.draw} · ${d.date} ${d.time} — ${r.pos}-й тираж удержания комб, построенных после №${r.anchor}; жёлтая клетка этого тиража — <span class="cellTag">${KC.concOf(d.balls)}</span></div><div class="balls">${balls}</div>${rows}<div class="dTotal"><span>Ставка ${rub(stake)}</span><span class="${total>=stake?'plus':total>=stake/2?'':'minus'}">выплата ${rub(total)} · итог ${total-stake>=0?'+':''}${rub(total-stake)}</span></div>`;
 }
