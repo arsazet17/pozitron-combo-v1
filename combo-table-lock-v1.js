@@ -733,6 +733,10 @@
       '#tableDayMatrixPanel .dmTools button.has{border-color:#ffc14d;color:#ffc14d}',
       '#tableDayMatrixPanel .dmTools button.open.has{color:#fff}',
       '#tableDayMatrixPanel .dmEmpty{width:78px;min-height:66px;border:1px dashed #20364d;border-radius:9px;box-sizing:border-box}',
+      '#tableDayMatrixPanel button.dmEmpty{display:block;padding:0;background:transparent;cursor:pointer}',
+      '#tableDayMatrixPanel button.dmEmpty.peeked{border-style:solid;border-color:#8fa9c2}',
+      '#tableDayMatrixPanel .dmPeek{display:flex;gap:10px;align-items:stretch;margin-top:6px}',
+      '#tableDayMatrixPanel .dmPeek .dmc{width:96px;flex:0 0 auto;cursor:default}',
       '#tableDayMatrixPanel .dmInfo{margin-top:8px;padding:8px;border:1px solid #2b4a68;border-radius:9px;background:#0d2236;font-size:12px;color:#b8cde0;line-height:1.5}',
       '#tableDayMatrixPanel .dmInfo b{color:#fff}',
       '#tableDayMatrixPanel .dmInfo span{font-weight:800;margin-right:6px;font-size:14px}',
@@ -774,6 +778,22 @@
     return p;
   }
 
+  // Проходит ли тираж текущие фильтры (КЦ, СТ, Ч-Н): возвращает {k,nums} или null.
+  function passes(d){
+    const balls=(d.balls||[]).map(Number);
+    if(!balls.length)return null;
+    const k=domK(balls);
+    if(sel.size&&!sel.has(k))return null;
+    if(selC.size&&!selC.has(colOf(d)))return null;
+    let nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
+    if(par==='even')nums=nums.filter(n=>n%2===0);
+    else if(par==='odd')nums=nums.filter(n=>n%2===1);
+    if(par&&!nums.length)return null;
+    return{k,nums};
+  }
+  const cellInner=(d,p)=>'<span class="dmTop"><b>С'+colOf(d)+'</b><u style="color:'+KC[p.k]+'">K'+(p.k+1)+'</u></span><i style="color:'+KC[p.k]+'">'+p.nums.map(markNum).join(' ')+'</i>';
+  let peek=null,peekTimer=0;
+
   function collect(){
     const all=allDraws();
     const rows=[];const seen=new Map();
@@ -809,18 +829,11 @@
       const cells=times.map(t=>{
         const d=r.list.get(t);
         if(!d)return'<td><div class="dmEmpty"></div></td>';
-        const balls=(d.balls||[]).map(Number);
         const cls='dmc'+(last&&d.draw===last.draw?' last':'')+(picked===d.draw?' sel':'');
-        const k=domK(balls);
-        // Фильтры (все вместе): главная концентрация среди выбранных K, столб среди выбранных СТ,
-        // только чётные / нечётные числа. Что не подошло — пустой квадрат.
-        if(sel.size&&!sel.has(k))return'<td><div class="dmEmpty"></div></td>';
-        if(selC.size&&!selC.has(colOf(d)))return'<td><div class="dmEmpty"></div></td>';
-        let nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
-        if(par==='even')nums=nums.filter(n=>n%2===0);
-        else if(par==='odd')nums=nums.filter(n=>n%2===1);
-        if(par&&!nums.length)return'<td><div class="dmEmpty"></div></td>';
-        const inner='<span class="dmTop"><b>С'+colOf(d)+'</b><u style="color:'+KC[k]+'">K'+(k+1)+'</u></span><i style="color:'+KC[k]+'">'+nums.map(markNum).join(' ')+'</i>';
+        const p=passes(d);
+        // Не подошло под фильтры — пустой квадрат; нажатие покажет следующий подходящий тираж.
+        if(!p)return'<td><button type="button" class="dmEmpty'+(peek&&peek.from===d.draw?' peeked':'')+'" data-dm-empty="'+d.draw+'" aria-label="Пустая клетка, показать следующий"></button></td>';
+        const inner=cellInner(d,p);
         return'<td><button type="button" class="'+cls+'" data-dm-draw="'+d.draw+'" aria-label="Тираж '+d.draw+'">'+inner+'</button></td>';
       }).join('');
       return'<tr><td class="dmDate">'+esc(r.date.slice(0,5))+'<small>'+esc(weekday(r.date))+'</small></td>'+cells+'</tr>';
@@ -868,6 +881,17 @@
   function showInfo(){
     const box=document.getElementById('dmInfo');
     if(!box)return;
+    if(peek){
+      const f=allDraws().find(x=>x&&x.draw===peek.from);
+      const t=peek.to?allDraws().find(x=>x&&x.draw===peek.to):null;
+      box.style.display='';
+      const fs=f?esc(f.date)+' '+esc(f.time):'';
+      if(!t){box.innerHTML='Пусто '+fs+'. <b>После этого подходящих тиражей пока нет.</b>';return}
+      const p=passes(t);
+      box.innerHTML='Пусто '+fs+'. Следующий в этом режиме: <b>№'+t.draw+'</b> · '+esc(t.date)+' '+esc(t.time)+
+        '<div class="dmPeek"><div class="dmc">'+(p?cellInner(t,p):'')+'</div></div>';
+      return;
+    }
     const d=allDraws().find(x=>x&&x.draw===picked);
     if(!d){box.style.display='none';return}
     box.style.display='';
@@ -876,7 +900,7 @@
       balls.map(n=>'<span style="color:'+KC[kOf(n)]+'">'+n+'</span>').join('');
   }
 
-  function save(){try{
+  function save(){peek=null;clearTimeout(peekTimer);try{
     localStorage.setItem(KEY,on?'1':'0');localStorage.setItem(DAYS_KEY,String(days));
     localStorage.setItem(SEL_KEY,JSON.stringify([...sel]));localStorage.setItem(SELC_KEY,JSON.stringify([...selC]));
     localStorage.setItem(PAR_KEY,par);localStorage.setItem(OPEN_KEY,JSON.stringify(open));localStorage.setItem(ACT_KEY,JSON.stringify([...selA]));
@@ -886,6 +910,18 @@
     const b=e.target.closest('button');
     if(!b)return;
     const act=b.dataset.dm;
+    if(b.dataset.dmEmpty){
+      const id=Number(b.dataset.dmEmpty);
+      clearTimeout(peekTimer);
+      if(peek&&peek.from===id){peek=null;render();return}
+      const all=allDraws();
+      const i=all.findIndex(x=>x&&x.draw===id);
+      let to=null;
+      for(let j=i+1;j<all.length;j++){const x=all[j];if(x&&passes(x)){to=x.draw;break}}
+      peek={from:id,to};picked=0;render();
+      peekTimer=setTimeout(()=>{peek=null;render()},8000);
+      return;
+    }
     if(b.dataset.dmK!==undefined){
       const k=Number(b.dataset.dmK);
       if(sel.has(k))sel.delete(k);else sel.add(k);
@@ -917,7 +953,7 @@
     if(act==='plus'){days=Math.min(30,days+1);save();needScroll=true;render();return}
     if(b.dataset.dmDraw){
       const id=Number(b.dataset.dmDraw);
-      picked=picked===id?0:id;
+      peek=null;clearTimeout(peekTimer);picked=picked===id?0:id;
       render();
     }
   }
