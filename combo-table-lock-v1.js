@@ -692,7 +692,10 @@
       '#tableDayMatrixPanel th.dmDate,#tableDayMatrixPanel td.dmDate{position:sticky;left:0;z-index:2;background:#091d30;text-align:left;min-width:46px;padding-right:4px}',
       '#tableDayMatrixPanel td.dmDate{font-size:13px;font-weight:800;color:#fff;line-height:1.15}',
       '#tableDayMatrixPanel td.dmDate small{display:block;font-size:10px;font-weight:600;color:#8fa9c2}',
-      '#tableDayMatrixPanel td{vertical-align:top;padding:0}',
+      '#tableDayMatrixPanel td{vertical-align:top;padding:0;height:1px}',
+      '#tableDayMatrixPanel td>.dmc,#tableDayMatrixPanel td>.dmEmpty{height:100%}',
+      '#tableDayMatrixPanel.dmWide .dmc,#tableDayMatrixPanel.dmWide .dmEmpty{width:122px}',
+      '#tableDayMatrixPanel.dmWide .dmc i{word-spacing:3px}',
       '#tableDayMatrixPanel .dmc{box-sizing:border-box;width:78px;min-height:66px;border:1px solid #2b4a68;border-radius:9px;background:#10263d;padding:5px;display:flex;flex-direction:column;gap:4px;color:#fff;text-align:left;font:inherit}',
       '#tableDayMatrixPanel .dmc.last{border-color:#f2c230}',
       '#tableDayMatrixPanel .dmc.sel{outline:2px solid #fff;outline-offset:-2px}',
@@ -773,6 +776,7 @@
     const prevLeft=keep?keep.scrollLeft:0;
     const {rows,times,last}=collect();
     panel.classList.remove('hidden');
+    panel.classList.toggle('dmWide',sel.size>=2);
     if(!rows.length||!times.length){
       panel.innerHTML='<div class="dmHead"><b>Дата × время</b><button type="button" data-dm="close" aria-label="Закрыть">✕</button></div><div class="dmNote">Нет данных тиражей</div>';
       return;
@@ -794,7 +798,9 @@
             const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
             return nums.length?'<span class="dmLine"><u style="color:'+KC[k]+'">K'+(k+1)+'</u><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i></span>':'';
           }).join('');
-          inner='<span class="dmTop"><b>С'+colOf(d)+'</b></span>'+(lines||'<span class="dmNone">—</span>');
+          // Выбранных концентраций в этом тираже нет — пустой квадрат.
+          if(!lines)return'<td><div class="dmEmpty"></div></td>';
+          inner='<span class="dmTop"><b>С'+colOf(d)+'</b></span>'+lines;
         }
         return'<td><button type="button" class="'+cls+'" data-dm-draw="'+d.draw+'" aria-label="Тираж '+d.draw+'">'+inner+'</button></td>';
       }).join('');
@@ -805,10 +811,10 @@
       '<div class="dmK" role="group" aria-label="Концентрации K1–K9">'+KC.map((c,k)=>{
         const a=sel.has(k);
         return'<button type="button" data-dm-k="'+k+'" aria-pressed="'+a+'" class="'+(a?'on':'')+'" style="border-color:'+c+';color:'+c+(a?';background:'+c:'')+'">K'+(k+1)+'</button>';
-      }).join('')+'</div>'+
+      }).join('')+(sel.size?'<button type="button" data-dm="kclear" aria-label="Сбросить выбор концентраций" style="border-color:#8fa9c2;color:#e8f0f8">Сброс</button>':'')+'</div>'+
       '<div class="dmScroll"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
       '<div class="dmInfo" id="dmInfo"></div>'+
-      '<div class="dmNote">'+(sel.size?'Показаны числа выбранных концентраций. Нажмите K ещё раз, чтобы убрать; без выбора — главная концентрация тиража.':'В ячейке: столб тиража и числа главной концентрации. Нажмите K1–K9, чтобы показать нужные концентрации.')+' Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
+      '<div class="dmNote">'+(sel.size?'Показаны выбранные концентрации (можно несколько). Пустой квадрат — в этом тираже их нет. Нажмите K ещё раз, чтобы убрать; без выбора — главная концентрация тиража.':'В ячейке: столб тиража и числа главной концентрации. Нажмите K1–K9, чтобы показать нужные концентрации.')+' Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
     const sc=panel.querySelector('.dmScroll');
     if(sc){
       if(needScroll){
@@ -842,6 +848,7 @@
       if(sel.has(k))sel.delete(k);else sel.add(k);
       save();render();return;
     }
+    if(act==='kclear'){sel.clear();save();render();return}
     if(act==='close'){on=false;save();render();return}
     if(act==='minus'){days=Math.max(1,days-1);save();needScroll=true;render();return}
     if(act==='plus'){days=Math.min(30,days+1);save();needScroll=true;render();return}
