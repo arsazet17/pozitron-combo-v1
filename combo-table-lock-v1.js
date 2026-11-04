@@ -776,7 +776,6 @@
     const prevLeft=keep?keep.scrollLeft:0;
     const {rows,times,last}=collect();
     panel.classList.remove('hidden');
-    panel.classList.toggle('dmWide',sel.size>=2);
     if(!rows.length||!times.length){
       panel.innerHTML='<div class="dmHead"><b>Дата × время</b><button type="button" data-dm="close" aria-label="Закрыть">✕</button></div><div class="dmNote">Нет данных тиражей</div>';
       return;
@@ -788,20 +787,11 @@
         if(!d)return'<td><div class="dmEmpty"></div></td>';
         const balls=(d.balls||[]).map(Number);
         const cls='dmc'+(last&&d.draw===last.draw?' last':'')+(picked===d.draw?' sel':'');
-        let inner;
-        if(!sel.size){
-          const k=domK(balls);
-          const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
-          inner='<span class="dmTop"><b>С'+colOf(d)+'</b><u style="color:'+KC[k]+'">K'+(k+1)+'</u></span><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i>';
-        }else{
-          const lines=[...sel].sort((a,b)=>a-b).map(k=>{
-            const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
-            return nums.length?'<span class="dmLine"><u style="color:'+KC[k]+'">K'+(k+1)+'</u><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i></span>':'';
-          }).join('');
-          // Выбранных концентраций в этом тираже нет — пустой квадрат.
-          if(!lines)return'<td><div class="dmEmpty"></div></td>';
-          inner='<span class="dmTop"><b>С'+colOf(d)+'</b></span>'+lines;
-        }
+        const k=domK(balls);
+        // Выбраны K — остаются только тиражи, где главная концентрация среди выбранных; остальные — пустой квадрат.
+        if(sel.size&&!sel.has(k))return'<td><div class="dmEmpty"></div></td>';
+        const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
+        const inner='<span class="dmTop"><b>С'+colOf(d)+'</b><u style="color:'+KC[k]+'">K'+(k+1)+'</u></span><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i>';
         return'<td><button type="button" class="'+cls+'" data-dm-draw="'+d.draw+'" aria-label="Тираж '+d.draw+'">'+inner+'</button></td>';
       }).join('');
       return'<tr><td class="dmDate">'+esc(r.date.slice(0,5))+'<small>'+esc(weekday(r.date))+'</small></td>'+cells+'</tr>';
@@ -814,7 +804,7 @@
       }).join('')+(sel.size?'<button type="button" data-dm="kclear" aria-label="Сбросить выбор концентраций" style="border-color:#8fa9c2;color:#e8f0f8">Сброс</button>':'')+'</div>'+
       '<div class="dmScroll"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
       '<div class="dmInfo" id="dmInfo"></div>'+
-      '<div class="dmNote">'+(sel.size?'Показаны выбранные концентрации (можно несколько). Пустой квадрат — в этом тираже их нет. Нажмите K ещё раз, чтобы убрать; без выбора — главная концентрация тиража.':'В ячейке: столб тиража и числа главной концентрации. Нажмите K1–K9, чтобы показать нужные концентрации.')+' Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
+      '<div class="dmNote">'+(sel.size?'Показаны только тиражи, где главная концентрация — выбранная (можно несколько). Пустой квадрат — в этом тираже другая концентрация. Нажмите K ещё раз, чтобы убрать.':'В ячейке: столб тиража и числа главной концентрации. Нажмите K1–K9, чтобы показать нужные концентрации.')+' Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
     const sc=panel.querySelector('.dmScroll');
     if(sc){
       if(needScroll){
