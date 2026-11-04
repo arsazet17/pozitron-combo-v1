@@ -1,5 +1,5 @@
 'use strict';
-const BUILD='5cc0d99c4704';
+const BUILD='ce99341c9448';
 const CACHE_PREFIX='combo-keno-shell-';
 const CACHE=CACHE_PREFIX+BUILD;
 const SHELL=['./','./index.html','./?v='+BUILD,'./manifest.webmanifest?v='+BUILD,'./icon-192.png','./icon-512.png','./combo-search-v1.js?v='+BUILD,'./combo-max-details-v1.js?v='+BUILD,'./combo-table-lock-v1.js?v='+BUILD];

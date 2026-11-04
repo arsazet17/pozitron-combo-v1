@@ -641,12 +641,20 @@
   window.__comboDayMatrixV1=true;
 
   const KEY='combo-day-matrix-v1',DAYS_KEY='combo-day-matrix-days-v1',SEL_KEY='combo-day-matrix-k-v1';
+  const SELC_KEY='combo-day-matrix-st-v1',PAR_KEY='combo-day-matrix-par-v1',OPEN_KEY='combo-day-matrix-open-v1';
   const KC=['#ff8a7a','#ffc14d','#e6e05a','#6fd68a','#4fd1c5','#5aa2ff','#a78bfa','#f472b6','#cbd5e1'];
   const WD=['вс','пн','вт','ср','чт','пт','сб'];
   // sel — выбранные концентрации (0..8 = K1..K9). Пусто: в ячейке главная концентрация тиража.
-  let on=false,days=3,picked=0,lastSig='',needScroll=false,sel=new Set();
+  // selC — выбранные столбы (1..10), par — '' | 'even' | 'odd', open — какие группы кнопок развёрнуты (КЦ / СТ / Ч-Н).
+  let on=false,days=3,picked=0,lastSig='',needScroll=false,sel=new Set(),selC=new Set(),par='',open={k:false,c:false,p:false};
   try{
     on=localStorage.getItem(KEY)==='1';
+    const sc=JSON.parse(localStorage.getItem(SELC_KEY)||'[]');
+    if(Array.isArray(sc))sc.forEach(c=>{if(Number.isInteger(c)&&c>=1&&c<=10)selC.add(c)});
+    const pv=localStorage.getItem(PAR_KEY);
+    if(pv==='even'||pv==='odd')par=pv;
+    const ov=JSON.parse(localStorage.getItem(OPEN_KEY)||'{}');
+    if(ov&&typeof ov==='object'){open.k=ov.k===true;open.c=ov.c===true;open.p=ov.p===true}
     const d=Number(localStorage.getItem(DAYS_KEY));
     if(Number.isInteger(d)&&d>=1&&d<=30)days=d;
     const s=JSON.parse(localStorage.getItem(SEL_KEY)||'[]');
@@ -708,6 +716,11 @@
       '#tableDayMatrixPanel .dmK{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px}',
       '#tableDayMatrixPanel .dmK button{min-width:38px;height:34px;padding:0 6px;border:2px solid;border-radius:9px;background:#0a1c2d;font-weight:900;font-size:13px}',
       '#tableDayMatrixPanel .dmK button.on{color:#06121f!important}',
+      '#tableDayMatrixPanel .dmTools{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}',
+      '#tableDayMatrixPanel .dmTools button{min-width:46px;height:34px;padding:0 12px;border:1px solid #406783;background:#14324b;border-radius:9px;font-weight:800;font-size:13px;color:#fff}',
+      '#tableDayMatrixPanel .dmTools button.open{background:#2b7041;border-color:#69c781}',
+      '#tableDayMatrixPanel .dmTools button.has{border-color:#ffc14d;color:#ffc14d}',
+      '#tableDayMatrixPanel .dmTools button.open.has{color:#fff}',
       '#tableDayMatrixPanel .dmEmpty{width:78px;min-height:66px;border:1px dashed #20364d;border-radius:9px;box-sizing:border-box}',
       '#tableDayMatrixPanel .dmInfo{margin-top:8px;padding:8px;border:1px solid #2b4a68;border-radius:9px;background:#0d2236;font-size:12px;color:#b8cde0;line-height:1.5}',
       '#tableDayMatrixPanel .dmInfo b{color:#fff}',
@@ -788,9 +801,14 @@
         const balls=(d.balls||[]).map(Number);
         const cls='dmc'+(last&&d.draw===last.draw?' last':'')+(picked===d.draw?' sel':'');
         const k=domK(balls);
-        // Выбраны K — остаются только тиражи, где главная концентрация среди выбранных; остальные — пустой квадрат.
+        // Фильтры (все вместе): главная концентрация среди выбранных K, столб среди выбранных СТ,
+        // только чётные / нечётные числа. Что не подошло — пустой квадрат.
         if(sel.size&&!sel.has(k))return'<td><div class="dmEmpty"></div></td>';
-        const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
+        if(selC.size&&!selC.has(colOf(d)))return'<td><div class="dmEmpty"></div></td>';
+        let nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
+        if(par==='even')nums=nums.filter(n=>n%2===0);
+        else if(par==='odd')nums=nums.filter(n=>n%2===1);
+        if(par&&!nums.length)return'<td><div class="dmEmpty"></div></td>';
         const inner='<span class="dmTop"><b>С'+colOf(d)+'</b><u style="color:'+KC[k]+'">K'+(k+1)+'</u></span><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i>';
         return'<td><button type="button" class="'+cls+'" data-dm-draw="'+d.draw+'" aria-label="Тираж '+d.draw+'">'+inner+'</button></td>';
       }).join('');
@@ -798,13 +816,27 @@
     }).join('');
     panel.innerHTML=
       '<div class="dmHead"><b>Дата × время</b><button type="button" data-dm="minus" aria-label="Меньше дней">−</button><span>дни '+days+'</span><button type="button" data-dm="plus" aria-label="Больше дней">+</button><button type="button" data-dm="close" aria-label="Закрыть">✕</button></div>'+
-      '<div class="dmK" role="group" aria-label="Концентрации K1–K9">'+KC.map((c,k)=>{
+      '<div class="dmTools" role="group" aria-label="Фильтры матрицы">'+
+        '<button type="button" data-dm-tg="k" aria-pressed="'+open.k+'" class="'+(open.k?'open ':'')+(sel.size?'has':'')+'" title="Концентрации K1–K9">КЦ'+(sel.size?' '+sel.size:'')+'</button>'+
+        '<button type="button" data-dm-tg="c" aria-pressed="'+open.c+'" class="'+(open.c?'open ':'')+(selC.size?'has':'')+'" title="Столбы 1–10">СТ'+(selC.size?' '+selC.size:'')+'</button>'+
+        '<button type="button" data-dm-tg="p" aria-pressed="'+open.p+'" class="'+(open.p?'open ':'')+(par?'has':'')+'" title="Только чётные или нечётные числа">Ч-Н'+(par?' '+(par==='even'?'ЧЁТ':'НЕЧЁТ'):'')+'</button>'+
+        ((sel.size||selC.size||par)?'<button type="button" data-dm="reset" aria-label="Сбросить все фильтры" style="border-color:#8fa9c2">Сброс</button>':'')+
+      '</div>'+
+      (open.k?'<div class="dmK" role="group" aria-label="Концентрации K1–K9">'+KC.map((c,k)=>{
         const a=sel.has(k);
         return'<button type="button" data-dm-k="'+k+'" aria-pressed="'+a+'" class="'+(a?'on':'')+'" style="border-color:'+c+';color:'+c+(a?';background:'+c:'')+'">K'+(k+1)+'</button>';
-      }).join('')+(sel.size?'<button type="button" data-dm="kclear" aria-label="Сбросить выбор концентраций" style="border-color:#8fa9c2;color:#e8f0f8">Сброс</button>':'')+'</div>'+
+      }).join('')+'</div>':'')+
+      (open.c?'<div class="dmK" role="group" aria-label="Столбы 1–10">'+[1,2,3,4,5,6,7,8,9,10].map(c=>{
+        const a=selC.has(c);
+        return'<button type="button" data-dm-c="'+c+'" aria-pressed="'+a+'" class="'+(a?'on':'')+'" style="border-color:#7fb8ff;color:#7fb8ff'+(a?';background:#7fb8ff':'')+'">СТ'+c+'</button>';
+      }).join('')+'</div>':'')+
+      (open.p?'<div class="dmK" role="group" aria-label="Чётные и нечётные числа">'+[['even','ЧЁТ'],['odd','НЕЧЁТ']].map(x=>{
+        const a=par===x[0];
+        return'<button type="button" data-dm-p="'+x[0]+'" aria-pressed="'+a+'" class="'+(a?'on':'')+'" style="border-color:#7ee0a8;color:#7ee0a8;padding:0 14px'+(a?';background:#7ee0a8':'')+'">'+x[1]+'</button>';
+      }).join('')+'</div>':'')+
       '<div class="dmScroll"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
       '<div class="dmInfo" id="dmInfo"></div>'+
-      '<div class="dmNote">'+(sel.size?'Показаны только тиражи, где главная концентрация — выбранная (можно несколько). Пустой квадрат — в этом тираже другая концентрация. Нажмите K ещё раз, чтобы убрать.':'В ячейке: столб тиража и числа главной концентрации. Нажмите K1–K9, чтобы показать нужные концентрации.')+' Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
+      '<div class="dmNote">В ячейке: столб тиража и числа главной концентрации. КЦ — выбрать концентрации K1–K9, СТ — столбы 1–10, Ч-Н — только чётные или нечётные числа; можно сочетать, пустой квадрат — тираж не подходит. Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
     const sc=panel.querySelector('.dmScroll');
     if(sc){
       if(needScroll){
@@ -827,7 +859,11 @@
       balls.map(n=>'<span style="color:'+KC[kOf(n)]+'">'+n+'</span>').join('');
   }
 
-  function save(){try{localStorage.setItem(KEY,on?'1':'0');localStorage.setItem(DAYS_KEY,String(days));localStorage.setItem(SEL_KEY,JSON.stringify([...sel]))}catch(e){}}
+  function save(){try{
+    localStorage.setItem(KEY,on?'1':'0');localStorage.setItem(DAYS_KEY,String(days));
+    localStorage.setItem(SEL_KEY,JSON.stringify([...sel]));localStorage.setItem(SELC_KEY,JSON.stringify([...selC]));
+    localStorage.setItem(PAR_KEY,par);localStorage.setItem(OPEN_KEY,JSON.stringify(open));
+  }catch(e){}}
 
   function onPanelClick(e){
     const b=e.target.closest('button');
@@ -838,7 +874,21 @@
       if(sel.has(k))sel.delete(k);else sel.add(k);
       save();render();return;
     }
-    if(act==='kclear'){sel.clear();save();render();return}
+    if(b.dataset.dmTg){
+      const g=b.dataset.dmTg;
+      if(g==='k'||g==='c'||g==='p'){open[g]=!open[g];save();render()}
+      return;
+    }
+    if(b.dataset.dmC!==undefined){
+      const c=Number(b.dataset.dmC);
+      if(selC.has(c))selC.delete(c);else selC.add(c);
+      save();render();return;
+    }
+    if(b.dataset.dmP){
+      par=par===b.dataset.dmP?'':b.dataset.dmP;
+      save();render();return;
+    }
+    if(act==='reset'){sel.clear();selC.clear();par='';save();render();return}
     if(act==='close'){on=false;save();render();return}
     if(act==='minus'){days=Math.max(1,days-1);save();needScroll=true;render();return}
     if(act==='plus'){days=Math.min(30,days+1);save();needScroll=true;render();return}
