@@ -628,3 +628,221 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+
+/* COMBO · Матрица «дата × время» v1
+   Кнопка «Д×В» рядом с МАТР / TRG / Линии. Открывает отдельный блок под таблицей:
+   строки — дни (новые внизу), колонки — время тиража. В ячейке: столб тиража (С)
+   и числа главной концентрации (K1–K9, по цифровому корню; при равенстве — та,
+   что набрала максимум раньше). Ничего в остальных блоках не меняет. */
+(() => {
+  'use strict';
+  if(window.__comboDayMatrixV1)return;
+  window.__comboDayMatrixV1=true;
+
+  const KEY='combo-day-matrix-v1',DAYS_KEY='combo-day-matrix-days-v1';
+  const KC=['#ff8a7a','#ffc14d','#e6e05a','#6fd68a','#4fd1c5','#5aa2ff','#a78bfa','#f472b6','#cbd5e1'];
+  const WD=['вс','пн','вт','ср','чт','пт','сб'];
+  let on=false,days=3,picked=0,lastSig='',needScroll=false;
+  try{
+    on=localStorage.getItem(KEY)==='1';
+    const d=Number(localStorage.getItem(DAYS_KEY));
+    if(Number.isInteger(d)&&d>=1&&d<=30)days=d;
+  }catch(e){}
+
+  const allDraws=()=>{try{return Array.isArray(DRAWS)?DRAWS:[]}catch(e){return[]}};
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const kOf=n=>((n-1)%9);
+
+  // Главная концентрация: больше всего чисел; при равенстве — раньше набравшая максимум (порядок выпадения).
+  function domK(balls){
+    const c=new Array(9).fill(0);let best=0,w=0;
+    for(const b of balls){const k=kOf(b);c[k]++;if(c[k]>best){best=c[k];w=k}}
+    return w;
+  }
+  function colOf(d){
+    const v=Number(d.column);
+    if(Number.isInteger(v)&&v>=1&&v<=10)return v;
+    const c=new Array(11).fill(0);let best=0,w=1;
+    for(const b of d.balls||[]){const k=((Number(b)-1)%10)+1;c[k]++;if(c[k]>best){best=c[k];w=k}}
+    return w;
+  }
+  function weekday(date){
+    const m=String(date).match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+    return m?WD[new Date(2000+Number(m[3]),Number(m[2])-1,Number(m[1])).getDay()]:'';
+  }
+
+  function injectStyle(){
+    if(document.getElementById('comboDayMatrixStyle'))return;
+    const st=document.createElement('style');
+    st.id='comboDayMatrixStyle';
+    st.textContent=[
+      '#tableDayMatrixPanel{width:100%;min-width:0;box-sizing:border-box;margin:8px 0 14px;padding:8px;border:1px solid #365b78;border-radius:12px;background:#091d30}',
+      '#tableDayMatrixPanel.hidden{display:none}',
+      '#tableDayMatrixPanel .dmHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}',
+      '#tableDayMatrixPanel .dmHead b{font-size:15px;margin-right:auto}',
+      '#tableDayMatrixPanel .dmHead button{min-width:34px;height:34px;padding:0 8px;border:1px solid #406783;background:#14324b;border-radius:9px;font-weight:800;color:#fff}',
+      '#tableDayMatrixPanel .dmHead span{font-size:12px;color:#b8cde0}',
+      '#tableDayMatrixPanel .dmScroll{overflow-x:auto;overflow-y:hidden;padding-bottom:6px;-webkit-overflow-scrolling:touch}',
+      '#tableDayMatrixPanel table{border-collapse:separate;border-spacing:4px;width:max-content}',
+      '#tableDayMatrixPanel th{font-size:11px;font-weight:800;color:#b8cde0;text-align:center;padding:0 0 2px;white-space:nowrap}',
+      '#tableDayMatrixPanel th.dmDate,#tableDayMatrixPanel td.dmDate{position:sticky;left:0;z-index:2;background:#091d30;text-align:left;min-width:46px;padding-right:4px}',
+      '#tableDayMatrixPanel td.dmDate{font-size:13px;font-weight:800;color:#fff;line-height:1.15}',
+      '#tableDayMatrixPanel td.dmDate small{display:block;font-size:10px;font-weight:600;color:#8fa9c2}',
+      '#tableDayMatrixPanel td{vertical-align:top;padding:0}',
+      '#tableDayMatrixPanel .dmc{box-sizing:border-box;width:78px;min-height:66px;border:1px solid #2b4a68;border-radius:9px;background:#10263d;padding:5px;display:flex;flex-direction:column;gap:4px;color:#fff;text-align:left;font:inherit}',
+      '#tableDayMatrixPanel .dmc.last{border-color:#f2c230}',
+      '#tableDayMatrixPanel .dmc.sel{outline:2px solid #fff;outline-offset:-2px}',
+      '#tableDayMatrixPanel .dmc b{align-self:flex-start;font-size:13px;font-weight:900;background:#1b3550;border-radius:6px;padding:1px 6px}',
+      '#tableDayMatrixPanel .dmc i{font-style:normal;font-size:13px;font-weight:800;line-height:1.2;word-spacing:5px}',
+      '#tableDayMatrixPanel .dmEmpty{width:78px;min-height:66px;border:1px dashed #20364d;border-radius:9px;box-sizing:border-box}',
+      '#tableDayMatrixPanel .dmInfo{margin-top:8px;padding:8px;border:1px solid #2b4a68;border-radius:9px;background:#0d2236;font-size:12px;color:#b8cde0;line-height:1.5}',
+      '#tableDayMatrixPanel .dmInfo b{color:#fff}',
+      '#tableDayMatrixPanel .dmInfo span{font-weight:800;margin-right:6px;font-size:14px}',
+      '#tableDayMatrixPanel .dmNote{margin-top:6px;font-size:11px;color:#8fa9c2}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  function ensureButton(){
+    const bar=document.querySelector('.tableFeatureControls');
+    if(!bar)return null;
+    let b=document.getElementById('tableDayMatrixBtn');
+    if(!b){
+      b=document.createElement('button');
+      b.id='tableDayMatrixBtn';
+      b.type='button';
+      b.title='Открыть или закрыть матрицу дата × время';
+      b.textContent='Д×В';
+      bar.appendChild(b);
+      if(typeof MutationObserver==='function'){
+        new MutationObserver(()=>{if(b.parentNode===bar&&bar.lastElementChild!==b)bar.appendChild(b)}).observe(bar,{childList:true});
+      }
+    }
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+    return b;
+  }
+
+  function ensurePanel(){
+    let p=document.getElementById('tableDayMatrixPanel');
+    if(p)return p;
+    const anchor=document.getElementById('tableMatrixPanel')||document.getElementById('tableDrawerBody');
+    if(!anchor)return null;
+    p=document.createElement('div');
+    p.id='tableDayMatrixPanel';
+    p.className='hidden';
+    anchor.after(p);
+    p.addEventListener('click',onPanelClick);
+    return p;
+  }
+
+  function collect(){
+    const all=allDraws();
+    const rows=[];const seen=new Map();
+    for(let i=all.length-1;i>=0;i--){
+      const d=all[i];if(!d||!d.date)continue;
+      let r=seen.get(d.date);
+      if(!r){
+        if(rows.length>=days)break;
+        r={date:d.date,list:new Map()};seen.set(d.date,r);rows.unshift(r);
+      }
+      r.list.set(String(d.time),d);
+    }
+    const times=[...new Set(rows.flatMap(r=>[...r.list.keys()]))].sort();
+    return{rows,times,last:all.length?all[all.length-1]:null};
+  }
+
+  function render(){
+    ensureButton();
+    const panel=ensurePanel();
+    if(!panel)return;
+    if(!on){panel.classList.add('hidden');return}
+    injectStyle();
+    const keep=panel.querySelector('.dmScroll');
+    const prevLeft=keep?keep.scrollLeft:0;
+    const {rows,times,last}=collect();
+    panel.classList.remove('hidden');
+    if(!rows.length||!times.length){
+      panel.innerHTML='<div class="dmHead"><b>Дата × время</b><button type="button" data-dm="close" aria-label="Закрыть">✕</button></div><div class="dmNote">Нет данных тиражей</div>';
+      return;
+    }
+    const head='<tr><th class="dmDate">дата</th>'+times.map(t=>'<th>'+esc(t)+'</th>').join('')+'</tr>';
+    const body=rows.map(r=>{
+      const cells=times.map(t=>{
+        const d=r.list.get(t);
+        if(!d)return'<td><div class="dmEmpty"></div></td>';
+        const balls=(d.balls||[]).map(Number);
+        const k=domK(balls);
+        const nums=balls.filter(n=>kOf(n)===k).sort((a,b)=>a-b);
+        const cls='dmc'+(last&&d.draw===last.draw?' last':'')+(picked===d.draw?' sel':'');
+        return'<td><button type="button" class="'+cls+'" data-dm-draw="'+d.draw+'" aria-label="Тираж '+d.draw+'"><b>С'+colOf(d)+'</b><i style="color:'+KC[k]+'">'+nums.join(' ')+'</i></button></td>';
+      }).join('');
+      return'<tr><td class="dmDate">'+esc(r.date.slice(0,5))+'<small>'+esc(weekday(r.date))+'</small></td>'+cells+'</tr>';
+    }).join('');
+    panel.innerHTML=
+      '<div class="dmHead"><b>Дата × время</b><button type="button" data-dm="minus" aria-label="Меньше дней">−</button><span>дни '+days+'</span><button type="button" data-dm="plus" aria-label="Больше дней">+</button><button type="button" data-dm="close" aria-label="Закрыть">✕</button></div>'+
+      '<div class="dmScroll"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
+      '<div class="dmInfo" id="dmInfo"></div>'+
+      '<div class="dmNote">В ячейке: столб тиража и числа главной концентрации. Жёлтая рамка — последний тираж. Нажмите на ячейку — весь тираж.</div>';
+    const sc=panel.querySelector('.dmScroll');
+    if(sc){
+      if(needScroll){
+        const cell=sc.querySelector('.dmc.last')||[...sc.querySelectorAll('.dmc')].pop();
+        if(cell)sc.scrollLeft=Math.max(0,cell.offsetLeft+cell.offsetWidth-sc.clientWidth+8);
+        needScroll=false;
+      }else sc.scrollLeft=prevLeft;
+    }
+    showInfo();
+  }
+
+  function showInfo(){
+    const box=document.getElementById('dmInfo');
+    if(!box)return;
+    const d=allDraws().find(x=>x&&x.draw===picked);
+    if(!d){box.style.display='none';return}
+    box.style.display='';
+    const balls=(d.balls||[]).map(Number).sort((a,b)=>a-b);
+    box.innerHTML='<b>№'+d.draw+'</b> · '+esc(d.date)+' '+esc(d.time)+' · столб <b>'+colOf(d)+'</b><br>'+
+      balls.map(n=>'<span style="color:'+KC[kOf(n)]+'">'+n+'</span>').join('');
+  }
+
+  function save(){try{localStorage.setItem(KEY,on?'1':'0');localStorage.setItem(DAYS_KEY,String(days))}catch(e){}}
+
+  function onPanelClick(e){
+    const b=e.target.closest('button');
+    if(!b)return;
+    const act=b.dataset.dm;
+    if(act==='close'){on=false;save();render();return}
+    if(act==='minus'){days=Math.max(1,days-1);save();needScroll=true;render();return}
+    if(act==='plus'){days=Math.min(30,days+1);save();needScroll=true;render();return}
+    if(b.dataset.dmDraw){
+      const id=Number(b.dataset.dmDraw);
+      picked=picked===id?0:id;
+      render();
+    }
+  }
+
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button');
+    if(!b||b.id!=='tableDayMatrixBtn')return;
+    on=!on;save();needScroll=on;render();
+    if(on){
+      const p=document.getElementById('tableDayMatrixPanel');
+      if(p&&p.scrollIntoView)p.scrollIntoView({block:'nearest',behavior:'smooth'});
+    }
+  });
+
+  // Новые тиражи появляются сами: обновляем блок только если он открыт и данные изменились.
+  setInterval(()=>{
+    const all=allDraws(),last=all.length?all[all.length-1]:null;
+    const sig=all.length+':'+(last?last.draw:0);
+    if(sig===lastSig)return;
+    lastSig=sig;
+    if(on)render();
+  },3000);
+
+  const start=()=>{ensureButton();ensurePanel();render()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
