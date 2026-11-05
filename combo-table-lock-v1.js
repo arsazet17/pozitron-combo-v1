@@ -1018,7 +1018,24 @@
     if(!panel){panel=document.createElement('section');panel.id='comboT2Panel';panel.setAttribute('aria-label','Таблица 2');panel.addEventListener('click',onClick);panel.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='t2Custom')applyCustom()})}
     const box=document.getElementById('tableDrawerBody');
     if(box&&panel.parentNode!==box)box.appendChild(panel);
-    if(box)box.classList.add('hasT2');
+    applyView();
+  }
+  // Переключатель таблиц в шапке: Т1 — первая таблица, Т2 — вторая (по умолчанию свёрнута).
+  const VIEW_KEY='combo-tables-view-v1';
+  const view={t1:true,t2:false};
+  try{const v=JSON.parse(localStorage.getItem(VIEW_KEY)||'null');if(v&&typeof v==='object'){view.t1=v.t1!==false;view.t2=v.t2===true}}catch(e){}
+  function applyView(){
+    const box=document.getElementById('tableDrawerBody');
+    if(box){box.classList.toggle('t1Off',!view.t1);box.classList.toggle('t2Off',!view.t2);box.classList.toggle('hasT2',view.t2&&view.t1)}
+    document.querySelectorAll('[data-tview]').forEach(b=>{const on=!!view[b.dataset.tview];b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
+  }
+  function ensureSwitch(){
+    const title=document.querySelector('#tableDrawer .tableDrawerHead > b');
+    if(!title||title.querySelector('.tvSw'))return;
+    const sw=document.createElement('span');sw.className='tvSw';
+    sw.innerHTML='<button type="button" class="tableHeadToggle" data-tview="t1" title="Показать или свернуть таблицу 1">Т1</button><button type="button" class="tableHeadToggle" data-tview="t2" title="Показать или свернуть таблицу 2">Т2</button>';
+    sw.addEventListener('click',e=>{const b=e.target.closest('[data-tview]');if(!b)return;const k=b.dataset.tview;view[k]=!view[k];try{localStorage.setItem(VIEW_KEY,JSON.stringify(view))}catch(err){}applyView();if(k==='t2'&&view.t2)render();else align()});
+    title.appendChild(sw);applyView();
   }
   function injectStyle(){
     if(document.getElementById('comboT2Style'))return;
@@ -1027,6 +1044,11 @@
       '#comboT2Panel{margin-top:14px;display:flex;flex-direction:column;gap:7px;min-width:0;width:100%;max-width:560px}',
       '#comboT2Panel .t2Over{margin-top:8px;padding:8px;border:1px solid #315b7d;border-radius:10px;background:#081827;font-size:11px;line-height:1.35;color:#d8e5ef}',
       '#comboT2Panel .tableGrid{align-content:start}',
+      '#tableDrawer .tableDrawerHead > b{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}',
+      '#tableDrawer .tvSw{display:inline-flex;gap:4px;margin-left:auto;margin-right:4px}',
+      '#tableDrawer .tvSw button{padding:5px 8px;font-size:12px;font-weight:800;line-height:1.1}',
+      '#tableDrawerBody.t1Off > :not(#comboT2Panel){display:none!important}',
+      '#tableDrawerBody.t2Off > #comboT2Panel{display:none!important}',
       '#comboT2Panel .tableTopStats{display:flex;gap:10px;align-items:baseline}',
       '#comboT2Panel .t2Title{margin-left:auto;font-weight:800;font-size:11px;color:#8fa9c2}',
       '#tableDrawerBody #comboT2Panel .tableGrid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}',
@@ -1038,6 +1060,7 @@
       ' #comboT2Panel .tableGrid{gap:4px}',
       ' #comboT2Panel > *{margin-top:0}',
       ' #tableDrawerBody.hasT2 > .recentDraws{grid-column:1;grid-row:auto}',
+      ' #tableDrawerBody.t1Off > #comboT2Panel{grid-column:1}',
       '}',
       '@media (min-width:900px) and (pointer:fine) and (max-width:1150px){',
       ' #comboT2Panel{max-width:440px}',
@@ -1077,6 +1100,7 @@
     const g1=box.querySelector(':scope > .tableGrid'),m1=box.querySelector(':scope > .muted');
     if(!g1)return;
     const r1=g1.getBoundingClientRect(),r2=g2.getBoundingClientRect();
+    if(!r1.width||!r2.width)return;
     if(!(r2.left>=r1.right))return; // таблицы не рядом (телефон)
     const h=r1.bottom-r2.top;if(h>r2.height)g2.style.minHeight=Math.ceil(h)+'px';
     if(m1&&m2){const a=m1.getBoundingClientRect().height;if(a>m2.getBoundingClientRect().height)m2.style.minHeight=Math.ceil(a)+'px'}
@@ -1128,6 +1152,6 @@
   }
   injectStyle();wrap();
   window.addEventListener('resize',()=>{clearTimeout(align.t);align.t=setTimeout(align,120)});
-  const start=()=>{if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
+  const start=()=>{ensureSwitch();if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
