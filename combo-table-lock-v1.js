@@ -1025,19 +1025,22 @@
     const st=document.createElement('style');st.id='comboT2Style';
     st.textContent=[
       '#comboT2Panel{margin-top:14px;display:flex;flex-direction:column;gap:7px;min-width:0;width:100%;max-width:560px}',
+      '#comboT2Panel .t2Over{margin-top:8px;padding:8px;border:1px solid #315b7d;border-radius:10px;background:#081827;font-size:11px;line-height:1.35;color:#d8e5ef}',
+      '#comboT2Panel .tableGrid{align-content:start}',
       '#comboT2Panel .tableTopStats{display:flex;gap:10px;align-items:baseline}',
       '#comboT2Panel .t2Title{margin-left:auto;font-weight:800;font-size:11px;color:#8fa9c2}',
       '#tableDrawerBody #comboT2Panel .tableGrid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}',
       '#comboT2Panel .recentModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}',
       '#comboT2Panel .recentModes.two{grid-template-columns:repeat(2,minmax(0,1fr))}',
-      '#comboT2Panel .recentDraws{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;max-height:70vh;overflow-y:auto;overflow-x:hidden}',
+      '#comboT2Panel .t2Draws{margin-top:8px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;max-height:70vh;overflow-y:auto;overflow-x:hidden}',
       '@media (min-width:900px) and (pointer:fine){',
       ' #tableDrawerBody > #comboT2Panel{grid-column:2;grid-row:1 / span 30;align-self:start;justify-self:start;margin-top:0}',
       ' #comboT2Panel .tableGrid{gap:4px}',
+      ' #comboT2Panel > *{margin-top:0}',
+      ' #tableDrawerBody.hasT2 > .recentDraws{grid-column:1;grid-row:auto}',
       '}',
       '@media (min-width:900px) and (pointer:fine) and (max-width:1150px){',
       ' #comboT2Panel{max-width:440px}',
-      ' #tableDrawerBody.hasT2 > .recentDraws{grid-column:1;grid-row:auto}',
       '}'
     ].join('\n');
     document.head.appendChild(st);
@@ -1051,18 +1054,32 @@
     const names=['1 зел','2 жёлт','3 красн','4 голуб','5 синий'];
     const legend='<div class="tableLegend">'+COLORS.map((c,i)=>'<button type="button" class="lg '+c+' '+(S.paint===c?'paintOn':'')+'" data-t2paint="'+c+'">'+names[i]+'</button>').join('')+'</div>';
     const grid=Array.from({length:80},(_,i)=>i+1).map(n=>'<button type="button" class="tcell '+clsFor(map.get(n))+'" data-t2cell="'+n+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+n+'</button>').join('');
-    const list=S.win?'<div class="recentDraws">'+rec.map((d,i)=>{const on=S.active.includes(d.draw);const cc=on?COLORS[i%COLORS.length]:'';
+    const list=S.win?'<div class="t2Draws">'+rec.map((d,i)=>{const on=S.active.includes(d.draw);const cc=on?COLORS[i%COLORS.length]:'';
       return'<div class="recentDrawItem '+(on?'on':'')+' '+cc+'" data-t2draw="'+d.draw+'"><div class="recentDrawTop"><span>№'+d.draw+'</span><span class="drawModeSwitch"><button type="button" data-t2mode="draw" data-t2id="'+d.draw+'" class="'+(on?'active':'')+'">ТИР</button><button type="button" data-t2mode="number" data-t2id="'+d.draw+'" class="'+(S.numMode?'active':'')+'">ЧСЛ</button></span><span>'+d.date+' '+d.time+'</span></div><div class="recentDrawNums">'+numsHTML(d,map)+'</div>'+details(d)+'</div>'}).join('')+'</div>':'';
     panel.innerHTML='<div class="tableTopStats"><span>Отмечено <b>'+nums.length+'</b></span><span>Сумма <b>'+nums.reduce((a,b)=>a+b,0)+'</b></span><span class="t2Title">Таблица 2</span></div>'+legend+
       '<div class="tableGrid">'+grid+'</div>'+
       '<div class="tableActions"><button class="ghost" type="button" data-t2act="info">Тиры: '+(S.win||'5 / 10 / 20')+'</button><button type="button" data-t2act="clear">Очистить</button></div>'+
-      '<div class="muted">Классическая таблица 1–10, 11–20 … 71–80. Работает отдельно от первой: свои отметки, цвета, тиры и фильтры.</div>'+
+      '<div class="muted" style="margin-top:8px">Классическая таблица 1–10, 11–20 … 71–80. Работает отдельно от первой: свои отметки, цвета, тиры и фильтры.</div>'+
       '<div class="recentModes two"><input id="t2Custom" type="number" inputmode="numeric" min="1" step="1" value="'+(focusCustom?customVal:(S.win||''))+'" aria-label="Количество тиражей для таблицы 2" placeholder="Сколько тиров" style="width:100%;min-width:0;background:#132f49;color:white;border:1px solid #416783;border-radius:10px;padding:10px"/><button type="button" data-t2act="custom">Показать</button>'+
       '<button type="button" data-t2act="even" aria-pressed="'+(S.parity==='even')+'" class="'+(S.parity==='even'?'active':'')+'">ЧЁТ</button><button type="button" data-t2act="odd" aria-pressed="'+(S.parity==='odd')+'" class="'+(S.parity==='odd'?'active':'')+'">НЕЧЁТ</button>'+
       '<button type="button" data-t2act="reverse" aria-pressed="'+S.reverse+'" class="'+(S.reverse?'active':'')+'" title="Перевернуть цифры только в тиражах">🔁</button><button type="button" data-t2act="mirror" aria-pressed="'+S.mirror+'" class="'+(S.mirror?'active':'')+'" title="Подсветить зеркальные пары в тиражах">🪞</button></div>'+
       '<div class="recentModes">'+[5,10,20].map(w=>'<button type="button" class="'+(S.win===w?'active':'')+'" data-t2win="'+w+'">'+w+' тир</button>').join('')+'</div>'+
-      list+'<div class="tableOverlap"><b>Совпали — </b>'+(over.length?over.map(fmt2).join(' '):'нет совпадений')+'</div>';
+      list+'<div class="t2Over"><b>Совпали — </b>'+(over.length?over.map(fmt2).join(' '):'нет совпадений')+'</div>';
+    align();requestAnimationFrame(align);
     if(focusCustom){const el=document.getElementById('t2Custom');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}}}
+  }
+  // На широком экране ряды второй таблицы выравниваются по первой: «Тиры» и кнопки — вровень, пропуск снизу сетки.
+  function align(){
+    if(!panel)return;
+    const g2=panel.querySelector('.tableGrid'),m2=panel.querySelector('.muted');
+    if(g2)g2.style.minHeight='';if(m2)m2.style.minHeight='';
+    const box=document.getElementById('tableDrawerBody');if(!box||!g2)return;
+    const g1=box.querySelector(':scope > .tableGrid'),m1=box.querySelector(':scope > .muted');
+    if(!g1)return;
+    const r1=g1.getBoundingClientRect(),r2=g2.getBoundingClientRect();
+    if(!(r2.left>=r1.right))return; // таблицы не рядом (телефон)
+    const h=r1.bottom-r2.top;if(h>r2.height)g2.style.minHeight=Math.ceil(h)+'px';
+    if(m1&&m2){const a=m1.getBoundingClientRect().height;if(a>m2.getBoundingClientRect().height)m2.style.minHeight=Math.ceil(a)+'px'}
   }
   function applyCustom(){const el=document.getElementById('t2Custom');if(!el)return;const n=Number(el.value);if(!Number.isSafeInteger(n)||n<1){el.setCustomValidity('Введите целое количество тиражей от 1');el.reportValidity();return}el.setCustomValidity('');S.win=Math.min(n,draws().length);el.blur();render()}
   function toggleNum(n){
@@ -1100,7 +1117,7 @@
         try{
           ensurePanel();
           const ds=draws(),sig=ds.length+':'+(ds.length?ds[ds.length-1].draw:'')+':'+recentOrder()+':'+highlightOn();
-          if(sig!==lastSig||!panel.firstChild){lastSig=sig;render()}
+          if(sig!==lastSig||!panel.firstChild){lastSig=sig;render()}else{align();requestAnimationFrame(align)}
         }catch(e){console.warn('COMBO T2',e)}
         return out;
       };
@@ -1110,6 +1127,7 @@
     }catch(e){console.warn('COMBO T2 WRAP',e)}
   }
   injectStyle();wrap();
+  window.addEventListener('resize',()=>{clearTimeout(align.t);align.t=setTimeout(align,120)});
   const start=()=>{if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
