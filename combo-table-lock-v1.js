@@ -981,3 +981,131 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+/* COMBO · Вторая таблица 1–80 (классическая, по 10 в ряд) v1
+   Своё состояние, те же функции, что под первой таблицей. Первую таблицу не трогает. */
+(function(){
+  'use strict';
+  const COLORS=['c1','c2','c3','c4','c5'];
+  const S={manual:[],colors:{},paint:'',active:[],win:0,parity:'all',reverse:false,mirror:false,numMode:false,marked:new Set()};
+  let panel=null;
+  const fmt2=n=>(typeof fmt==='function'?fmt(n):String(n));
+  const draws=()=>{try{return Array.isArray(DRAWS)?DRAWS:[]}catch(e){return[]}};
+  const byId=id=>draws().find(d=>Number(d.draw)===Number(id));
+  const vis=n=>S.parity==='all'||(Number(n)%2===0)===(S.parity==='even');
+  const recent=()=>S.win?draws().slice(-S.win).reverse():[];
+  const recentOrder=()=>{try{return tableRecentOrder}catch(e){return'draw'}};
+  const highlightOn=()=>{try{return !!tableHighlightActive}catch(e){return false}};
+  function effective(){const s=new Set(S.manual);S.active.forEach(id=>{const d=byId(id);if(d)d.balls.forEach(n=>s.add(Number(n)))});return[...s].sort((a,b)=>a-b)}
+  function numberMap(rec){const m=new Map();S.manual.forEach(n=>m.set(n,{manual:true,manualColor:S.colors[n]||'',colors:[]}));rec.forEach((d,i)=>{if(!S.active.includes(d.draw))return;const c=COLORS[i%COLORS.length];d.balls.forEach(n=>{n=Number(n);if(!m.has(n))m.set(n,{manual:false,colors:[]});m.get(n).colors.push(c)})});return m}
+  function clsFor(meta){if(!meta)return'';if(meta.manualColor)return meta.manualColor;if(meta.colors.length>1)return'overlap';if(meta.colors.length===1)return meta.colors[0];if(meta.manual)return'manual';return''}
+  function sourceSet(d){const out=new Set(),id=Number(d.draw),all=draws();for(const a of S.active){const i=all.findIndex(x=>Number(x.draw)===Number(a));if(i<=0||Number(all[i-1].draw)!==id)continue;try{comboDrawGroupDetails(all[i]).numbers.forEach(n=>out.add(Number(n)))}catch(e){}}return out}
+  function mirrorSet(d){const s=new Set((d.balls||[]).map(Number)),out=new Set();for(const n of s){const r=Number(fmt2(n).split('').reverse().join(''));if(n!==r&&s.has(r))out.add(n)}return out}
+  function numsHTML(d,map){
+    const src=sourceSet(d),order=recentOrder(),hl=highlightOn();
+    const balls=order==='asc'?[...(d.balls||[])].sort((a,b)=>a-b):(d.balls||[]);
+    const mir=S.mirror?mirrorSet(d):new Set();
+    return balls.map(n=>{n=Number(n);const echo=hl?clsFor(map.get(n)):'';const shown=S.reverse?fmt2(n).split('').reverse().join(''):fmt2(n);
+      const c=['recentDrawNum',src.has(n)?'sourceOn':'',echo?'tableEcho':'',echo,mir.has(n)?'mirrorPair':'',S.marked.has(n)?'numberPicked':''].filter(Boolean).join(' ');
+      return'<span class="'+c+'" data-t2num="'+n+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+shown+'</span>'}).join(' ');
+  }
+  function details(d){
+    if(typeof comboDrawDetailsHTML!=='function')return'';
+    // подробности тиража считаются по ЧЁТ/НЕЧЁТ второй таблицы
+    let keep;try{keep=tableParityFilter;tableParityFilter=S.parity;return comboDrawDetailsHTML(d)}catch(e){return''}finally{try{if(keep!==undefined)tableParityFilter=keep}catch(e){}}
+  }
+  function ensurePanel(){
+    if(!panel){panel=document.createElement('section');panel.id='comboT2Panel';panel.setAttribute('aria-label','Таблица 2');panel.addEventListener('click',onClick);panel.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='t2Custom')applyCustom()})}
+    const box=document.getElementById('tableDrawerBody');
+    if(box&&panel.parentNode!==box)box.appendChild(panel);
+    if(box)box.classList.add('hasT2');
+  }
+  function injectStyle(){
+    if(document.getElementById('comboT2Style'))return;
+    const st=document.createElement('style');st.id='comboT2Style';
+    st.textContent=[
+      '#comboT2Panel{margin-top:14px;padding:10px;border:1px solid #365b78;border-radius:12px;background:#091d30;display:flex;flex-direction:column;gap:7px;min-width:0}',
+      '#comboT2Panel .t2Title{font-weight:900;font-size:14px;color:#cfe0f1}',
+      '#tableDrawerBody #comboT2Panel .tableGrid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}',
+      '#comboT2Panel .recentModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}',
+      '#comboT2Panel .recentModes.two{grid-template-columns:repeat(2,minmax(0,1fr))}',
+      '#comboT2Panel .recentDraws{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;max-height:70vh;overflow-y:auto;overflow-x:hidden}',
+      '@media (min-width:900px) and (pointer:fine){',
+      ' #tableDrawerBody > #comboT2Panel{grid-column:2;grid-row:1 / span 30;align-self:start;margin-top:0}',
+      ' #tableDrawerBody.hasT2 > .recentDraws{grid-column:1;grid-row:auto}',
+      '}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+  function render(){
+    ensurePanel();if(!panel)return;
+    const focusCustom=document.activeElement&&document.activeElement.id==='t2Custom';
+    const customVal=focusCustom?document.activeElement.value:'';
+    const rec=recent(),map=numberMap(rec),nums=effective().filter(vis);
+    const over=[...map.entries()].filter(([,m])=>m.colors.length>1).map(([n])=>n).sort((a,b)=>a-b).filter(vis);
+    const names=['1 зел','2 жёлт','3 красн','4 голуб','5 синий'];
+    const legend='<div class="tableLegend">'+COLORS.map((c,i)=>'<button type="button" class="lg '+c+' '+(S.paint===c?'paintOn':'')+'" data-t2paint="'+c+'">'+names[i]+'</button>').join('')+'</div>';
+    const grid=Array.from({length:80},(_,i)=>i+1).map(n=>'<button type="button" class="tcell '+clsFor(map.get(n))+'" data-t2cell="'+n+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+n+'</button>').join('');
+    const list=S.win?'<div class="recentDraws">'+rec.map((d,i)=>{const on=S.active.includes(d.draw);const cc=on?COLORS[i%COLORS.length]:'';
+      return'<div class="recentDrawItem '+(on?'on':'')+' '+cc+'" data-t2draw="'+d.draw+'"><div class="recentDrawTop"><span>№'+d.draw+'</span><span class="drawModeSwitch"><button type="button" data-t2mode="draw" data-t2id="'+d.draw+'" class="'+(on?'active':'')+'">ТИР</button><button type="button" data-t2mode="number" data-t2id="'+d.draw+'" class="'+(S.numMode?'active':'')+'">ЧСЛ</button></span><span>'+d.date+' '+d.time+'</span></div><div class="recentDrawNums">'+numsHTML(d,map)+'</div>'+details(d)+'</div>'}).join('')+'</div>':'';
+    panel.innerHTML='<div class="t2Title">Таблица 2 · 1–80</div>'+
+      '<div class="tableTopStats"><span>Отмечено <b>'+nums.length+'</b></span><span>Сумма <b>'+nums.reduce((a,b)=>a+b,0)+'</b></span></div>'+legend+
+      '<div class="tableGrid">'+grid+'</div>'+
+      '<div class="tableActions"><button class="ghost" type="button" data-t2act="info">Тиры: '+(S.win||'5 / 10 / 20')+'</button><button type="button" data-t2act="clear">Очистить</button></div>'+
+      '<div class="muted">Классическая таблица 1–10, 11–20 … 71–80. Работает отдельно от первой: свои отметки, цвета, тиры и фильтры.</div>'+
+      '<div class="recentModes two"><input id="t2Custom" type="number" inputmode="numeric" min="1" step="1" value="'+(focusCustom?customVal:(S.win||''))+'" aria-label="Количество тиражей для таблицы 2" placeholder="Сколько тиров" style="width:100%;min-width:0;background:#132f49;color:white;border:1px solid #416783;border-radius:10px;padding:10px"/><button type="button" data-t2act="custom">Показать</button>'+
+      '<button type="button" data-t2act="even" aria-pressed="'+(S.parity==='even')+'" class="'+(S.parity==='even'?'active':'')+'">ЧЁТ</button><button type="button" data-t2act="odd" aria-pressed="'+(S.parity==='odd')+'" class="'+(S.parity==='odd'?'active':'')+'">НЕЧЁТ</button>'+
+      '<button type="button" data-t2act="reverse" aria-pressed="'+S.reverse+'" class="'+(S.reverse?'active':'')+'" title="Перевернуть цифры только в тиражах">🔁</button><button type="button" data-t2act="mirror" aria-pressed="'+S.mirror+'" class="'+(S.mirror?'active':'')+'" title="Подсветить зеркальные пары в тиражах">🪞</button></div>'+
+      '<div class="recentModes">'+[5,10,20].map(w=>'<button type="button" class="'+(S.win===w?'active':'')+'" data-t2win="'+w+'">'+w+' тир</button>').join('')+'</div>'+
+      list+'<div class="tableOverlap"><b>Совпали — </b>'+(over.length?over.map(fmt2).join(' '):'нет совпадений')+'</div>';
+    if(focusCustom){const el=document.getElementById('t2Custom');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}}}
+  }
+  function applyCustom(){const el=document.getElementById('t2Custom');if(!el)return;const n=Number(el.value);if(!Number.isSafeInteger(n)||n<1){el.setCustomValidity('Введите целое количество тиражей от 1');el.reportValidity();return}el.setCustomValidity('');S.win=Math.min(n,draws().length);el.blur();render()}
+  function toggleNum(n){
+    if(!Number.isInteger(n)||n<1||n>80)return;
+    if(S.paint){if(S.manual.includes(n)&&S.colors[n]===S.paint){S.manual=S.manual.filter(x=>x!==n);delete S.colors[n]}else{if(!S.manual.includes(n))S.manual=[...S.manual,n].sort((a,b)=>a-b);S.colors[n]=S.paint}}
+    else if(S.manual.includes(n)){S.manual=S.manual.filter(x=>x!==n);delete S.colors[n]}
+    else{S.manual=[...S.manual,n].sort((a,b)=>a-b);S.colors[n]=''}
+  }
+  function toggleDraw(id){S.active=S.active.includes(id)?S.active.filter(x=>x!==id):[...S.active,id]}
+  function onClick(e){
+    const t=e.target;
+    const num=t.closest('[data-t2num]');
+    if(num&&S.numMode){const n=Number(num.dataset.t2num);if(S.marked.has(n))S.marked.delete(n);else S.marked.add(n);render();return}
+    const b=t.closest('button');
+    if(!b){const card=t.closest('[data-t2draw]');if(card&&!S.numMode){toggleDraw(Number(card.dataset.t2draw));render()}return}
+    if(b.dataset.t2paint){S.paint=S.paint===b.dataset.t2paint?'':b.dataset.t2paint;render();return}
+    if(b.dataset.t2cell){toggleNum(Number(b.dataset.t2cell));render();return}
+    if(b.dataset.t2win){const w=Number(b.dataset.t2win);S.win=S.win===w?0:w;render();return}
+    if(b.dataset.t2mode){const id=Number(b.dataset.t2id);if(b.dataset.t2mode==='draw'){S.numMode=false;toggleDraw(id)}else{S.numMode=true;S.active=S.active.filter(x=>x!==id)}render();return}
+    const a=b.dataset.t2act;
+    if(a==='clear'){S.manual=[];S.colors={};S.paint='';S.active=[];S.marked.clear();render();return}
+    if(a==='custom'){applyCustom();return}
+    if(a==='even'||a==='odd'){S.parity=S.parity===a?'all':a;render();return}
+    if(a==='reverse'){S.reverse=!S.reverse;render();return}
+    if(a==='mirror'){S.mirror=!S.mirror;render();return}
+  }
+  // Перерисовывать вместе с первой таблицей (новые тиражи, кнопки шапки).
+  let lastSig='';
+  function wrap(){
+    try{
+      if(typeof renderTableDrawer!=='function'||renderTableDrawer.__t2V1)return;
+      const original=renderTableDrawer;
+      const wrapped=function(){
+        const out=original.apply(this,arguments);
+        try{
+          ensurePanel();
+          const ds=draws(),sig=ds.length+':'+(ds.length?ds[ds.length-1].draw:'')+':'+recentOrder()+':'+highlightOn();
+          if(sig!==lastSig||!panel.firstChild){lastSig=sig;render()}
+        }catch(e){console.warn('COMBO T2',e)}
+        return out;
+      };
+      wrapped.__t2V1=true;
+      ['__tableLockV1','__transitionLinesV1'].forEach(k=>{if(original[k])wrapped[k]=original[k]});
+      renderTableDrawer=wrapped;
+    }catch(e){console.warn('COMBO T2 WRAP',e)}
+  }
+  injectStyle();wrap();
+  const start=()=>{if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
