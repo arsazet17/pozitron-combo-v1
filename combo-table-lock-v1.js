@@ -1024,14 +1024,19 @@
     if(document.getElementById('comboT2Style'))return;
     const st=document.createElement('style');st.id='comboT2Style';
     st.textContent=[
-      '#comboT2Panel{margin-top:14px;padding:10px;border:1px solid #365b78;border-radius:12px;background:#091d30;display:flex;flex-direction:column;gap:7px;min-width:0}',
-      '#comboT2Panel .t2Title{font-weight:900;font-size:14px;color:#cfe0f1}',
+      '#comboT2Panel{margin-top:14px;display:flex;flex-direction:column;gap:7px;min-width:0;width:100%;max-width:560px}',
+      '#comboT2Panel .tableTopStats{display:flex;gap:10px;align-items:baseline}',
+      '#comboT2Panel .t2Title{margin-left:auto;font-weight:800;font-size:11px;color:#8fa9c2}',
       '#tableDrawerBody #comboT2Panel .tableGrid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}',
       '#comboT2Panel .recentModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}',
       '#comboT2Panel .recentModes.two{grid-template-columns:repeat(2,minmax(0,1fr))}',
       '#comboT2Panel .recentDraws{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;max-height:70vh;overflow-y:auto;overflow-x:hidden}',
       '@media (min-width:900px) and (pointer:fine){',
-      ' #tableDrawerBody > #comboT2Panel{grid-column:2;grid-row:1 / span 30;align-self:start;margin-top:0}',
+      ' #tableDrawerBody > #comboT2Panel{grid-column:2;grid-row:1 / span 30;align-self:start;justify-self:start;margin-top:0}',
+      ' #comboT2Panel .tableGrid{gap:4px}',
+      '}',
+      '@media (min-width:900px) and (pointer:fine) and (max-width:1150px){',
+      ' #comboT2Panel{max-width:440px}',
       ' #tableDrawerBody.hasT2 > .recentDraws{grid-column:1;grid-row:auto}',
       '}'
     ].join('\n');
@@ -1048,8 +1053,7 @@
     const grid=Array.from({length:80},(_,i)=>i+1).map(n=>'<button type="button" class="tcell '+clsFor(map.get(n))+'" data-t2cell="'+n+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+n+'</button>').join('');
     const list=S.win?'<div class="recentDraws">'+rec.map((d,i)=>{const on=S.active.includes(d.draw);const cc=on?COLORS[i%COLORS.length]:'';
       return'<div class="recentDrawItem '+(on?'on':'')+' '+cc+'" data-t2draw="'+d.draw+'"><div class="recentDrawTop"><span>№'+d.draw+'</span><span class="drawModeSwitch"><button type="button" data-t2mode="draw" data-t2id="'+d.draw+'" class="'+(on?'active':'')+'">ТИР</button><button type="button" data-t2mode="number" data-t2id="'+d.draw+'" class="'+(S.numMode?'active':'')+'">ЧСЛ</button></span><span>'+d.date+' '+d.time+'</span></div><div class="recentDrawNums">'+numsHTML(d,map)+'</div>'+details(d)+'</div>'}).join('')+'</div>':'';
-    panel.innerHTML='<div class="t2Title">Таблица 2 · 1–80</div>'+
-      '<div class="tableTopStats"><span>Отмечено <b>'+nums.length+'</b></span><span>Сумма <b>'+nums.reduce((a,b)=>a+b,0)+'</b></span></div>'+legend+
+    panel.innerHTML='<div class="tableTopStats"><span>Отмечено <b>'+nums.length+'</b></span><span>Сумма <b>'+nums.reduce((a,b)=>a+b,0)+'</b></span><span class="t2Title">Таблица 2</span></div>'+legend+
       '<div class="tableGrid">'+grid+'</div>'+
       '<div class="tableActions"><button class="ghost" type="button" data-t2act="info">Тиры: '+(S.win||'5 / 10 / 20')+'</button><button type="button" data-t2act="clear">Очистить</button></div>'+
       '<div class="muted">Классическая таблица 1–10, 11–20 … 71–80. Работает отдельно от первой: свои отметки, цвета, тиры и фильтры.</div>'+
