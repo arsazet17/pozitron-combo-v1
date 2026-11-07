@@ -1027,14 +1027,14 @@
   function applyView(){
     const box=document.getElementById('tableDrawerBody');
     if(box){box.classList.toggle('t1Off',!view.t1);box.classList.toggle('t2Off',!view.t2);box.classList.toggle('hasT2',view.t2&&view.t1)}
-    document.querySelectorAll('[data-tview]').forEach(b=>{const on=!!view[b.dataset.tview];b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
+    document.querySelectorAll('[data-tview="t1"],[data-tview="t2"]').forEach(b=>{const on=!!view[b.dataset.tview];b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
   }
   function ensureSwitch(){
     const title=document.querySelector('#tableDrawer .tableDrawerHead > b');
     if(!title||title.querySelector('.tvSw'))return;
     const sw=document.createElement('span');sw.className='tvSw';
     sw.innerHTML='<button type="button" class="tableHeadToggle" data-tview="t1" title="Показать или свернуть таблицу 1">Т1</button><button type="button" class="tableHeadToggle" data-tview="t2" title="Показать или свернуть таблицу 2">Т2</button>';
-    sw.addEventListener('click',e=>{const b=e.target.closest('[data-tview]');if(!b)return;const k=b.dataset.tview;view[k]=!view[k];try{localStorage.setItem(VIEW_KEY,JSON.stringify(view))}catch(err){}applyView();if(k==='t2'&&view.t2)render();else align()});
+    sw.addEventListener('click',e=>{const b=e.target.closest('[data-tview]');if(!b||!(b.dataset.tview in view))return;const k=b.dataset.tview;view[k]=!view[k];try{localStorage.setItem(VIEW_KEY,JSON.stringify(view))}catch(err){}applyView();if(k==='t2'&&view.t2)render();else align()});
     title.appendChild(sw);applyView();
   }
   function injectStyle(){
@@ -1047,7 +1047,7 @@
       '#tableDrawer .tableDrawerHead > b{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}',
       '#tableDrawer .tvSw{display:inline-flex;gap:4px;margin-left:auto;margin-right:4px}',
       '#tableDrawer .tvSw button{padding:5px 8px;font-size:12px;font-weight:800;line-height:1.1}',
-      '#tableDrawerBody.t1Off > :not(#comboT2Panel){display:none!important}',
+      '#tableDrawerBody.t1Off > :not(#comboT2Panel):not(#comboT3Panel){display:none!important}',
       '#tableDrawerBody.t2Off > #comboT2Panel{display:none!important}',
       '#comboT2Panel .tableTopStats{display:flex;gap:10px;align-items:baseline}',
       '#comboT2Panel .t2Title{margin-left:auto;font-weight:800;font-size:11px;color:#8fa9c2}',
@@ -1149,6 +1149,176 @@
       ['__tableLockV1','__transitionLinesV1'].forEach(k=>{if(original[k])wrapped[k]=original[k]});
       renderTableDrawer=wrapped;
     }catch(e){console.warn('COMBO T2 WRAP',e)}
+  }
+  injectStyle();wrap();
+  window.addEventListener('resize',()=>{clearTimeout(align.t);align.t=setTimeout(align,120)});
+  const start=()=>{ensureSwitch();if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+
+
+/* COMBO · Третья таблица 1–80 — зеркальная: в ряду четыре пары n и 81−n (1·80, 11·70, 21·60, 31·50 …) v1
+   Своё состояние, те же функции, что у таблиц 1 и 2, плюс «Форт». Первую и вторую таблицы не трогает. */
+(function(){
+  'use strict';
+  const COLORS=['c1','c2','c3','c4','c5'];
+  const S={manual:[],colors:{},paint:'',active:[],win:0,parity:'all',reverse:false,mirror:false,fort:false,numMode:false,marked:new Set()};
+  // Порядок клеток: ряд r (1–10) = r·(81−r), r+10·(71−r), r+20·(61−r), r+30·(51−r)
+  const ORDER=[];for(let r=1;r<=10;r++)for(let k=0;k<4;k++){const n=r+10*k;ORDER.push(n,81-n)}
+  function fortSet(d){const s=new Set((d.balls||[]).map(Number)),out=new Set();for(const n of s){if(s.has(81-n))out.add(n)}return out}
+  let panel=null;
+  const fmt2=n=>(typeof fmt==='function'?fmt(n):String(n));
+  const draws=()=>{try{return Array.isArray(DRAWS)?DRAWS:[]}catch(e){return[]}};
+  const byId=id=>draws().find(d=>Number(d.draw)===Number(id));
+  const vis=n=>S.parity==='all'||(Number(n)%2===0)===(S.parity==='even');
+  const recent=()=>S.win?draws().slice(-S.win).reverse():[];
+  const recentOrder=()=>{try{return tableRecentOrder}catch(e){return'draw'}};
+  const highlightOn=()=>{try{return !!tableHighlightActive}catch(e){return false}};
+  function effective(){const s=new Set(S.manual);S.active.forEach(id=>{const d=byId(id);if(d)d.balls.forEach(n=>s.add(Number(n)))});return[...s].sort((a,b)=>a-b)}
+  function numberMap(rec){const m=new Map();S.manual.forEach(n=>m.set(n,{manual:true,manualColor:S.colors[n]||'',colors:[]}));rec.forEach((d,i)=>{if(!S.active.includes(d.draw))return;const c=COLORS[i%COLORS.length];d.balls.forEach(n=>{n=Number(n);if(!m.has(n))m.set(n,{manual:false,colors:[]});m.get(n).colors.push(c)})});return m}
+  function clsFor(meta){if(!meta)return'';if(meta.manualColor)return meta.manualColor;if(meta.colors.length>1)return'overlap';if(meta.colors.length===1)return meta.colors[0];if(meta.manual)return'manual';return''}
+  function sourceSet(d){const out=new Set(),id=Number(d.draw),all=draws();for(const a of S.active){const i=all.findIndex(x=>Number(x.draw)===Number(a));if(i<=0||Number(all[i-1].draw)!==id)continue;try{comboDrawGroupDetails(all[i]).numbers.forEach(n=>out.add(Number(n)))}catch(e){}}return out}
+  function mirrorSet(d){const s=new Set((d.balls||[]).map(Number)),out=new Set();for(const n of s){const r=Number(fmt2(n).split('').reverse().join(''));if(n!==r&&s.has(r))out.add(n)}return out}
+  function numsHTML(d,map){
+    const src=sourceSet(d),order=recentOrder(),hl=highlightOn();
+    const balls=order==='asc'?[...(d.balls||[])].sort((a,b)=>a-b):(d.balls||[]);
+    const mir=S.mirror?mirrorSet(d):new Set();const frt=S.fort?fortSet(d):new Set();
+    return balls.map(n=>{n=Number(n);const echo=hl?clsFor(map.get(n)):'';const shown=S.reverse?fmt2(n).split('').reverse().join(''):fmt2(n);
+      const c=['recentDrawNum',src.has(n)?'sourceOn':'',echo?'tableEcho':'',echo,mir.has(n)?'mirrorPair':'',frt.has(n)?'fortPair':'',S.marked.has(n)?'numberPicked':''].filter(Boolean).join(' ');
+      return'<span class="'+c+'" data-t3num="'+n+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+shown+'</span>'}).join(' ');
+  }
+  function details(d){
+    if(typeof comboDrawDetailsHTML!=='function')return'';
+    // подробности тиража считаются по ЧЁТ/НЕЧЁТ второй таблицы
+    let keep;try{keep=tableParityFilter;tableParityFilter=S.parity;return comboDrawDetailsHTML(d)}catch(e){return''}finally{try{if(keep!==undefined)tableParityFilter=keep}catch(e){}}
+  }
+  function ensurePanel(){
+    if(!panel){panel=document.createElement('section');panel.id='comboT3Panel';panel.setAttribute('aria-label','Таблица 3');panel.addEventListener('click',onClick);panel.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='t3Custom')applyCustom()})}
+    const box=document.getElementById('tableDrawerBody');
+    if(box&&panel.parentNode!==box)box.appendChild(panel);
+    applyView();
+  }
+  // Кнопка «Т3» в шапке рядом с Т1 и Т2 (по умолчанию свёрнута).
+  const VIEW_KEY='combo-tables-view-t3-v1';
+  const view={t3:false};
+  try{const v=JSON.parse(localStorage.getItem(VIEW_KEY)||'null');if(v&&typeof v==='object')view.t3=v.t3===true}catch(e){}
+  function applyView(){
+    const box=document.getElementById('tableDrawerBody');
+    if(box)box.classList.toggle('t3Off',!view.t3);
+    document.querySelectorAll('[data-tview="t3"]').forEach(b=>{b.classList.toggle('active',view.t3);b.setAttribute('aria-pressed',String(view.t3))});
+  }
+  function ensureSwitch(){
+    const sw=document.querySelector('#tableDrawer .tvSw');
+    if(!sw){setTimeout(ensureSwitch,300);return}
+    if(sw.querySelector('[data-tview="t3"]'))return;
+    const b=document.createElement('button');b.type='button';b.className='tableHeadToggle';b.dataset.tview='t3';b.title='Показать или свернуть таблицу 3 (зеркальную)';b.textContent='Т3';
+    b.addEventListener('click',e=>{e.stopPropagation();view.t3=!view.t3;try{localStorage.setItem(VIEW_KEY,JSON.stringify(view))}catch(err){}applyView();if(view.t3)render()});
+    sw.appendChild(b);applyView();
+  }
+  function injectStyle(){
+    if(document.getElementById('comboT3Style'))return;
+    const st=document.createElement('style');st.id='comboT3Style';
+    st.textContent=[
+      '#comboT3Panel{margin-top:14px;display:flex;flex-direction:column;gap:7px;min-width:0;width:100%;max-width:560px}',
+      '#comboT3Panel .t3Over{margin-top:8px;padding:8px;border:1px solid #315b7d;border-radius:10px;background:#081827;font-size:11px;line-height:1.35;color:#d8e5ef}',
+      '#tableDrawerBody.t3Off > #comboT3Panel{display:none!important}',
+      '#comboT3Panel .tableTopStats{display:flex;gap:10px;align-items:baseline}',
+      '#comboT3Panel .t3Title{margin-left:auto;font-weight:800;font-size:11px;color:#8fa9c2}',
+      '#tableDrawerBody #comboT3Panel .tableGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr) minmax(0,1fr) 7px) minmax(0,1fr) minmax(0,1fr);gap:4px;align-content:start}',
+      '#comboT3Panel .t3gap{display:block}',
+      '#comboT3Panel .recentModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}',
+      '#comboT3Panel .recentModes.two{grid-template-columns:repeat(2,minmax(0,1fr))}',
+      '#comboT3Panel .t3Draws{margin-top:8px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;max-height:70vh;overflow-y:auto;overflow-x:hidden}',
+      '#comboT3Panel .recentDrawNum.fortPair{background:#2b1700!important;color:#ff9f1a!important;border-radius:5px;box-shadow:0 0 0 1px #ff9f1a inset}',
+      '#comboT3Panel button.t3fort{border-color:#ff9f1a;color:#ffc46b}',
+      '#comboT3Panel button.t3fort.active{background:#c96a00;border-color:#ffc46b;color:#fff}',
+      '@media (min-width:900px) and (pointer:fine){',
+      ' #tableDrawerBody > #comboT3Panel{grid-column:1;align-self:start;justify-self:start}',
+      '}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+  function render(){
+    ensurePanel();if(!panel)return;
+    const focusCustom=document.activeElement&&document.activeElement.id==='t3Custom';
+    const customVal=focusCustom?document.activeElement.value:'';
+    const rec=recent(),map=numberMap(rec),nums=effective().filter(vis);
+    const over=[...map.entries()].filter(([,m])=>m.colors.length>1).map(([n])=>n).sort((a,b)=>a-b).filter(vis);
+    const names=['1 зел','2 жёлт','3 красн','4 голуб','5 синий'];
+    const legend='<div class="tableLegend">'+COLORS.map((c,i)=>'<button type="button" class="lg '+c+' '+(S.paint===c?'paintOn':'')+'" data-t3paint="'+c+'">'+names[i]+'</button>').join('')+'</div>';
+    const grid=ORDER.map((n,i)=>(i%8&&i%2===0?'<span class="t3gap" aria-hidden="true"></span>':'')+'<button type="button" class="tcell '+clsFor(map.get(n))+'" data-t3cell="'+n+'" title="'+n+' ↔ '+(81-n)+'"'+(vis(n)?'':' style="visibility:hidden"')+'>'+n+'</button>').join('');
+    const list=S.win?'<div class="t3Draws">'+rec.map((d,i)=>{const on=S.active.includes(d.draw);const cc=on?COLORS[i%COLORS.length]:'';
+      return'<div class="recentDrawItem '+(on?'on':'')+' '+cc+'" data-t3draw="'+d.draw+'"><div class="recentDrawTop"><span>№'+d.draw+'</span><span class="drawModeSwitch"><button type="button" data-t3mode="draw" data-t3id="'+d.draw+'" class="'+(on?'active':'')+'">ТИР</button><button type="button" data-t3mode="number" data-t3id="'+d.draw+'" class="'+(S.numMode?'active':'')+'">ЧСЛ</button></span><span>'+d.date+' '+d.time+'</span></div><div class="recentDrawNums">'+numsHTML(d,map)+'</div>'+details(d)+'</div>'}).join('')+'</div>':'';
+    panel.innerHTML='<div class="tableTopStats"><span>Отмечено <b>'+nums.length+'</b></span><span>Сумма <b>'+nums.reduce((a,b)=>a+b,0)+'</b></span><span class="t3Title">Таблица 3</span></div>'+legend+
+      '<div class="tableGrid">'+grid+'</div>'+
+      '<div class="tableActions"><button class="ghost" type="button" data-t3act="info">Тиры: '+(S.win||'5 / 10 / 20')+'</button><button type="button" data-t3act="clear">Очистить</button></div>'+
+      '<div class="muted" style="margin-top:8px">Зеркальная таблица: в каждой паре числа n и 81−n (1·80 … 40·41). Работает отдельно от первой и второй: свои отметки, цвета, тиры и фильтры. «Форт» подсвечивает в тиражах пары, где выпали оба числа.</div>'+
+      '<div class="recentModes two"><input id="t3Custom" type="number" inputmode="numeric" min="1" step="1" value="'+(focusCustom?customVal:(S.win||''))+'" aria-label="Количество тиражей для таблицы 3" placeholder="Сколько тиров" style="width:100%;min-width:0;background:#132f49;color:white;border:1px solid #416783;border-radius:10px;padding:10px"/><button type="button" data-t3act="custom">Показать</button>'+
+      '<button type="button" data-t3act="even" aria-pressed="'+(S.parity==='even')+'" class="'+(S.parity==='even'?'active':'')+'">ЧЁТ</button><button type="button" data-t3act="odd" aria-pressed="'+(S.parity==='odd')+'" class="'+(S.parity==='odd'?'active':'')+'">НЕЧЁТ</button>'+
+      '<button type="button" data-t3act="reverse" aria-pressed="'+S.reverse+'" class="'+(S.reverse?'active':'')+'" title="Перевернуть цифры только в тиражах">🔁</button><button type="button" data-t3act="mirror" aria-pressed="'+S.mirror+'" class="'+(S.mirror?'active':'')+'" title="Подсветить зеркальные пары в тиражах">🪞</button><button type="button" data-t3act="fort" aria-pressed="'+S.fort+'" class="t3fort'+(S.fort?' active':'')+'" title="Форт: подсветить в тиражах пары n и 81−n, если выпали оба числа">Форт</button></div>'+
+      '<div class="recentModes">'+[5,10,20].map(w=>'<button type="button" class="'+(S.win===w?'active':'')+'" data-t3win="'+w+'">'+w+' тир</button>').join('')+'</div>'+
+      list+'<div class="t3Over"><b>Совпали — </b>'+(over.length?over.map(fmt2).join(' '):'нет совпадений')+'</div>';
+    if(focusCustom){const el=document.getElementById('t3Custom');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}}}
+  }
+  // На широком экране ряды второй таблицы выравниваются по первой: «Тиры» и кнопки — вровень, пропуск снизу сетки.
+  function align(){
+    return;
+    const g2=panel.querySelector('.tableGrid'),m2=panel.querySelector('.muted');
+    if(g2)g2.style.minHeight='';if(m2)m2.style.minHeight='';
+    const box=document.getElementById('tableDrawerBody');if(!box||!g2)return;
+    const g1=box.querySelector(':scope > .tableGrid'),m1=box.querySelector(':scope > .muted');
+    if(!g1)return;
+    const r1=g1.getBoundingClientRect(),r2=g2.getBoundingClientRect();
+    if(!r1.width||!r2.width)return;
+    if(!(r2.left>=r1.right))return; // таблицы не рядом (телефон)
+    const h=r1.bottom-r2.top;if(h>r2.height)g2.style.minHeight=Math.ceil(h)+'px';
+    if(m1&&m2){const a=m1.getBoundingClientRect().height;if(a>m2.getBoundingClientRect().height)m2.style.minHeight=Math.ceil(a)+'px'}
+  }
+  function applyCustom(){const el=document.getElementById('t3Custom');if(!el)return;const n=Number(el.value);if(!Number.isSafeInteger(n)||n<1){el.setCustomValidity('Введите целое количество тиражей от 1');el.reportValidity();return}el.setCustomValidity('');S.win=Math.min(n,draws().length);el.blur();render()}
+  function toggleNum(n){
+    if(!Number.isInteger(n)||n<1||n>80)return;
+    if(S.paint){if(S.manual.includes(n)&&S.colors[n]===S.paint){S.manual=S.manual.filter(x=>x!==n);delete S.colors[n]}else{if(!S.manual.includes(n))S.manual=[...S.manual,n].sort((a,b)=>a-b);S.colors[n]=S.paint}}
+    else if(S.manual.includes(n)){S.manual=S.manual.filter(x=>x!==n);delete S.colors[n]}
+    else{S.manual=[...S.manual,n].sort((a,b)=>a-b);S.colors[n]=''}
+  }
+  function toggleDraw(id){S.active=S.active.includes(id)?S.active.filter(x=>x!==id):[...S.active,id]}
+  function onClick(e){
+    const t=e.target;
+    const num=t.closest('[data-t3num]');
+    if(num&&S.numMode){const n=Number(num.dataset.t3num);if(S.marked.has(n))S.marked.delete(n);else S.marked.add(n);render();return}
+    const b=t.closest('button');
+    if(!b){const card=t.closest('[data-t3draw]');if(card&&!S.numMode){toggleDraw(Number(card.dataset.t3draw));render()}return}
+    if(b.dataset.t3paint){S.paint=S.paint===b.dataset.t3paint?'':b.dataset.t3paint;render();return}
+    if(b.dataset.t3cell){toggleNum(Number(b.dataset.t3cell));render();return}
+    if(b.dataset.t3win){const w=Number(b.dataset.t3win);S.win=S.win===w?0:w;render();return}
+    if(b.dataset.t3mode){const id=Number(b.dataset.t3id);if(b.dataset.t3mode==='draw'){S.numMode=false;toggleDraw(id)}else{S.numMode=true;S.active=S.active.filter(x=>x!==id)}render();return}
+    const a=b.dataset.t3act;
+    if(a==='clear'){S.manual=[];S.colors={};S.paint='';S.active=[];S.marked.clear();render();return}
+    if(a==='custom'){applyCustom();return}
+    if(a==='even'||a==='odd'){S.parity=S.parity===a?'all':a;render();return}
+    if(a==='reverse'){S.reverse=!S.reverse;render();return}
+    if(a==='mirror'){S.mirror=!S.mirror;render();return}
+    if(a==='fort'){S.fort=!S.fort;render();return}
+  }
+  // Перерисовывать вместе с первой таблицей (новые тиражи, кнопки шапки).
+  let lastSig='';
+  function wrap(){
+    try{
+      if(typeof renderTableDrawer!=='function'||renderTableDrawer.__t3V1)return;
+      const original=renderTableDrawer;
+      const wrapped=function(){
+        const out=original.apply(this,arguments);
+        try{
+          ensurePanel();
+          const ds=draws(),sig=ds.length+':'+(ds.length?ds[ds.length-1].draw:'')+':'+recentOrder()+':'+highlightOn();
+          if(sig!==lastSig||!panel.firstChild){lastSig=sig;render()}else{align();requestAnimationFrame(align)}
+        }catch(e){console.warn('COMBO T3',e)}
+        return out;
+      };
+      wrapped.__t3V1=true;
+      ['__tableLockV1','__transitionLinesV1','__t2V1'].forEach(k=>{if(original[k])wrapped[k]=original[k]});
+      renderTableDrawer=wrapped;
+    }catch(e){console.warn('COMBO T3 WRAP',e)}
   }
   injectStyle();wrap();
   window.addEventListener('resize',()=>{clearTimeout(align.t);align.t=setTimeout(align,120)});
