@@ -31,7 +31,7 @@ try{
  await page.waitForFunction(()=>DRAWS.length===100&&!autoRefreshBusy);
  await page.locator('#tableDrawerBtn').click();await page.locator('#tableMatrixBtn').click();
  await page.locator('[data-cm-action="numbers"]').click();await page.locator('[data-cm-action="numbers"]').click();
- const id=tail[80].draw;await page.locator('[data-cm-row="'+id+'"]').click();
+ const id=tail[80].draw;await page.locator('[data-cm-row="'+id+'"][data-cm-action="row-numbers"]').click();
  await page.evaluate(()=>{tableRecentWindow=5;tableParityFilter='even';tableMarkedNumbers.add(5);cmReduce=3;cmEmpty=2;cmTemperature=true;cmReverse=true;cmTrg=true;renderTableDrawer();});
  await page.evaluate(()=>{const el=document.querySelector('.cm-scroll');el.scrollTop=250;el.scrollLeft=12;document.querySelector('#tableDrawerBody').scrollTop=100;window.testToolbar=document.querySelector('.cm-toolbar');window.testRange=document.querySelector('#cmReduce');window.testRow=document.querySelector('.cm-inline-a.active');});
  const state=()=>page.evaluate(()=>({open:cmOpen,table:!document.querySelector('#tableDrawer').classList.contains('hidden'),numbers:cmNumbers,individual:[...cmIndividual],count:cmCount,reverse:cmReverse,reduce:cmReduce,empty:cmEmpty,temp:cmTemperature,trg:cmTrg,parity:tableParityFilter,recent:tableRecentWindow,marked:[...tableMarkedNumbers],width:document.querySelector('.cm-table').getBoundingClientRect().width,bodyScroll:document.querySelector('#tableDrawerBody').scrollTop}));
