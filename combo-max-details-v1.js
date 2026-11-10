@@ -1,4 +1,6 @@
 /* COMBO KENO — Максимальные выходы + свободная подсветка архива
+   10.11.2026: плитка «Макс.» раскрывает ВСЕ выигрышные тиражи по уровням,
+   от самого крупного выигрыша вниз (6/6, 5/6, 4/6…).
    v4.3.21 · 30.09.2026
    Исправление зависания: наблюдаем только замену содержимого csDetail,
    не сканируем/перепривязываем сотни тысяч чисел при каждом изменении DOM.
@@ -8,6 +10,8 @@
 
   const VERSION='4.3.21';
   const PREVIEW_LIMIT=4;
+  const LEVEL_PAGE=20;
+  const payloadCache=new WeakMap();
   const mainViewState=new Map();
   const searchViewState=new Map();
   const searchMarkState=new Map();
@@ -54,6 +58,12 @@
       .comboMaxHit{padding:3px 5px;border-radius:6px;background:#26752d;border:1px solid #67c93f;color:#fff;font-size:10px;font-weight:900}
       .comboMaxNoiseNum{padding:2px 4px;border-radius:5px;background:#0a1c2d;border:1px solid #294b66;color:#aebfcd;font-size:9px;font-weight:800}
       .comboMaxToggle{width:100%;margin-top:7px;padding:7px;border-radius:8px;background:#0b2032;color:#d5e3ee;font-size:10px}
+      .comboWinLevel{margin-top:7px}.comboWinLevel:first-of-type{margin-top:0}
+      .comboWinLevelBtn{width:100%;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;text-align:left;padding:9px 10px;border:1px solid #294b66;border-radius:10px;background:#0a1c2d;color:#fff}
+      .comboWinLevelBtn.open{border-color:#ffbd23;box-shadow:0 0 0 1px rgba(255,189,35,.22) inset}
+      .comboWinLevelTitle{display:block;font-size:12px;font-weight:950;color:#fff}.comboWinLevelTitle em{font-style:normal;color:#ffbd23}
+      .comboWinLevelSub{display:block;margin-top:2px;font-size:10px;color:#b7c8d7;line-height:1.3}.comboWinLevelChevron{font-size:13px;color:#ffcf5c;font-weight:950}
+      .comboWinLevelBody{margin-top:6px}
       #csDetail .csMaxDetailsWrap{width:100%;margin:8px 0 9px}
       #csDetail .csMaxSummaryBtn{width:100%;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;text-align:left;padding:10px 11px;border:1px solid #6b5521;border-radius:11px;background:linear-gradient(180deg,#142b43,#0a1b2b)}
       #csDetail .csMaxSummaryBtn.open{border-color:#ffbd23;box-shadow:0 0 0 1px rgba(255,189,35,.22) inset}
@@ -82,33 +92,74 @@
     return `<button id="${id}" class="comboMaxToggle" type="button">${showAll?'Свернуть ▲':`Развернуть все (${p.maxDraws.length}) ▼`}</button>`;
   }
 
+  function rowHtml(nums,k,d){
+    const hn=hitNumbers(nums,d),noise=drawNoise(nums,d),amount=payout(k,hn.length),col=columnOf(d);
+    return `<div class="comboMaxRow"><div class="comboMaxRowTop"><span class="comboMaxDraw">${amount>0?'🔥 ':''}№${d.draw}</span><span class="comboMaxPrize">${hn.length}/${k}${amount>0?` · ${money(amount)}`:''}</span></div><div class="comboMaxMeta">${d.date||'—'} · ${d.time||'—'} · столб ${col??'—'}</div><div class="comboMaxHits"><span class="comboMaxMeta">Попали:</span>${hn.length?hn.map(n=>`<span class="comboMaxHit">${fmt(n)}</span>`).join(''):'<span class="comboMaxMeta">—</span>'}</div><div class="comboMaxNoise"><span class="comboMaxMeta">Шум:</span>${noise.map(n=>`<span class="comboMaxNoiseNum">${fmt(n)}</span>`).join('')}</div></div>`;
+  }
   function mainPayload(){
     try{
       if(typeof lastResult==='undefined'||!lastResult)return null;
+      const cached=payloadCache.get(lastResult);if(cached)return cached;
       const nums=[...(lastResult.nums||[])].map(Number),draws=[...(lastResult.draws||[])];
       if(!nums.length||!draws.length)return null;
-      let best=Number(lastResult.st?.best);if(!Number.isFinite(best))best=Math.max(...draws.map(d=>hits(nums,d)));
-      const maxDraws=draws.filter(d=>hits(nums,d)===best).sort((a,b)=>Number(b.draw)-Number(a.draw));
-      return {nums,draws,best,maxDraws,k:nums.length,key:comboKey(nums)};
+      const k=nums.length,byHits=new Map();
+      for(const d of draws){const h=hits(nums,d);let a=byHits.get(h);if(!a){a=[];byHits.set(h,a)}a.push(d)}
+      const best=Math.max(...byHits.keys());
+      const newestFirst=(a,b)=>Number(b.draw)-Number(a.draw);
+      const maxDraws=[...(byHits.get(best)||[])].sort(newestFirst);
+      // Все уровни с выплатой: самый крупный выигрыш сверху.
+      const levels=[...byHits.entries()].map(([h,list])=>({h,prize:payout(k,h),draws:list})).filter(l=>l.prize>0)
+        .sort((a,b)=>b.prize-a.prize||b.h-a.h);
+      for(const l of levels){l.draws.sort(newestFirst);l.total=l.prize*l.draws.length}
+      const winCount=levels.reduce((s,l)=>s+l.draws.length,0),winTotal=levels.reduce((s,l)=>s+l.total,0);
+      const p={nums,draws,best,maxDraws,k,key:comboKey(nums),levels,winCount,winTotal};
+      payloadCache.set(lastResult,p);return p;
     }catch(e){return null}
+  }
+  function levelState(st,p,l,index){
+    let ls=st.levels.get(l.h);
+    if(!ls){ls={shown:index===0?Math.min(PREVIEW_LIMIT,l.draws.length):0};st.levels.set(l.h,ls)}
+    if(ls.shown>l.draws.length)ls.shown=l.draws.length;
+    return ls;
+  }
+  function levelsHtml(p,st){
+    return p.levels.map((l,index)=>{
+      const ls=levelState(st,p,l,index),open=ls.shown>0,left=l.draws.length-ls.shown;
+      const body=open?`<div class="comboWinLevelBody"><div class="comboMaxList">${l.draws.slice(0,ls.shown).map(d=>rowHtml(p.nums,p.k,d)).join('')}</div>${left>0?`<button class="comboMaxToggle" type="button" data-win-more="${l.h}">Показать ещё ${Math.min(LEVEL_PAGE,left)} (осталось ${left}) ▼</button>`:''}</div>`:'';
+      return `<div class="comboWinLevel"><button class="comboWinLevelBtn ${open?'open':''}" type="button" data-win-level="${l.h}" aria-expanded="${open?'true':'false'}"><span><span class="comboWinLevelTitle">${l.h}/${p.k} · <em>${money(l.prize)}</em></span><span class="comboWinLevelSub">${l.draws.length} раз · всего ${money(l.total)}</span></span><span class="comboWinLevelChevron">${open?'▲':'▼'}</span></button>${body}</div>`;
+    }).join('');
   }
   function enhanceMainHistory(){
     const p=mainPayload(),box=document.getElementById('historyBox');if(!p||!box)return;
     const stats=box.querySelector('.stats');if(!stats)return;
     const maxStat=[...stats.querySelectorAll('.stat')].find(el=>String(el.querySelector('span')?.textContent||'').trim().startsWith('Макс.'));if(!maxStat)return;
-    let st=mainViewState.get(p.key);if(!st){st={open:false,all:false};mainViewState.set(p.key,st)}
+    let st=mainViewState.get(p.key);if(!st){st={open:false,all:false,levels:new Map()};mainViewState.set(p.key,st)}
+    if(!st.levels)st.levels=new Map();
     const prize=payout(p.k,p.best);maxStat.classList.add('maxDetailsStat');maxStat.classList.toggle('open',!!st.open);
     maxStat.setAttribute('role','button');maxStat.setAttribute('tabindex','0');maxStat.setAttribute('aria-expanded',st.open?'true':'false');
     const span=maxStat.querySelector('span');if(span)span.innerHTML=`Макс.<small class="maxDetailsHint">${p.maxDraws.length} раз${prize>0?` · ${money(prize)}`:''} ${st.open?'▲':'▼'}</small>`;
     box.querySelector('.maxDetailsPanel')?.remove();
+    const close=()=>{st.open=false;st.all=false;st.levels.clear();enhanceMainHistory()};
     if(st.open){
       const panel=document.createElement('div');panel.className='maxDetailsPanel';
-      const total=prize*p.maxDraws.length;panel.innerHTML=`<div class="comboMaxHead"><div><div class="comboMaxTitle">МАКСИМАЛЬНЫЕ ВЫХОДЫ · ${p.best}/${p.k}</div><div class="comboMaxSummary">${p.maxDraws.length} раз · ${prize>0?`по ${money(prize)} · всего ${money(total)}`:'выплаты за этот уровень нет'}</div></div><button id="maxDetailsClose" class="comboMaxClose" type="button">Свернуть ▲</button></div><div class="comboMaxList">${occurrenceRowsHtml(p,st.all)}</div>${moreButtonHtml(p,st.all,'maxDetailsMore')}`;
+      if(p.levels.length){
+        panel.innerHTML=`<div class="comboMaxHead"><div><div class="comboMaxTitle">ВЫИГРЫШНЫЕ ТИРАЖИ · ${p.winCount}</div><div class="comboMaxSummary">от самого крупного выигрыша · всего выплат ${money(p.winTotal)}</div></div><button id="maxDetailsClose" class="comboMaxClose" type="button">Свернуть ▲</button></div>${levelsHtml(p,st)}`;
+      }else{
+        panel.innerHTML=`<div class="comboMaxHead"><div><div class="comboMaxTitle">МАКСИМАЛЬНЫЕ ВЫХОДЫ · ${p.best}/${p.k}</div><div class="comboMaxSummary">${p.maxDraws.length} раз · выигрышных тиражей нет</div></div><button id="maxDetailsClose" class="comboMaxClose" type="button">Свернуть ▲</button></div><div class="comboMaxList">${occurrenceRowsHtml(p,st.all)}</div>${moreButtonHtml(p,st.all,'maxDetailsMore')}`;
+      }
       stats.insertAdjacentElement('afterend',panel);
-      panel.querySelector('#maxDetailsClose')?.addEventListener('click',e=>{e.stopPropagation();st.open=false;st.all=false;enhanceMainHistory()});
+      panel.querySelector('#maxDetailsClose')?.addEventListener('click',e=>{e.stopPropagation();close()});
       panel.querySelector('#maxDetailsMore')?.addEventListener('click',e=>{e.stopPropagation();st.all=!st.all;enhanceMainHistory()});
+      panel.querySelectorAll('[data-win-level]').forEach(btn=>btn.addEventListener('click',e=>{
+        e.stopPropagation();const h=Number(btn.dataset.winLevel),l=p.levels.find(x=>x.h===h),ls=st.levels.get(h);if(!l||!ls)return;
+        ls.shown=ls.shown>0?0:Math.min(PREVIEW_LIMIT,l.draws.length);enhanceMainHistory();
+      }));
+      panel.querySelectorAll('[data-win-more]').forEach(btn=>btn.addEventListener('click',e=>{
+        e.stopPropagation();const h=Number(btn.dataset.winMore),l=p.levels.find(x=>x.h===h),ls=st.levels.get(h);if(!l||!ls)return;
+        ls.shown=Math.min(l.draws.length,ls.shown+LEVEL_PAGE);enhanceMainHistory();
+      }));
     }
-    const toggle=()=>{st.open=!st.open;if(!st.open)st.all=false;enhanceMainHistory()};
+    const toggle=()=>{if(st.open)close();else{st.open=true;enhanceMainHistory()}};
     maxStat.onclick=toggle;maxStat.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}};
   }
   function patchMainRender(){
