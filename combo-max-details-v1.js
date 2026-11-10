@@ -58,6 +58,10 @@
       .comboMaxHit{padding:3px 5px;border-radius:6px;background:#26752d;border:1px solid #67c93f;color:#fff;font-size:10px;font-weight:900}
       .comboMaxNoiseNum{padding:2px 4px;border-radius:5px;background:#0a1c2d;border:1px solid #294b66;color:#aebfcd;font-size:9px;font-weight:800}
       .comboMaxToggle{width:100%;margin-top:7px;padding:7px;border-radius:8px;background:#0b2032;color:#d5e3ee;font-size:10px}
+      /* Числа в панели не выделяются долгим нажатием (иначе Android предлагает «Позвонить/Копировать»),
+         а двойное нажатие и щипок внутри панели не увеличивают экран. */
+      #historyBox .maxDetailsPanel,#historyBox .maxDetailsPanel *,#historyBox .maxDetailsStat,#historyBox .maxDetailsStat *,#csDetail .csMaxDetailsWrap,#csDetail .csMaxDetailsWrap *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+      #historyBox .maxDetailsPanel,#historyBox .maxDetailsStat,#csDetail .csMaxDetailsWrap{touch-action:pan-y}
       .comboWinLevel{margin-top:7px}.comboWinLevel:first-of-type{margin-top:0}
       .comboWinLevelBtn{width:100%;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;text-align:left;padding:9px 10px;border:1px solid #294b66;border-radius:10px;background:#0a1c2d;color:#fff}
       .comboWinLevelBtn.open{border-color:#ffbd23;box-shadow:0 0 0 1px rgba(255,189,35,.22) inset}
