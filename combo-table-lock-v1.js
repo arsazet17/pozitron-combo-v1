@@ -1339,7 +1339,31 @@
   // Место прокрутки М2/М3 живёт отдельно от таблицы: матрица перерисовывается (карточка, режимы), а место остаётся.
   const scrollMem={};
   const mainConc=()=>{try{return !!cmConc}catch(e){return false}};
-  try{localStorage.removeItem('combo-matrix-views-k-v1')}catch(e){}
+  // «К» в углу М2/М3: у каждого вида свой режим — концентрации или обычные столбы.
+  const KMODE_KEY='combo-matrix-views-k-v2';
+  const kMode={m2:null,m3:null};
+  try{localStorage.removeItem('combo-matrix-views-k-v1');const v=JSON.parse(localStorage.getItem(KMODE_KEY)||'null');if(v)['m2','m3'].forEach(d=>{if(typeof v[d]==='boolean')kMode[d]=v[d]})}catch(e){}
+  const sideConc=d=>kMode[d]===null?mainConc():kMode[d];
+  // Таблица в другом режиме: на мгновение перерисовываем саму матрицу в другом режиме, снимаем копию
+  // и сразу рисуем обратно. Никаких подмен — приложение остаётся в своём состоянии.
+  let altCache={sig:'',table:null};
+  function altTable(src){
+    const sig=String(mainConc())+'|'+src.rows.length+'|'+(src.tBodies[0]?.rows[0]?.cells[0]?.textContent||'')+'|'+(src.tBodies[0]?.rows[src.tBodies[0].rows.length-1]?.cells[0]?.textContent||'')+'|'+src.innerHTML.length;
+    if(altCache.sig===sig&&altCache.table)return altCache.table;
+    let saved;try{saved=cmConc}catch(e){return null}
+    const panel=document.getElementById('tableMatrixPanel');
+    const scrolls=[...document.querySelectorAll('#tableDrawer, #tableDrawerBody, #tableMatrixPanel .cm-scroll')].map(el=>[el,el.scrollTop,el.scrollLeft]);
+    let copy=null;
+    try{
+      cmConc=!saved;cmRender();
+      const t=panel.querySelector('.cm-panel .cm-scroll > table.cm-table, .cm-panel table.cm-table');
+      if(t&&t.tBodies[0]&&t.tBodies[0].rows.length)copy=t.cloneNode(true);
+    }catch(e){console.warn('М-вид: другой режим',e)}
+    finally{cmConc=saved;try{cmRender()}catch(e){console.warn('М-вид: возврат',e)}}
+    scrolls.forEach(([el,t,l])=>{if(el.isConnected){el.scrollTop=t;el.scrollLeft=l}});
+    if(copy){const src2=panel.querySelector('.cm-panel .cm-scroll > table.cm-table, .cm-panel table.cm-table');altCache={sig:src2?(String(mainConc())+'|'+src2.rows.length+'|'+(src2.tBodies[0]?.rows[0]?.cells[0]?.textContent||'')+'|'+(src2.tBodies[0]?.rows[src2.tBodies[0].rows.length-1]?.cells[0]?.textContent||'')+'|'+src2.innerHTML.length):'',table:copy}}
+    return copy;
+  }
 
 
   function injectStyle(){
@@ -1425,22 +1449,29 @@
     if(!(view.m2||view.m3)||!cmp||!src){if(wrap){building=true;wrap.remove();building=false}return}
     building=true;
     try{
+      const needAlt=['m2','m3'].some(d=>view[d]&&sideConc(d)!==mainConc());
+      let alt=null;
+      if(needAlt){alt=altTable(src);wrap=panel.querySelector('.cmSideWrap')}
+      const srcNow=panel.querySelector('.cm-panel .cm-scroll > table.cm-table, .cm-panel table.cm-table')||src;
       if(!wrap){wrap=document.createElement('div');wrap.className='cmSideWrap'}
-      const after=src.closest('.cm-scroll')||src;
+      const after=srcNow.closest('.cm-scroll')||srcNow;
       if(wrap.previousElementSibling!==after)after.insertAdjacentElement('afterend',wrap);
       wrap.classList.toggle('both',view.m2&&view.m3);
       wrap.innerHTML='';
       [['m2','Слева направо →'],['m3','← Справа налево']].forEach(([d,title])=>{
         if(!view[d])return;
         const box=document.createElement('div');box.className='cmSide '+d;
-        const kOn=mainConc();
+        const kOn=sideConc(d);
         const kBtn='<button type="button" class="cmSideK'+(kOn?' active':'')+'" data-side-k="'+d+'" aria-pressed="'+kOn+'" title="'+(kOn?'Концентрации — нажми, чтобы показать столбы':'Столбы — нажми, чтобы показать концентрации')+'">К</button>';
         box.innerHTML='<div class="cmSideHead">'+(d==='m3'?kBtn:'')+'<span class="cmSideTitle">'+(d==='m2'?'М2 · ':'')+title+(d==='m3'?' · М3':'')+'</span>'+(d==='m2'?kBtn:'')+'</div>';
-        // К — то же, что КОНЦ: концентрации ↔ обычные столбы на всей матрице.
+        // К — только для своего вида: концентрации ↔ обычные столбы.
         box.querySelector('[data-side-k]').addEventListener('click',e=>{e.stopPropagation();
-          const b=document.querySelector('#tableMatrixPanel [data-cm-action="conc"]');if(b)b.click()});
+          kMode[d]=!sideConc(d);try{localStorage.setItem(KMODE_KEY,JSON.stringify(kMode))}catch(err){}rebuild()});
         const sc=document.createElement('div');sc.className='cmSideScroll';sc.dataset.dir=d;
-        sc.appendChild(buildSide(src,d));box.appendChild(sc);wrap.appendChild(box);
+        const other=sideConc(d)!==mainConc()&&alt;
+        sc.appendChild(buildSide(other?alt:srcNow,d));box.appendChild(sc);wrap.appendChild(box);
+        // В виде с другим режимом клетки только для просмотра (карточка открылась бы не для того столба); В/А работают.
+        if(other)sc.addEventListener('click',e=>{if(!e.target.closest('button'))e.stopPropagation()},true);
         // Новые тиражи ближе к центру: М2 — справа, М3 — слева. Если пользователь прокрутил — сохраняем место.
         // Новые тиражи ближе к центру: М2 — у правого края, М3 — у левого. Если прокрутил назад — место сохраняется
         // (по номеру тиража у края, чтобы при новом тираже не сползало).
