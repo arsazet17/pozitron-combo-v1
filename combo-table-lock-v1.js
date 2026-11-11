@@ -1338,6 +1338,23 @@
   let building=false,pending=0;
   // Место прокрутки М2/М3 живёт отдельно от таблицы: матрица перерисовывается (карточка, режимы), а место остаётся.
   const scrollMem={};
+  // «К» в углу М2/М3: свой режим вида — концентрации или обычные столбы (null — как в основной матрице).
+  const KMODE_KEY='combo-matrix-views-k-v1';
+  const kMode={m2:null,m3:null};
+  try{const v=JSON.parse(localStorage.getItem(KMODE_KEY)||'null');if(v)['m2','m3'].forEach(d=>{if(v[d]==='conc'||v[d]==='cols')kMode[d]=v[d]})}catch(e){}
+  const mainConc=()=>{try{return !!cmConc}catch(e){return false}};
+  const sideConc=d=>kMode[d]?kMode[d]==='conc':mainConc();
+  // Таблица в другом режиме: основная матрица рисуется ещё раз в скрытый блок с переключённым КОНЦ.
+  function altTable(){
+    const real=document.getElementById('tableMatrixPanel');if(!real)return null;
+    const tmp=document.createElement('div');tmp.style.cssText='position:absolute;left:-99999px;top:0;width:900px;visibility:hidden';
+    let saved;try{saved=cmConc}catch(e){return null}
+    real.id='tableMatrixPanel__real';tmp.id='tableMatrixPanel';document.body.appendChild(tmp);
+    try{cmConc=!saved;cmRender()}catch(e){console.warn('M-вид КОНЦ',e)}
+    finally{cmConc=saved;tmp.id='';real.id='tableMatrixPanel'}
+    const t=tmp.querySelector('.cm-scroll > table.cm-table, table.cm-table');
+    tmp.remove();return t;
+  }
 
   function injectStyle(){
     if(document.getElementById('comboMViewStyle'))return;
@@ -1349,7 +1366,10 @@
       '@media (min-width:1100px){#tableMatrixPanel .cmSideWrap.both{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}',
       '#tableMatrixPanel .cmSide{min-width:0;border:1px solid #2b4a68;border-radius:10px;background:#081a2b;padding:6px}',
       '#tableMatrixPanel .cmSideHead{display:flex;align-items:center;gap:8px;font-weight:900;font-size:12px;color:#ffb46b;padding:2px 4px 6px}',
-      '#tableMatrixPanel .cmSide.m3 .cmSideHead{color:#6fd3f0;justify-content:flex-end}',
+      '#tableMatrixPanel .cmSide.m3 .cmSideHead{color:#6fd3f0}',
+      '#tableMatrixPanel .cmSide .cmSideHead{justify-content:space-between}',
+      '#tableMatrixPanel .cmSideK{flex:0 0 auto;min-width:30px;height:26px;padding:0 8px;border:1px solid #647d93;border-radius:8px;background:#183449;color:#e2eaf0;font-weight:900;font-size:13px;cursor:pointer}',
+      '#tableMatrixPanel .cmSideK.active{background:#1f6b45;border-color:#5fd39a;color:#fff}',
       '#tableMatrixPanel .cmSideScroll{overflow-x:auto!important;overflow-y:hidden;max-width:100%;-webkit-overflow-scrolling:touch}',
       '#tableMatrixPanel .cmSide table.cm-table{width:max-content!important;min-width:0!important;table-layout:auto!important}',
       '#tableMatrixPanel .cmSide table.cm-table td,#tableMatrixPanel .cmSide table.cm-table th{width:auto!important;min-width:30px!important;height:26px!important;white-space:nowrap}',
@@ -1423,13 +1443,21 @@
       const after=src.closest('.cm-scroll')||src;
       if(wrap.previousElementSibling!==after)after.insertAdjacentElement('afterend',wrap);
       wrap.classList.toggle('both',view.m2&&view.m3);
-      wrap.innerHTML='';
+      wrap.innerHTML='';let alt=null;
       [['m2','Слева направо →'],['m3','← Справа налево']].forEach(([d,title])=>{
         if(!view[d])return;
         const box=document.createElement('div');box.className='cmSide '+d;
-        box.innerHTML='<div class="cmSideHead">'+(d==='m2'?'М2 · ':'')+title+(d==='m3'?' · М3':'')+'</div>';
+        const kOn=sideConc(d);
+        const kBtn='<button type="button" class="cmSideK'+(kOn?' active':'')+'" data-side-k="'+d+'" aria-pressed="'+kOn+'" title="'+(kOn?'Показаны концентрации — нажми для обычных столбов':'Показаны столбы — нажми для концентраций')+'">К</button>';
+        box.innerHTML='<div class="cmSideHead">'+(d==='m3'?kBtn:'')+'<span class="cmSideTitle">'+(d==='m2'?'М2 · ':'')+title+(d==='m3'?' · М3':'')+'</span>'+(d==='m2'?kBtn:'')+'</div>';
+        box.querySelector('[data-side-k]').addEventListener('click',e=>{e.stopPropagation();kMode[d]=sideConc(d)?'cols':'conc';
+          if((kMode[d]==='conc')===mainConc())kMode[d]=null;try{localStorage.setItem(KMODE_KEY,JSON.stringify(kMode))}catch(err){}rebuild()});
         const sc=document.createElement('div');sc.className='cmSideScroll';sc.dataset.dir=d;
-        sc.appendChild(buildSide(src,d));box.appendChild(sc);wrap.appendChild(box);
+        const conc=sideConc(d);let base=src;
+        if(conc!==mainConc()){if(!alt)alt=altTable();if(alt)base=alt}
+        sc.appendChild(buildSide(base,d));box.appendChild(sc);wrap.appendChild(box);
+        // В виде с другим режимом карточка по клетке открывалась бы не для того столба — клетки здесь только для просмотра.
+        if(base!==src)sc.addEventListener('click',e=>{if(!e.target.closest('button'))e.stopPropagation()},true);
         // Новые тиражи ближе к центру: М2 — справа, М3 — слева. Если пользователь прокрутил — сохраняем место.
         // Новые тиражи ближе к центру: М2 — у правого края, М3 — у левого. Если прокрутил назад — место сохраняется
         // (по номеру тиража у края, чтобы при новом тираже не сползало).
