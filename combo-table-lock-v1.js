@@ -1325,3 +1325,141 @@
   const start=()=>{ensureSwitch();if(document.getElementById('tableDrawerBody')){ensurePanel();render()}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+/* COMBO · М1/М2/М3 — виды матрицы столбов v1
+   М1 — обычная (тиражи сверху вниз), М2 — боком слева направо, М3 — боком справа налево.
+   М2/М3 строятся из уже нарисованной матрицы (все режимы и кнопки В/А сохраняются). */
+(function(){
+  'use strict';
+  const KEY='combo-matrix-views-v1';
+  const view={m1:true,m2:false,m3:false};
+  try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&typeof v==='object'){view.m1=v.m1!==false;view.m2=v.m2===true;view.m3=v.m3===true}}catch(e){}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(view))}catch(e){}};
+  let building=false,pending=0;
+
+  function injectStyle(){
+    if(document.getElementById('comboMViewStyle'))return;
+    const st=document.createElement('style');st.id='comboMViewStyle';
+    st.textContent=[
+      '#tableMatrixPanel.m1Off .cm-panel > .cm-scroll{display:none!important}',
+      '@media (max-width:700px){#tableDrawer .tvSw{flex-wrap:wrap;justify-content:flex-end;row-gap:4px;max-width:150px}#tableDrawer .tvSw button{padding:4px 7px}}',
+      '#tableMatrixPanel .cmSideWrap{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:10px}',
+      '@media (min-width:1100px){#tableMatrixPanel .cmSideWrap.both{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}',
+      '#tableMatrixPanel .cmSide{min-width:0;border:1px solid #2b4a68;border-radius:10px;background:#081a2b;padding:6px}',
+      '#tableMatrixPanel .cmSideHead{display:flex;align-items:center;gap:8px;font-weight:900;font-size:12px;color:#ffb46b;padding:2px 4px 6px}',
+      '#tableMatrixPanel .cmSide.m3 .cmSideHead{color:#6fd3f0;justify-content:flex-end}',
+      '#tableMatrixPanel .cmSideScroll{overflow-x:auto!important;overflow-y:hidden;max-width:100%;-webkit-overflow-scrolling:touch}',
+      '#tableMatrixPanel .cmSide table.cm-table{width:max-content!important;min-width:0!important;table-layout:auto!important}',
+      '#tableMatrixPanel .cmSide table.cm-table td,#tableMatrixPanel .cmSide table.cm-table th{width:auto!important;min-width:30px!important;height:26px!important;white-space:nowrap}',
+      '#tableMatrixPanel .cmSide table.cm-table .cm-draw{width:auto!important;min-width:58px!important;font-size:10px!important;padding:12px 2px 2px!important}',
+      '#tableMatrixPanel .cmSide table.cm-table .cm-date{min-width:40px!important;font-size:9px!important;white-space:normal!important;line-height:1.1}',
+      '#tableMatrixPanel .cmSide table.cm-table .cmSideLabel{position:sticky;z-index:3;background:#16324c!important;min-width:44px!important;font-weight:900}',
+      '#tableMatrixPanel .cmSide.m2 table.cm-table .cmSideLabel{left:0}',
+      '#tableMatrixPanel .cmSide.m3 table.cm-table .cmSideLabel{right:0}',
+      '#tableMatrixPanel .cmSide .cm-inline-a{top:1px!important;right:1px!important}',
+      '#tableMatrixPanel .cmSide .cm-inline-v{top:1px!important;left:1px!important}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  // Раскладка исходной таблицы в сетку с учётом colspan/rowspan.
+  function gridOf(table){
+    const rows=[...table.rows];const items=[];const occ=new Set();
+    rows.forEach((tr,r)=>{let c=0;[...tr.cells].forEach(cell=>{while(occ.has(r+':'+c))c++;const rs=cell.rowSpan||1,cs=cell.colSpan||1;
+      for(let i=0;i<rs;i++)for(let j=0;j<cs;j++)occ.add((r+i)+':'+(c+j));
+      items.push({cell,r,c,rs,cs,sec:tr.parentNode.tagName});c+=cs})});
+    return{items,nRows:rows.length,nCols:Math.max(0,...items.map(x=>x.c+x.cs))};
+  }
+  const drawNo=tr=>{const t=(tr.cells[0]?.textContent||'').match(/\d{5,}/);return t?Number(t[0]):NaN};
+
+  function buildSide(src,dir){
+    const g=gridOf(src);const skipFoot=new Set([...src.rows].map((tr,i)=>i).filter(i=>src.rows[i].parentNode.tagName==='TFOOT'&&/^\s*Тираж/.test(src.rows[i].cells[0]?.textContent||'')));
+    const rows=[...src.rows];
+    // Порядок «колонок» вида: шапка, затем тиражи по возрастанию (старые → новые), затем итоги.
+    const head=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='THEAD');
+    const body=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='TBODY');
+    const foot=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='TFOOT'&&!/^\s*Тираж/.test(rows[i].cells[0]?.textContent||''));
+    const asc=body.length>1&&drawNo(rows[body[0]])>drawNo(rows[body[body.length-1]])?[...body].reverse():body;
+    let order=[...head,...asc,...foot];
+    if(dir==='m3')order=order.reverse();
+    const pos=new Map(order.map((r,i)=>[r,i]));
+    const t=document.createElement('table');t.className=src.className;
+    const tb=document.createElement('tbody');t.appendChild(tb);
+    for(let c=0;c<g.nCols;c++){
+      const tr=document.createElement('tr');
+      const here=g.items.filter(x=>x.c===c&&!skipFoot.has(x.r)).map(x=>{const rowsSpan=[];for(let i=0;i<x.rs;i++)rowsSpan.push(pos.get(x.r+i));return{...x,at:Math.min(...rowsSpan)}}).sort((a,b)=>a.at-b.at);
+      here.forEach(x=>{
+        const tag=x.sec==='THEAD'?'th':(x.cell.tagName==='TH'?'th':'td');
+        const n=document.createElement(tag);
+        for(const a of x.cell.attributes){if(a.name!=='rowspan'&&a.name!=='colspan'&&a.name!=='id')n.setAttribute(a.name,a.value)}
+        n.innerHTML=x.cell.innerHTML;
+        if(x.cs>1)n.rowSpan=x.cs;if(x.rs>1)n.colSpan=x.rs;
+        if(x.sec==='THEAD')n.classList.add('cmSideLabel');
+        tr.appendChild(n);
+      });
+      tb.appendChild(tr);
+    }
+    t.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+    return t;
+  }
+
+  function rebuild(){
+    pending=0;
+    const panel=document.getElementById('tableMatrixPanel');if(!panel)return;
+    panel.classList.toggle('m1Off',!view.m1);
+    const cmp=panel.querySelector('.cm-panel');const src=cmp&&cmp.querySelector('.cm-scroll > table.cm-table, table.cm-table');
+    let wrap=panel.querySelector('.cmSideWrap');
+    if(!(view.m2||view.m3)||!cmp||!src){if(wrap){building=true;wrap.remove();building=false}return}
+    building=true;
+    try{
+      const keep={};wrap&&wrap.querySelectorAll('.cmSideScroll').forEach(s=>{keep[s.dataset.dir]={x:s.scrollLeft,max:s.scrollWidth-s.clientWidth}});
+      if(!wrap){wrap=document.createElement('div');wrap.className='cmSideWrap'}
+      const after=src.closest('.cm-scroll')||src;
+      if(wrap.previousElementSibling!==after)after.insertAdjacentElement('afterend',wrap);
+      wrap.classList.toggle('both',view.m2&&view.m3);
+      wrap.innerHTML='';
+      [['m2','Слева направо →'],['m3','← Справа налево']].forEach(([d,title])=>{
+        if(!view[d])return;
+        const box=document.createElement('div');box.className='cmSide '+d;
+        box.innerHTML='<div class="cmSideHead">'+(d==='m2'?'М2 · ':'')+title+(d==='m3'?' · М3':'')+'</div>';
+        const sc=document.createElement('div');sc.className='cmSideScroll';sc.dataset.dir=d;
+        sc.appendChild(buildSide(src,d));box.appendChild(sc);wrap.appendChild(box);
+        // Новые тиражи ближе к центру: М2 — справа, М3 — слева. Если пользователь прокрутил — сохраняем место.
+        const place=()=>{const k=keep[d];const max=sc.scrollWidth-sc.clientWidth;
+          if(d==='m2')sc.scrollLeft=k&&k.max-k.x>8?k.x:max;else sc.scrollLeft=k&&k.x>8?k.x:0};
+        place();requestAnimationFrame(place);
+      });
+    }finally{building=false}
+  }
+  const schedule=()=>{if(!pending)pending=requestAnimationFrame(rebuild)};
+
+  function applyButtons(){
+    document.querySelectorAll('[data-mview]').forEach(b=>{const on=!!view[b.dataset.mview];b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
+  }
+  function ensureSwitch(){
+    const sw=document.querySelector('#tableDrawer .tvSw');
+    if(!sw){setTimeout(ensureSwitch,300);return}
+    if(sw.querySelector('[data-mview]'))return;
+    const titles={m1:'Обычная матрица: тиражи сверху вниз',m2:'Матрица боком: тиражи слева направо',m3:'Матрица боком: тиражи справа налево'};
+    ['m1','m2','m3'].forEach(k=>{
+      const b=document.createElement('button');b.type='button';b.className='tableHeadToggle';b.dataset.mview=k;b.title=titles[k];b.textContent='М'+k.slice(1);
+      b.addEventListener('click',e=>{e.stopPropagation();view[k]=!view[k];save();applyButtons();rebuild()});
+      sw.appendChild(b);
+    });
+    applyButtons();
+  }
+
+  injectStyle();
+  const start=()=>{
+    ensureSwitch();
+    const panel=document.getElementById('tableMatrixPanel');
+    if(!panel){setTimeout(start,400);return}
+    new MutationObserver(muts=>{
+      if(building)return;
+      if(muts.every(m=>m.target.closest&&m.target.closest('.cmSideWrap')))return;
+      schedule();
+    }).observe(panel,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','style']});
+    schedule();
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
