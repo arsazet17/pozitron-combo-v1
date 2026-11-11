@@ -1361,6 +1361,9 @@
       '#tableMatrixPanel .cm-card [data-cm-close]{position:relative;z-index:21}',
       '#tableMatrixPanel .cmSide.m3 table.cm-table .cmSideLabel{right:0}',
       '#tableMatrixPanel .cmSide .cm-inline-a{top:1px!important;right:1px!important}',
+      '#tableMatrixPanel .cmSide .cmSideScroll table.cm-table :is(td,th){width:auto!important;max-width:none!important}',
+      '#tableMatrixPanel .cmSide .cmSideScroll table.cm-table :is(td,th).cmSideLabel{width:46px!important;min-width:46px!important;max-width:46px!important;padding:0 2px!important;font-size:11px!important;white-space:normal!important;line-height:1.05}',
+      '#tableMatrixPanel .cmSide .cmSideScroll table.cm-table.cm-conc :is(td,th):not(.cmSideLabel){min-width:62px!important;max-width:96px!important;white-space:normal!important}',
       '#tableMatrixPanel .cmSide .cm-inline-v{top:1px!important;left:1px!important}'
     ].join('\n');
     document.head.appendChild(st);
