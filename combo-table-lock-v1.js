@@ -1338,23 +1338,9 @@
   let building=false,pending=0;
   // Место прокрутки М2/М3 живёт отдельно от таблицы: матрица перерисовывается (карточка, режимы), а место остаётся.
   const scrollMem={};
-  // «К» в углу М2/М3: свой режим вида — концентрации или обычные столбы (null — как в основной матрице).
-  const KMODE_KEY='combo-matrix-views-k-v1';
-  const kMode={m2:null,m3:null};
-  try{const v=JSON.parse(localStorage.getItem(KMODE_KEY)||'null');if(v)['m2','m3'].forEach(d=>{if(v[d]==='conc'||v[d]==='cols')kMode[d]=v[d]})}catch(e){}
   const mainConc=()=>{try{return !!cmConc}catch(e){return false}};
-  const sideConc=d=>kMode[d]?kMode[d]==='conc':mainConc();
-  // Таблица в другом режиме: основная матрица рисуется ещё раз в скрытый блок с переключённым КОНЦ.
-  function altTable(){
-    const real=document.getElementById('tableMatrixPanel');if(!real)return null;
-    const tmp=document.createElement('div');tmp.style.cssText='position:absolute;left:-99999px;top:0;width:900px;visibility:hidden';
-    let saved;try{saved=cmConc}catch(e){return null}
-    real.id='tableMatrixPanel__real';tmp.id='tableMatrixPanel';document.body.appendChild(tmp);
-    try{cmConc=!saved;cmRender()}catch(e){console.warn('M-вид КОНЦ',e)}
-    finally{cmConc=saved;tmp.id='';real.id='tableMatrixPanel'}
-    const t=tmp.querySelector('.cm-scroll > table.cm-table, table.cm-table');
-    tmp.remove();return t;
-  }
+  try{localStorage.removeItem('combo-matrix-views-k-v1')}catch(e){}
+
 
   function injectStyle(){
     if(document.getElementById('comboMViewStyle'))return;
@@ -1443,21 +1429,18 @@
       const after=src.closest('.cm-scroll')||src;
       if(wrap.previousElementSibling!==after)after.insertAdjacentElement('afterend',wrap);
       wrap.classList.toggle('both',view.m2&&view.m3);
-      wrap.innerHTML='';let alt=null;
+      wrap.innerHTML='';
       [['m2','Слева направо →'],['m3','← Справа налево']].forEach(([d,title])=>{
         if(!view[d])return;
         const box=document.createElement('div');box.className='cmSide '+d;
-        const kOn=sideConc(d);
-        const kBtn='<button type="button" class="cmSideK'+(kOn?' active':'')+'" data-side-k="'+d+'" aria-pressed="'+kOn+'" title="'+(kOn?'Показаны концентрации — нажми для обычных столбов':'Показаны столбы — нажми для концентраций')+'">К</button>';
+        const kOn=mainConc();
+        const kBtn='<button type="button" class="cmSideK'+(kOn?' active':'')+'" data-side-k="'+d+'" aria-pressed="'+kOn+'" title="'+(kOn?'Концентрации — нажми, чтобы показать столбы':'Столбы — нажми, чтобы показать концентрации')+'">К</button>';
         box.innerHTML='<div class="cmSideHead">'+(d==='m3'?kBtn:'')+'<span class="cmSideTitle">'+(d==='m2'?'М2 · ':'')+title+(d==='m3'?' · М3':'')+'</span>'+(d==='m2'?kBtn:'')+'</div>';
-        box.querySelector('[data-side-k]').addEventListener('click',e=>{e.stopPropagation();kMode[d]=sideConc(d)?'cols':'conc';
-          if((kMode[d]==='conc')===mainConc())kMode[d]=null;try{localStorage.setItem(KMODE_KEY,JSON.stringify(kMode))}catch(err){}rebuild()});
+        // К — то же, что КОНЦ: концентрации ↔ обычные столбы на всей матрице.
+        box.querySelector('[data-side-k]').addEventListener('click',e=>{e.stopPropagation();
+          const b=document.querySelector('#tableMatrixPanel [data-cm-action="conc"]');if(b)b.click()});
         const sc=document.createElement('div');sc.className='cmSideScroll';sc.dataset.dir=d;
-        const conc=sideConc(d);let base=src;
-        if(conc!==mainConc()){if(!alt)alt=altTable();if(alt)base=alt}
-        sc.appendChild(buildSide(base,d));box.appendChild(sc);wrap.appendChild(box);
-        // В виде с другим режимом карточка по клетке открывалась бы не для того столба — клетки здесь только для просмотра.
-        if(base!==src)sc.addEventListener('click',e=>{if(!e.target.closest('button'))e.stopPropagation()},true);
+        sc.appendChild(buildSide(src,d));box.appendChild(sc);wrap.appendChild(box);
         // Новые тиражи ближе к центру: М2 — справа, М3 — слева. Если пользователь прокрутил — сохраняем место.
         // Новые тиражи ближе к центру: М2 — у правого края, М3 — у левого. Если прокрутил назад — место сохраняется
         // (по номеру тиража у края, чтобы при новом тираже не сползало).
