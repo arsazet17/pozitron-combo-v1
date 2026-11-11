@@ -1410,12 +1410,12 @@
   const drawNo=tr=>{const t=(tr.cells[0]?.textContent||'').match(/\d{5,}/);return t?Number(t[0]):NaN};
 
   function buildSide(src,dir){
-    const g=gridOf(src);const skipFoot=new Set([...src.rows].map((tr,i)=>i).filter(i=>src.rows[i].parentNode.tagName==='TFOOT'&&/^\s*Тираж/.test(src.rows[i].cells[0]?.textContent||'')));
+    const g=gridOf(src);const skipFoot=new Set([...src.rows].map((tr,i)=>i).filter(i=>src.rows[i].parentNode.tagName==='TFOOT'));
     const rows=[...src.rows];
     // Порядок «колонок» вида: шапка, затем тиражи по возрастанию (старые → новые), затем итоги.
     const head=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='THEAD');
     const body=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='TBODY');
-    const foot=rows.map((tr,i)=>i).filter(i=>rows[i].parentNode.tagName==='TFOOT'&&!/^\s*Тираж/.test(rows[i].cells[0]?.textContent||''));
+    const foot=[]; // строки итогов (Частота) в М2/М3 не показываем
     const asc=body.length>1&&drawNo(rows[body[0]])>drawNo(rows[body[body.length-1]])?[...body].reverse():body;
     let order=[...head,...asc,...foot];
     if(dir==='m3')order=order.reverse();
