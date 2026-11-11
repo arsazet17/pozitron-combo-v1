@@ -1465,3 +1465,60 @@
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+/* COMBO · ⟳ ставит и новую версию приложения v1
+   Кнопка ⟳ в Таблице: обновляет тиражи как раньше, а если в репозитории уже есть новая версия —
+   сразу применяет её (без закрытия приложения) и возвращает в Таблицу на то же место. */
+(function(){
+  'use strict';
+  const BACK='combo-reopen-after-update-v1';
+  const current=()=>document.querySelector('meta[name="app-build"]')?.content||'';
+  async function newBuild(){
+    try{
+      const r=await fetch('app-version.json?ts='+Date.now(),{cache:'no-store'});
+      if(!r.ok)return '';
+      const {build}=await r.json();
+      return /^[a-f0-9]{12}$/.test(build)&&build!==current()?build:'';
+    }catch(e){return ''}
+  }
+  async function applyUpdate(build){
+    try{
+      const drawer=document.getElementById('tableDrawer');
+      const body=drawer&&drawer.querySelector('.tableDrawerBody, #tableDrawerBody')?.parentElement;
+      sessionStorage.setItem(BACK,JSON.stringify({table:!!(drawer&&!drawer.classList.contains('hidden')),y:drawer?drawer.scrollTop:0,win:scrollY}));
+    }catch(e){}
+    try{if(typeof showComboToast==='function')showComboToast('Есть новая версия — обновляю приложение…','ok',4000)}catch(e){}
+    try{
+      if('caches' in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('combo-keno-shell-')).map(k=>caches.delete(k)))}
+      if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg){await reg.update().catch(()=>{});reg.waiting?.postMessage?.('SKIP_WAITING')}}
+    }catch(e){}
+    const url=new URL(location.href);url.searchParams.set('v',build);
+    location.replace(url.toString());
+  }
+  // После перезагрузки — вернуть Таблицу и место прокрутки.
+  function restore(){
+    let s=null;try{s=JSON.parse(sessionStorage.getItem(BACK)||'null');sessionStorage.removeItem(BACK)}catch(e){}
+    if(!s)return;
+    const go=()=>{
+      try{
+        if(s.table&&typeof openTableDrawer==='function'){openTableDrawer();const d=document.getElementById('tableDrawer');setTimeout(()=>{if(d)d.scrollTop=s.y||0},400)}
+        else scrollTo(0,s.win||0);
+        if(typeof showComboToast==='function')showComboToast('Приложение обновлено до '+(document.querySelector('.version')?.textContent||'новой версии'),'ok',4000);
+      }catch(e){}
+    };
+    setTimeout(go,900);
+  }
+  function hook(){
+    const b=document.getElementById('tableRefreshBtn');
+    if(!b||b.__appUpdateV1)return;
+    b.__appUpdateV1=true;
+    const original=b.onclick;
+    b.onclick=async function(ev){
+      const nb=await newBuild();
+      if(nb){applyUpdate(nb);return}
+      if(typeof original==='function')return original.call(this,ev);
+    };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{hook();restore()},{once:true});else{hook();restore()}
+  addEventListener('load',hook);
+})();
