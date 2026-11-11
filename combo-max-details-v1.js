@@ -52,6 +52,12 @@
       .comboMaxTitle{font-weight:950;font-size:13px;color:#fff}.comboMaxSummary{font-size:10px;color:#ffcf5c;margin-top:2px;line-height:1.35}
       .comboMaxClose{padding:5px 8px;border-radius:8px;background:#0a1c2d;color:#c9d9e7;font-size:10px;white-space:nowrap}
       .comboMaxList{display:grid;gap:6px}.comboMaxRow{padding:8px;border:1px solid #294b66;border-radius:9px;background:#071725}
+      .comboMaxMetaRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+      .comboMaxVBtn{flex:0 0 auto;min-width:34px;height:28px;padding:0 9px;border:1px solid #647d93;border-radius:8px;background:#183449;color:#e2eaf0;font-weight:900;font-size:13px;cursor:pointer}
+      .comboMaxVBtn.active{background:#a86a12;color:#fff;border-color:#ffc56b}
+      .comboMaxOrder{display:none;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
+      .comboMaxRow.vOn .comboMaxOrder{display:flex}
+      .comboMaxRow.vOn .comboMaxHits,.comboMaxRow.vOn .comboMaxNoise{display:none}
       .comboMaxRowTop{display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:11px;font-weight:900}
       .comboMaxDraw{color:#fff}.comboMaxPrize{color:#ffbd23;white-space:nowrap}.comboMaxMeta{margin-top:3px;font-size:10px;color:#b7c8d7;line-height:1.35}
       .comboMaxHits,.comboMaxNoise{margin-top:5px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -84,11 +90,23 @@
     document.head.appendChild(s);
   }
 
+  // Кнопка «В» — показать тираж в порядке выпадения, числа комбы подсвечены на своих местах.
+  const orderDraws=new Set();
+  function vBtnHtml(d){const on=orderDraws.has(Number(d.draw));return `<button type="button" class="comboMaxVBtn${on?' active':''}" data-max-v="${d.draw}" aria-pressed="${on}" title="Числа тиража в порядке выпадения">В</button>`}
+  function orderHtml(nums,d){const set=new Set((nums||[]).map(Number));return `<div class="comboMaxOrder"><span class="comboMaxMeta">Выпадение:</span>${(d.balls||[]).map(Number).map(n=>`<span class="${set.has(n)?'comboMaxHit':'comboMaxNoiseNum'}">${fmt(n)}</span>`).join('')}</div>`}
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('[data-max-v]');if(!b)return;
+    e.preventDefault();e.stopPropagation();
+    const id=Number(b.dataset.maxV),on=!orderDraws.has(id);
+    if(on)orderDraws.add(id);else orderDraws.delete(id);
+    document.querySelectorAll('[data-max-row="'+id+'"]').forEach(r=>{r.classList.toggle('vOn',on);const x=r.querySelector('[data-max-v]');if(x){x.classList.toggle('active',on);x.setAttribute('aria-pressed',String(on))}});
+  },true);
+
   function occurrenceRowsHtml(p,showAll){
     const visible=showAll?p.maxDraws:p.maxDraws.slice(0,PREVIEW_LIMIT);
     return visible.map(d=>{
       const hn=hitNumbers(p.nums,d),noise=drawNoise(p.nums,d),amount=payout(p.k,hn.length),col=columnOf(d);
-      return `<div class="comboMaxRow"><div class="comboMaxRowTop"><span class="comboMaxDraw">${amount>0?'🔥 ':''}№${d.draw}</span><span class="comboMaxPrize">${hn.length}/${p.k}${amount>0?` · ${money(amount)}`:''}</span></div><div class="comboMaxMeta">${d.date||'—'} · ${d.time||'—'} · столб ${col??'—'}</div><div class="comboMaxHits"><span class="comboMaxMeta">Попали:</span>${hn.map(n=>`<span class="comboMaxHit">${fmt(n)}</span>`).join('')}</div><div class="comboMaxNoise"><span class="comboMaxMeta">Шум:</span>${noise.map(n=>`<span class="comboMaxNoiseNum">${fmt(n)}</span>`).join('')}</div></div>`;
+      return `<div class="comboMaxRow${orderDraws.has(Number(d.draw))?' vOn':''}" data-max-row="${d.draw}"><div class="comboMaxRowTop"><span class="comboMaxDraw">${amount>0?'🔥 ':''}№${d.draw}</span><span class="comboMaxPrize">${hn.length}/${p.k}${amount>0?` · ${money(amount)}`:''}</span></div><div class="comboMaxMetaRow"><div class="comboMaxMeta">${d.date||'—'} · ${d.time||'—'} · столб ${col??'—'}</div>${vBtnHtml(d)}</div>${orderHtml(p.nums,d)}<div class="comboMaxHits"><span class="comboMaxMeta">Попали:</span>${hn.map(n=>`<span class="comboMaxHit">${fmt(n)}</span>`).join('')}</div><div class="comboMaxNoise"><span class="comboMaxMeta">Шум:</span>${noise.map(n=>`<span class="comboMaxNoiseNum">${fmt(n)}</span>`).join('')}</div></div>`;
     }).join('')||'<div class="muted">Максимальные выходы не найдены.</div>';
   }
   function moreButtonHtml(p,showAll,id){
@@ -98,7 +116,7 @@
 
   function rowHtml(nums,k,d){
     const hn=hitNumbers(nums,d),noise=drawNoise(nums,d),amount=payout(k,hn.length),col=columnOf(d);
-    return `<div class="comboMaxRow"><div class="comboMaxRowTop"><span class="comboMaxDraw">${amount>0?'🔥 ':''}№${d.draw}</span><span class="comboMaxPrize">${hn.length}/${k}${amount>0?` · ${money(amount)}`:''}</span></div><div class="comboMaxMeta">${d.date||'—'} · ${d.time||'—'} · столб ${col??'—'}</div><div class="comboMaxHits"><span class="comboMaxMeta">Попали:</span>${hn.length?hn.map(n=>`<span class="comboMaxHit">${fmt(n)}</span>`).join(''):'<span class="comboMaxMeta">—</span>'}</div><div class="comboMaxNoise"><span class="comboMaxMeta">Шум:</span>${noise.map(n=>`<span class="comboMaxNoiseNum">${fmt(n)}</span>`).join('')}</div></div>`;
+    return `<div class="comboMaxRow${orderDraws.has(Number(d.draw))?' vOn':''}" data-max-row="${d.draw}"><div class="comboMaxRowTop"><span class="comboMaxDraw">${amount>0?'🔥 ':''}№${d.draw}</span><span class="comboMaxPrize">${hn.length}/${k}${amount>0?` · ${money(amount)}`:''}</span></div><div class="comboMaxMetaRow"><div class="comboMaxMeta">${d.date||'—'} · ${d.time||'—'} · столб ${col??'—'}</div>${vBtnHtml(d)}</div>${orderHtml(nums,d)}<div class="comboMaxHits"><span class="comboMaxMeta">Попали:</span>${hn.length?hn.map(n=>`<span class="comboMaxHit">${fmt(n)}</span>`).join(''):'<span class="comboMaxMeta">—</span>'}</div><div class="comboMaxNoise"><span class="comboMaxMeta">Шум:</span>${noise.map(n=>`<span class="comboMaxNoiseNum">${fmt(n)}</span>`).join('')}</div></div>`;
   }
   function mainPayload(){
     try{
