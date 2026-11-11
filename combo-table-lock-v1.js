@@ -1353,8 +1353,10 @@
       '#tableMatrixPanel .cmSide table.cm-table td,#tableMatrixPanel .cmSide table.cm-table th{width:auto!important;min-width:30px!important;height:26px!important;white-space:nowrap}',
       '#tableMatrixPanel .cmSide table.cm-table .cm-draw{width:auto!important;min-width:58px!important;font-size:10px!important;padding:12px 2px 2px!important}',
       '#tableMatrixPanel .cmSide table.cm-table .cm-date{min-width:40px!important;font-size:9px!important;white-space:normal!important;line-height:1.1}',
-      '#tableMatrixPanel .cmSide table.cm-table .cmSideLabel{position:sticky;z-index:3;background:#16324c!important;min-width:44px!important;font-weight:900}',
+      '#tableMatrixPanel .cmSide table.cm-table .cmSideLabel{position:sticky;z-index:2;background:#16324c!important;min-width:44px!important;font-weight:900}',
       '#tableMatrixPanel .cmSide.m2 table.cm-table .cmSideLabel{left:0}',
+      '#tableMatrixPanel .cm-card{z-index:20!important;position:sticky}',
+      '#tableMatrixPanel .cm-card [data-cm-close]{position:relative;z-index:21}',
       '#tableMatrixPanel .cmSide.m3 table.cm-table .cmSideLabel{right:0}',
       '#tableMatrixPanel .cmSide .cm-inline-a{top:1px!important;right:1px!important}',
       '#tableMatrixPanel .cmSide .cm-inline-v{top:1px!important;left:1px!important}'
