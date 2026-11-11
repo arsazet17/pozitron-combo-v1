@@ -1336,6 +1336,8 @@
   try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&typeof v==='object'){view.m1=v.m1!==false;view.m2=v.m2===true;view.m3=v.m3===true}}catch(e){}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(view))}catch(e){}};
   let building=false,pending=0;
+  // Место прокрутки М2/М3 живёт отдельно от таблицы: матрица перерисовывается (карточка, режимы), а место остаётся.
+  const scrollMem={};
 
   function injectStyle(){
     if(document.getElementById('comboMViewStyle'))return;
@@ -1414,7 +1416,6 @@
     if(!(view.m2||view.m3)||!cmp||!src){if(wrap){building=true;wrap.remove();building=false}return}
     building=true;
     try{
-      const keep={};wrap&&wrap.querySelectorAll('.cmSideScroll').forEach(s=>{keep[s.dataset.dir]={x:s.scrollLeft,max:s.scrollWidth-s.clientWidth}});
       if(!wrap){wrap=document.createElement('div');wrap.className='cmSideWrap'}
       const after=src.closest('.cm-scroll')||src;
       if(wrap.previousElementSibling!==after)after.insertAdjacentElement('afterend',wrap);
@@ -1427,9 +1428,18 @@
         const sc=document.createElement('div');sc.className='cmSideScroll';sc.dataset.dir=d;
         sc.appendChild(buildSide(src,d));box.appendChild(sc);wrap.appendChild(box);
         // Новые тиражи ближе к центру: М2 — справа, М3 — слева. Если пользователь прокрутил — сохраняем место.
-        const place=()=>{const k=keep[d];const max=sc.scrollWidth-sc.clientWidth;
-          if(d==='m2')sc.scrollLeft=k&&k.max-k.x>8?k.x:max;else sc.scrollLeft=k&&k.x>8?k.x:0};
+        // Новые тиражи ближе к центру: М2 — у правого края, М3 — у левого. Если прокрутил назад — место сохраняется
+        // (по номеру тиража у края, чтобы при новом тираже не сползало).
+        const place=()=>{const k=scrollMem[d];const max=sc.scrollWidth-sc.clientWidth;
+          if(!k||k.edge){sc.scrollLeft=d==='m2'?max:0;return}
+          const th=k.draw&&[...sc.querySelectorAll('tr:first-child > :not(.cmSideLabel)')].find(c=>(c.textContent||'').includes(String(k.draw)));
+          if(th){sc.scrollLeft=Math.max(0,Math.min(max,th.offsetLeft-k.off))}else sc.scrollLeft=Math.max(0,Math.min(max,k.x))};
         place();requestAnimationFrame(place);
+        sc.addEventListener('scroll',()=>{if(building||!sc.isConnected)return;const max=sc.scrollWidth-sc.clientWidth;if(max<=0||!sc.clientWidth)return;const x=sc.scrollLeft;
+          const edge=d==='m2'?max-x<12:x<12;
+          // запоминаем тираж у левого края видимой части
+          let draw=0,off=0;for(const c of sc.querySelectorAll('tr:first-child > :not(.cmSideLabel)')){if(c.offsetLeft+c.offsetWidth>x+50){const m=(c.textContent||'').match(/\d{6}/);if(m){draw=Number(m[0]);off=c.offsetLeft-x;break}}}
+          scrollMem[d]={x,edge,draw,off}},{passive:true});
       });
     }finally{building=false}
   }
