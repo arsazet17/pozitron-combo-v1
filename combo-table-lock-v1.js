@@ -1577,3 +1577,12 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{hook();restore()},{once:true});else{hook();restore()}
   addEventListener('load',hook);
 })();
+
+/* Без выделения текста в матрицах и таблицах (не всплывает «Позвонить / Копировать») v4.8.116 */
+(function(){
+  if(document.getElementById('comboNoSelectCss'))return;
+  const st=document.createElement('style');st.id='comboNoSelectCss';
+  st.textContent=`#tableDrawer,#tableDrawer *,#tableMatrixPanel,#tableMatrixPanel *,.cmSideWrap,.cmSideWrap *,#comboT2Panel,#comboT2Panel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-tap-highlight-color:transparent}
+#tableDrawer input,#tableDrawer textarea,#tableDrawer [contenteditable]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}`;
+  (document.head||document.documentElement).appendChild(st);
+})();
