@@ -1398,6 +1398,22 @@
       '#tableMatrixPanel .cmSide.m4{grid-column:1/-1}',
       '#tableMatrixPanel .cmSide.m4 .cmSideHead{color:#c9a7ff;justify-content:space-between}',
       '#tableMatrixPanel .cmSide.m4.noNums .cm-cell-numbers{display:none!important}',
+      '#tableMatrixPanel .cmSide.m4 .m4Btns{display:flex;gap:6px;flex:0 0 auto}',
+      '#tableMatrixPanel .cmSide.m4.lupaOn td.cm-hit{cursor:zoom-in;outline:2px dashed #c9a7ff;outline-offset:-3px}',
+      '#tableMatrixPanel .m4Lupa{margin-top:8px;border:1px solid #6d5aa8;border-radius:10px;background:#120f2a;padding:8px;color:#e2eaf0;font-size:13px}',
+      '#tableMatrixPanel .m4Lupa .lpHead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:900;color:#c9a7ff;margin-bottom:6px}',
+      '#tableMatrixPanel .m4Lupa .lpClose{border:1px solid #647d93;border-radius:8px;background:#183449;color:#fff;font-weight:900;min-width:30px;height:28px;cursor:pointer}',
+      '#tableMatrixPanel .m4Lupa .lpNow{margin:4px 0 8px;line-height:1.5}',
+      '#tableMatrixPanel .m4Lupa .lpChips{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 8px}',
+      '#tableMatrixPanel .m4Lupa .lpChip{border:1px solid #3d5f7d;border-radius:8px;padding:2px 7px;background:#0d2236;font-weight:800}',
+      '#tableMatrixPanel .m4Lupa .lpChip b{color:#ffd166}',
+      '#tableMatrixPanel .m4Lupa .lpScroll{max-height:340px;overflow:auto}',
+      '#tableMatrixPanel .m4Lupa table{width:100%;border-collapse:collapse;font-size:12px}',
+      '#tableMatrixPanel .m4Lupa th,#tableMatrixPanel .m4Lupa td{border:1px solid #2b4a68;padding:4px 5px;text-align:center}',
+      '#tableMatrixPanel .m4Lupa th{position:sticky;top:0;background:#1d1846;color:#c9a7ff}',
+      '#tableMatrixPanel .m4Lupa .lpCol{display:inline-block;min-width:22px;padding:1px 5px;border-radius:999px;background:#1f6b45;color:#fff;font-weight:900}',
+      '#tableMatrixPanel .m4Lupa .lpCol.me{background:#ffd166;color:#111}',
+      '#tableMatrixPanel .m4Lupa small{color:#9aafc1;display:block;font-size:10px}',
       '#tableMatrixPanel .cmSide.m4 .m4Key{display:none;font-weight:900;font-size:14px}',
       '#tableMatrixPanel .cmSide.m4.noNums td.cm-hit .m4Key{display:inline}',
       '#tableMatrixPanel .cmM4Scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}',
@@ -1492,6 +1508,36 @@
     return t;
   }
 
+  // 🔍 Лупа М4: где этот столб уже стоял на той же концентрации и между какими столбами.
+  const M4_LUPA_KEY='combo-m4-lupa-v1';
+  let lupaSel=null; // {draw,k}
+  let concCache={len:0,last:0,list:null};
+  function concList(){
+    let D=[];try{D=DRAWS}catch(e){return []}
+    const last=D.length?Number(D[D.length-1].draw):0;
+    if(concCache.list&&concCache.len===D.length&&concCache.last===last)return concCache.list;
+    const list=[];D.forEach(d=>{let k=null,c=null;try{k=cmConcOf(d);c=drawColumn(d)}catch(e){}if(k&&c)list.push({draw:Number(d.draw),k,c,date:String(d.date||'').slice(0,5),time:String(d.time||'').slice(0,5)})});
+    concCache={len:D.length,last,list};return list;
+  }
+  const colChip=(c,me)=>'<span class="lpCol'+(me?' me':'')+'">'+c+'</span>';
+  const when=x=>x?x.draw+'<small>'+x.date+' '+x.time+'</small>':'—';
+  function lupaHTML(sel){
+    const list=concList();const seq=list.filter(x=>x.k===sel.k);
+    const i=seq.findIndex(x=>x.draw===sel.draw);if(i<0)return '<div class="lpHead"><span>Нет данных по тиражу '+sel.draw+'</span><button type="button" class="lpClose" data-lp-close>×</button></div>';
+    const me=seq[i],prev=seq[i-1],next=seq[i+1];
+    const hits=[];for(let j=seq.length-1;j>=0;j--){if(seq[j].c===me.c&&j!==i)hits.push(j)}
+    const cntBefore=new Map(),cntAfter=new Map();
+    hits.forEach(j=>{if(seq[j-1])cntBefore.set(seq[j-1].c,(cntBefore.get(seq[j-1].c)||0)+1);if(seq[j+1]&&seq[j+1].draw!==me.draw)cntAfter.set(seq[j+1].c,(cntAfter.get(seq[j+1].c)||0)+1)});
+    const chips=m=>[...m.entries()].sort((a,b)=>b[1]-a[1]||a[0]-b[0]).map(([c,n])=>'<span class="lpChip">ст '+c+' · <b>'+n+'</b></span>').join('')||'<span class="lpChip">—</span>';
+    const rows=hits.slice(0,60).map(j=>{const x=seq[j],a=seq[j-1],b=seq[j+1];
+      return '<tr><td>'+when(x)+'</td><td>'+(a?colChip(a.c)+'<small>'+a.draw+' · '+a.time+'</small>':'—')+'</td><td>'+colChip(x.c,true)+'</td><td>'+(b?colChip(b.c)+'<small>'+b.draw+' · '+b.time+'</small>':'—')+'</td></tr>'}).join('');
+    return '<div class="lpHead"><span>🔍 Столб '+me.c+' на концентрации '+me.k+'</span><button type="button" class="lpClose" data-lp-close title="Закрыть">×</button></div>'+
+      '<div class="lpNow">Сейчас: тираж <b>'+me.draw+'</b> ('+me.date+' '+me.time+') — до него на К'+me.k+' стоял '+(prev?colChip(prev.c)+' (тираж '+prev.draw+', '+prev.time+')':'—')+', после — '+(next?colChip(next.c)+' (тираж '+next.draw+', '+next.time+')':'<b>ещё не было</b>')+'</div>'+
+      '<div>Столб '+me.c+' на К'+me.k+' был ещё <b>'+hits.length+'</b> раз. Перед ним стояли:</div><div class="lpChips">'+chips(cntBefore)+'</div>'+
+      '<div>После него шли:</div><div class="lpChips">'+chips(cntAfter)+'</div>'+
+      (rows?'<div class="lpScroll"><table><thead><tr><th>Тираж</th><th>До него</th><th>Столб</th><th>После него</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'');
+  }
+
   function rebuild(){
     pending=0;
     const panel=document.getElementById('tableMatrixPanel');if(!panel)return;
@@ -1512,9 +1558,9 @@
       wrap.innerHTML='';
       if(view.m4){
         const m4src=mainConc()?srcNow:alt;
-        let nums=true;try{nums=localStorage.getItem(M4_NUMS_KEY)!=='0'}catch(e){}
-        const box=document.createElement('div');box.className='cmSide m4'+(nums?'':' noNums');
-        box.innerHTML='<div class="cmSideHead"><span class="cmSideTitle">М4 · Тесла: 1 · 2 · 4 · 8 · 7 · 5 ‖ 3 · 6 · 9</span><button type="button" class="cmSideK'+(nums?' active':'')+'" data-m4-nums aria-pressed="'+nums+'" title="'+(nums?'Числа показаны — нажми, чтобы оставить одни столбы':'Одни столбы — нажми, чтобы показать числа')+'">Ч</button></div>';
+        let nums=true,lupa=false;try{nums=localStorage.getItem(M4_NUMS_KEY)!=='0';lupa=localStorage.getItem(M4_LUPA_KEY)==='1'}catch(e){}
+        const box=document.createElement('div');box.className='cmSide m4'+(nums?'':' noNums')+(lupa?' lupaOn':'');
+        box.innerHTML='<div class="cmSideHead"><span class="cmSideTitle">М4 · Тесла: 1 · 2 · 4 · 8 · 7 · 5 ‖ 3 · 6 · 9</span><span class="m4Btns"><button type="button" class="cmSideK'+(lupa?' active':'')+'" data-m4-lupa aria-pressed="'+lupa+'" title="Лупа: нажми на столб в клетке концентрации — покажу, где он ещё так стоял и между какими столбами">🔍</button><button type="button" class="cmSideK'+(nums?' active':'')+'" data-m4-nums aria-pressed="'+nums+'" title="'+(nums?'Числа показаны — нажми, чтобы оставить одни столбы':'Одни столбы — нажми, чтобы показать числа')+'">Ч</button></span></div>';
         box.querySelector('[data-m4-nums]').addEventListener('click',e=>{e.stopPropagation();const on=box.classList.toggle('noNums');const b=e.currentTarget;
           b.classList.toggle('active',!on);b.setAttribute('aria-pressed',String(!on));b.title=!on?'Числа показаны — нажми, чтобы оставить одни столбы':'Одни столбы — нажми, чтобы показать числа';
           try{localStorage.setItem(M4_NUMS_KEY,on?'0':'1')}catch(err){}});
@@ -1523,7 +1569,17 @@
           // если основная матрица не в концентрациях — клетки М4 только для просмотра; В/А работают
           if(!mainConc())sc.addEventListener('click',e=>{if(!e.target.closest('button'))e.stopPropagation()},true);
         }else sc.innerHTML='<div style="padding:8px;color:#9aafc1">Матрица ещё загружается…</div>';
-        box.appendChild(sc);wrap.appendChild(box);
+        box.appendChild(sc);
+        const lp=document.createElement('div');lp.className='m4Lupa';lp.hidden=!lupaSel;if(lupaSel)lp.innerHTML=lupaHTML(lupaSel);box.appendChild(lp);
+        lp.addEventListener('click',e=>{if(e.target.closest('[data-lp-close]')){e.stopPropagation();lupaSel=null;lp.hidden=true;lp.innerHTML=''}});
+        box.querySelector('[data-m4-lupa]').addEventListener('click',e=>{e.stopPropagation();const on=box.classList.toggle('lupaOn');const b=e.currentTarget;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));
+          try{localStorage.setItem(M4_LUPA_KEY,on?'1':'0')}catch(err){}if(!on){lupaSel=null;lp.hidden=true;lp.innerHTML=''}});
+        // В режиме лупы нажатие на клетку концентрации открывает поиск (карточка не открывается).
+        sc.addEventListener('click',e=>{if(!box.classList.contains('lupaOn')||e.target.closest('button'))return;
+          const td=e.target.closest('td.cm-hit[data-cm-draw][data-cm-col]');if(!td)return;
+          e.stopPropagation();e.preventDefault();lupaSel={draw:Number(td.dataset.cmDraw),k:Number(td.dataset.cmCol)};
+          lp.hidden=false;lp.innerHTML=lupaHTML(lupaSel);lp.scrollIntoView({block:'nearest',behavior:'smooth'})},true);
+        wrap.appendChild(box);
         const x=scrollMem.m4x||0;sc.scrollLeft=x;sc.addEventListener('scroll',()=>{if(!building&&sc.isConnected)scrollMem.m4x=sc.scrollLeft},{passive:true});
       }
       [['m2','Слева направо →'],['m3','← Справа налево']].forEach(([d,title])=>{
