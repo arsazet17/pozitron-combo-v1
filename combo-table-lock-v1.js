@@ -1396,7 +1396,10 @@
       '#tableMatrixPanel .cmSide .cmSideScroll table.cm-table.cm-conc :is(td,th):not(.cmSideLabel){min-width:62px!important;max-width:96px!important;white-space:normal!important}',
       '#tableMatrixPanel .cmSide .cm-inline-v{top:1px!important;left:1px!important}',
       '#tableMatrixPanel .cmSide.m4{grid-column:1/-1}',
-      '#tableMatrixPanel .cmSide.m4 .cmSideHead{color:#c9a7ff}',
+      '#tableMatrixPanel .cmSide.m4 .cmSideHead{color:#c9a7ff;justify-content:space-between}',
+      '#tableMatrixPanel .cmSide.m4.noNums .cm-cell-numbers{display:none!important}',
+      '#tableMatrixPanel .cmSide.m4 .m4Key{display:none;font-weight:900;font-size:14px}',
+      '#tableMatrixPanel .cmSide.m4.noNums td.cm-hit .m4Key{display:inline}',
       '#tableMatrixPanel .cmM4Scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}',
       '#tableMatrixPanel .cmM4Scroll table.cm-table{width:100%!important;min-width:640px!important}',
       '#tableMatrixPanel .cmM4Scroll table.cm-table :is(td,th).m4Sep{border-left:3px solid #c9a7ff!important}',
@@ -1452,6 +1455,7 @@
 
   // М4 — матрица концентраций в порядке Теслы: 1-2-4-8-7-5 ‖ 3-6-9 и итоги по двум блокам.
   const M4_ORDER=[1,2,4,8,7,5,3,6,9];
+  const M4_NUMS_KEY='combo-m4-nums-v1';
   const dr=n=>1+(Number(n)-1)%9;
   function keyOf(cell){
     if(cell.tagName==='TD'&&cell.hasAttribute('data-cm-col')){const k=Number(cell.getAttribute('data-cm-col'));return k>=1&&k<=9?k:0}
@@ -1468,7 +1472,9 @@
       if(keyed.length<9)return;
       const by=new Map(keyed.map(c=>[keyOf(c),c]));
       const anchor=keyed[keyed.length-1].nextSibling;
-      M4_ORDER.forEach(k=>{const c=by.get(k);c.classList.toggle('m4Sep',k===3);tr.insertBefore(c,anchor)});
+      M4_ORDER.forEach(k=>{const c=by.get(k);c.classList.toggle('m4Sep',k===3);
+        if(c.tagName==='TD'&&!c.querySelector('.m4Key')){const sp=document.createElement('span');sp.className='m4Key';sp.textContent=k;c.appendChild(sp)}
+        tr.insertBefore(c,anchor)});
       // итоги блоков
       const head=tr.parentNode.tagName==='THEAD'||keyed[0].tagName==='TH';
       let a,b;
@@ -1506,8 +1512,12 @@
       wrap.innerHTML='';
       if(view.m4){
         const m4src=mainConc()?srcNow:alt;
-        const box=document.createElement('div');box.className='cmSide m4';
-        box.innerHTML='<div class="cmSideHead"><span class="cmSideTitle">М4 · Тесла: 1 · 2 · 4 · 8 · 7 · 5 ‖ 3 · 6 · 9</span></div>';
+        let nums=true;try{nums=localStorage.getItem(M4_NUMS_KEY)!=='0'}catch(e){}
+        const box=document.createElement('div');box.className='cmSide m4'+(nums?'':' noNums');
+        box.innerHTML='<div class="cmSideHead"><span class="cmSideTitle">М4 · Тесла: 1 · 2 · 4 · 8 · 7 · 5 ‖ 3 · 6 · 9</span><button type="button" class="cmSideK'+(nums?' active':'')+'" data-m4-nums aria-pressed="'+nums+'" title="'+(nums?'Числа показаны — нажми, чтобы оставить одни столбы':'Одни столбы — нажми, чтобы показать числа')+'">Ч</button></div>';
+        box.querySelector('[data-m4-nums]').addEventListener('click',e=>{e.stopPropagation();const on=box.classList.toggle('noNums');const b=e.currentTarget;
+          b.classList.toggle('active',!on);b.setAttribute('aria-pressed',String(!on));b.title=!on?'Числа показаны — нажми, чтобы оставить одни столбы':'Одни столбы — нажми, чтобы показать числа';
+          try{localStorage.setItem(M4_NUMS_KEY,on?'0':'1')}catch(err){}});
         const sc=document.createElement('div');sc.className='cmM4Scroll';
         if(m4src){sc.appendChild(buildM4(m4src));
           // если основная матрица не в концентрациях — клетки М4 только для просмотра; В/А работают
